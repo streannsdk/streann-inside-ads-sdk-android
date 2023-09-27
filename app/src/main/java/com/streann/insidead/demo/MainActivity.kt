@@ -7,7 +7,7 @@ import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
 
 class MainActivity : AppCompatActivity() {
-    private val TAG: String = MainActivity::class.java.simpleName
+    private val TAG = "InsideAdStreann"
     private var mInsideAdView: InsideAdView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {

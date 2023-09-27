@@ -103,8 +103,6 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
             adsManager!!.init(adsRenderingSettings)
         }
-
-        requestAds(VAST_TAG_URL)
     }
 
     private fun requestAds(adTagUrl: String) {
@@ -159,6 +157,7 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
         setImaAdsCallback()
+        insideAd.url?.let { requestAds(it) }
     }
 
 }
