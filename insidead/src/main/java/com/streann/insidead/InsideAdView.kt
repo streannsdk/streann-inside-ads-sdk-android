@@ -35,7 +35,7 @@ class InsideAdView @JvmOverloads constructor(
         val executor = Executors.newSingleThreadExecutor()
         val handler = android.os.Handler(Looper.getMainLooper())
         executor.execute {
-            var geoIpJsonObject = HttpURLConnection.getGeoIp()
+            var geoIpJsonObject = HttpRequestsUtil.getGeoIp()
             var geoCountryCode = geoIpJsonObject?.get("countryCode").toString()
 
             handler.post {
