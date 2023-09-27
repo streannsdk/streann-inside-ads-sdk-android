@@ -12,6 +12,11 @@ import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
 import com.google.ads.interactivemedia.v3.api.AdsManager
 import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
+import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
+import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
+import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
+import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.InsideAd
 
 class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     FrameLayout(context) {
@@ -27,6 +32,8 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     private var videoPlayer: VideoView? = null
     private var mediaController: MediaController? = null
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
+
+    private var insideAdListener: InsideAdCallback? = null
 
     init {
         init()
@@ -105,6 +112,53 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
         request.adTagUrl = adTagUrl
 
         adsLoader!!.requestAds(request)
+    }
+
+    private fun setImaAdsCallback() {
+        videoAdPlayerAdapter?.addCallback(object : VideoAdPlayer.VideoAdPlayerCallback {
+            override fun onAdProgress(p0: AdMediaInfo, p1: VideoProgressUpdate) {
+            }
+
+            override fun onBuffering(p0: AdMediaInfo) {
+                insideAdListener?.insideAdBuffering()
+            }
+
+            override fun onContentComplete() {
+            }
+
+            override fun onEnded(p0: AdMediaInfo) {
+                insideAdListener?.insideAdStop()
+            }
+
+            override fun onError(p0: AdMediaInfo) {
+                insideAdListener?.insideAdError()
+            }
+
+            override fun onLoaded(p0: AdMediaInfo) {
+                insideAdListener?.insideAdLoaded()
+            }
+
+            override fun onPause(p0: AdMediaInfo) {
+                insideAdListener?.insideAdStop()
+            }
+
+            override fun onPlay(p0: AdMediaInfo) {
+                insideAdListener?.insideAdPlay()
+            }
+
+            override fun onResume(p0: AdMediaInfo) {
+                insideAdListener?.insideAdResume()
+            }
+
+            override fun onVolumeChanged(p0: AdMediaInfo, p1: Int) {
+                insideAdListener?.insideAdVolumeChanged(p1.toFloat())
+            }
+        })
+    }
+
+    fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
+        insideAdListener = listener
+        setImaAdsCallback()
     }
 
 }

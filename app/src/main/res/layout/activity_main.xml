@@ -7,6 +7,7 @@
     tools:context=".MainActivity">
 
     <com.streann.insidead.InsideAdView
+        android:id="@+id/insideAdView"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         app:layout_constraintStart_toStartOf="parent"
