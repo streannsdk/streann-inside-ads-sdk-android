@@ -1,12 +1,14 @@
 package com.streann.insidead
 
 import android.content.Context
+import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.widget.FrameLayout
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
+import java.util.concurrent.Executors
 
 class InsideAdView @JvmOverloads constructor(
     private val context: Context,
@@ -24,21 +26,30 @@ class InsideAdView @JvmOverloads constructor(
         addView(mGoogleImaPlayer)
     }
 
-    fun requestAd(id: String, insideAdCallback: InsideAdCallback) {
-        if (TextUtils.isEmpty(id)) {
+    fun requestAd(resellerId: String, insideAdCallback: InsideAdCallback) {
+        if (TextUtils.isEmpty(resellerId)) {
             insideAdCallback.insideAdError("ID is required.")
             return
         }
 
-        makeRequest(id, insideAdCallback,
-            object : CampaignCallback {
-                override fun onSuccess(insideAd: InsideAd) {
-                    showAd(insideAd, insideAdCallback)
-                }
+        val executor = Executors.newSingleThreadExecutor()
+        val handler = android.os.Handler(Looper.getMainLooper())
+        executor.execute {
+            var geoIpJsonObject = HttpURLConnection.getGeoIp()
+            var geoCountryCode = geoIpJsonObject?.get("countryCode").toString()
 
-                override fun onError(error: String?) {
-                }
-            })
+            handler.post {
+                makeRequest(resellerId, insideAdCallback,
+                    object : CampaignCallback {
+                        override fun onSuccess(insideAd: InsideAd) {
+                            showAd(insideAd, insideAdCallback)
+                        }
+
+                        override fun onError(error: String?) {
+                        }
+                    })
+            }
+        }
     }
 
     private fun makeRequest(
