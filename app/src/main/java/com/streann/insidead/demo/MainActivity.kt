@@ -19,7 +19,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setupInsideAdView() {
         mInsideAdView = findViewById(R.id.insideAdView)
-        mInsideAdView?.requestAd("559ff7ade4b0d0aff40888dd", object : InsideAdCallback {
+        mInsideAdView?.requestAd("559ff7ade4b0d0aff40888dd", "", object : InsideAdCallback {
             override fun insideAdReceived() {
                 Log.i(TAG, "insideAdReceived: ")
             }
@@ -60,5 +60,10 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "insideAdVolumeChanged: $level")
             }
         })
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        mInsideAdView?.shutdownInsideAdExecutor()
     }
 }

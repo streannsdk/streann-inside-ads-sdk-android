@@ -28,7 +28,7 @@ class InsideAdView @JvmOverloads constructor(
         addView(mGoogleImaPlayer)
     }
 
-    fun requestAd(resellerId: String, insideAdCallback: InsideAdCallback?) {
+    fun requestAd(resellerId: String, screen: String, insideAdCallback: InsideAdCallback?) {
         if (TextUtils.isEmpty(resellerId)) {
             insideAdCallback?.insideAdError("ID is required.")
             return
@@ -43,6 +43,7 @@ class InsideAdView @JvmOverloads constructor(
                         HttpRequestsUtil.getCampaign(
                             resellerId,
                             geoCountryCode,
+                            screen,
                             object : CampaignCallback {
                                 override fun onSuccess(insideAd: InsideAd) {
                                     Log.d(LOGTAG, "onSuccess $insideAd")
@@ -57,13 +58,15 @@ class InsideAdView @JvmOverloads constructor(
                 }
             }
         }
-
-        executor.shutdown()
     }
 
     private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         mGoogleImaPlayer?.visibility = VISIBLE
         mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
+    }
+
+    fun shutdownInsideAdExecutor() {
+        executor.shutdown()
     }
 
 }

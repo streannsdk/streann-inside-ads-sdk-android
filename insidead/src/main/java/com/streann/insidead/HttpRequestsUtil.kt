@@ -54,13 +54,14 @@ object HttpRequestsUtil {
     fun getCampaign(
         resellerId: String,
         countryCode: String,
+        screen: String,
         campaignCallback: CampaignCallback
     ) {
         val url: URL
         var jsonObject: JSONObject? = null
         try {
             val urlParameters = "platform=ANDROID&country=" + countryCode +
-                    "&r=" + resellerId
+                    "&r=" + resellerId + "&screen=" + screen
             url = URL(
                 "https://inside-ads.services.c1.streann.com/v1/campaigns/app"
                         + "?" + urlParameters
