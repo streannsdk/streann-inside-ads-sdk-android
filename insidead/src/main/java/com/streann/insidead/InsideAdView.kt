@@ -8,6 +8,7 @@ import android.widget.FrameLayout
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.HttpRequestsUtil
 import java.util.concurrent.Executors
 
 class InsideAdView @JvmOverloads constructor(

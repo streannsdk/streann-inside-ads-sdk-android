@@ -1,4 +1,4 @@
-package com.streann.insidead
+package com.streann.insidead.utils
 
 import android.util.Log
 import com.streann.insidead.callbacks.CampaignCallback
