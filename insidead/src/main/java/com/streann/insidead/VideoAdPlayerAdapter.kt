@@ -31,22 +31,25 @@ class VideoAdPlayerAdapter(private val videoPlayer: VideoView, audioManager: Aud
         private const val INITIAL_DELAY_MS: Long = 250
     }
 
-    private fun startAdTracking() {
-        Log.i(LOGTAG, "startAdTracking")
-        if (timer != null) {
-            return
+    private fun notifyImaSdkAboutAdLoaded() {
+        Log.i(LOGTAG, "notifyImaSdkAboutAdLoaded")
+        for (callback in videoAdPlayerCallbacks) {
+            callback.onLoaded(loadedAdMediaInfo!!)
         }
+    }
 
-        timer = Timer()
-
-        val updateTimerTask: TimerTask = object : TimerTask() {
-            override fun run() {
-                val progressUpdate = adProgress
-                notifyImaSdkAboutAdProgress(progressUpdate)
-            }
+    private fun notifyImaSdkAboutAdStarted() {
+        Log.i(LOGTAG, "notifyImaSdkAboutAdStarted")
+        for (callback in videoAdPlayerCallbacks) {
+            callback.onPlay(loadedAdMediaInfo!!)
         }
+    }
 
-        timer!!.schedule(updateTimerTask, POLLING_TIME_MS, INITIAL_DELAY_MS)
+    private fun notifyImaSdkAboutAdPaused() {
+        Log.i(LOGTAG, "notifyImaSdkAboutAdPaused")
+        for (callback in videoAdPlayerCallbacks) {
+            callback.onPause(loadedAdMediaInfo!!)
+        }
     }
 
     private fun notifyImaSdkAboutAdEnded() {
@@ -85,6 +88,24 @@ class VideoAdPlayerAdapter(private val videoPlayer: VideoView, audioManager: Aud
         return true
     }
 
+    private fun startAdTracking() {
+        Log.i(LOGTAG, "startAdTracking")
+        if (timer != null) {
+            return
+        }
+
+        timer = Timer()
+
+        val updateTimerTask: TimerTask = object : TimerTask() {
+            override fun run() {
+                val progressUpdate = adProgress
+                notifyImaSdkAboutAdProgress(progressUpdate)
+            }
+        }
+
+        timer!!.schedule(updateTimerTask, POLLING_TIME_MS, INITIAL_DELAY_MS)
+    }
+
     private fun stopAdTracking() {
         Log.i(LOGTAG, "stopAdTracking")
         if (timer != null) {
@@ -108,13 +129,16 @@ class VideoAdPlayerAdapter(private val videoPlayer: VideoView, audioManager: Aud
     }
 
     override fun loadAd(adMediaInfo: AdMediaInfo, adPodInfo: AdPodInfo) {
+        Log.i(LOGTAG, "loadAd");
         loadedAdMediaInfo = adMediaInfo;
+        notifyImaSdkAboutAdLoaded()
     }
 
     override fun pauseAd(adMediaInfo: AdMediaInfo) {
         Log.i(LOGTAG, "pauseAd");
         savedAdPosition = videoPlayer.currentPosition;
         stopAdTracking();
+        notifyImaSdkAboutAdPaused()
     }
 
     override fun playAd(adMediaInfo: AdMediaInfo) {
@@ -128,6 +152,7 @@ class VideoAdPlayerAdapter(private val videoPlayer: VideoView, audioManager: Aud
             }
             mediaPlayer.start()
             startAdTracking()
+            notifyImaSdkAboutAdStarted()
         }
 
         videoPlayer.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
