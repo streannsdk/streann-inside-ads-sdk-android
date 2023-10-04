@@ -24,10 +24,8 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdStreann"
-    private val VAST_TAG_URL =
-        "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator="
-    private var sdkFactory: ImaSdkFactory? = null
 
+    private var sdkFactory: ImaSdkFactory? = null
     private var adsLoader: AdsLoader? = null
     private var adsManager: AdsManager? = null
 
@@ -156,11 +154,24 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
         })
     }
 
-    fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
+    fun playAd(
+        insideAd: InsideAd, geoIp: GeoIp, bundleId: String? = "",
+        appName: String? = "", appVersion: String? = "", appDomain: String? = "",
+        siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
+        userBirthYear: Int = 0, userGender: String? = "",
+        listener: InsideAdCallback
+    ) {
         insideAdListener = listener
         setImaAdsCallback()
+
         Log.d(LOGTAG, "BEFORE: " + insideAd.url.toString())
-        val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
+        val url = InsideAdHelper.populateVASTURL(
+            context, insideAd, geoIp, bundleId,
+            appName, appVersion, appDomain,
+            siteUrl, storeUrl, descriptionUrl,
+            userBirthYear, userGender
+        )
+
         url?.let {
             Log.d(LOGTAG, "AFTER: $it");
             requestAds(it)

@@ -22,6 +22,10 @@ class InsideAdView @JvmOverloads constructor(
     private val executor = Executors.newSingleThreadExecutor()
 
     private var apiKey: String = ""
+    private var bundleId: String? = ""
+    private var appName: String? = ""
+    private var appVersion: String? = ""
+    private var appDomain: String? = ""
     private var siteUrl: String? = ""
     private var storeUrl: String? = ""
     private var descriptionUrl: String? = ""
@@ -38,14 +42,17 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     fun initializeSdk(
-        apiKey: String,
-        siteUrl: String? = "",
-        storeUrl: String? = "",
-        descriptionUrl: String? = "",
-        userBirthYear: Int? = 0,
-        userGender: String? = ""
+        apiKey: String, bundleId: String? = "",
+        appName: String? = "", appVersion: String? = "", appDomain: String? = "",
+        siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
+        userBirthYear: Int? = 0, userGender: String? = ""
     ) {
+
         this.apiKey = apiKey
+        this.bundleId = bundleId
+        this.appName = appName
+        this.appVersion = appVersion
+        this.appDomain = appDomain
         this.siteUrl = siteUrl
         this.storeUrl = storeUrl
         this.descriptionUrl = descriptionUrl
@@ -54,7 +61,6 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     fun requestAd(screen: String, insideAdCallback: InsideAdCallback?) {
-
         if (TextUtils.isEmpty(apiKey)) {
             insideAdCallback?.insideAdError("Api Key is required.")
             return
@@ -91,7 +97,13 @@ class InsideAdView @JvmOverloads constructor(
         insideAdCallback: InsideAdCallback
     ) {
         mGoogleImaPlayer?.visibility = VISIBLE
-        mGoogleImaPlayer?.playAd(insideAd, geoIp, insideAdCallback)
+        mGoogleImaPlayer?.playAd(
+            insideAd, geoIp, bundleId,
+            appName, appVersion, appDomain,
+            storeUrl, siteUrl, descriptionUrl,
+            userBirthYear ?: 0, userGender,
+            insideAdCallback
+        )
     }
 
     fun shutdownInsideAdExecutor() {

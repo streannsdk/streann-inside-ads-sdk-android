@@ -2,18 +2,14 @@ package com.streann.insidead.utils
 
 import android.content.Context
 import android.text.TextUtils
-import android.util.Log
-import com.streann.insidead.application.AppController
+import android.webkit.WebSettings
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Macros
 import com.streann.insidead.models.MacrosBundle
 
 object InsideAdHelper {
-    private val LOGTAG = "InsideAdStreann"
-
     private fun replaceMacros(url: String, keyword: String, replacement: Double?): String {
-        Log.d(LOGTAG, "replaceMacros $keyword $replacement")
         var url: String = url
         url =
             if (replacement != 0.0) url.replace(
@@ -24,7 +20,6 @@ object InsideAdHelper {
     }
 
     private fun replaceMacros(url: String, keyword: String, replacement: Int): String {
-        Log.d(LOGTAG, "replaceMacros $keyword $replacement")
         var url: String = url
         url =
             if (replacement != 0) url.replace(
@@ -35,7 +30,6 @@ object InsideAdHelper {
     }
 
     private fun replaceMacros(url: String, keyword: String, replacement: String?): String {
-        Log.d(LOGTAG, "replaceMacros $keyword $replacement")
         var url: String = url
         url = if (!TextUtils.isEmpty(replacement)) replacement?.let {
             url.replace(
@@ -48,9 +42,8 @@ object InsideAdHelper {
 
     private fun populateMacros(url: String, macrosBundle: MacrosBundle): String {
         var url = url
-        Log.e(LOGTAG, "populateMacros - pre macros url: $url")
-        val macrosHashMap = AppController.macrosHashMap
 
+        val macrosHashMap = getMacrosHashMap()
         for (macro in macrosHashMap.keys) {
             var value = macrosHashMap[macro] as String
             when (value) {
@@ -70,13 +63,9 @@ object InsideAdHelper {
                     val year: Int = macrosBundle.birthYear
                     url = replaceMacros(url, value, year)
                 }
-                Macros.PACKAGE -> {
-                    val packageName: String? = macrosBundle.packageName
-                    url = replaceMacros(url, value, packageName)
-                }
-                Macros.STORE_ID -> {
-                    val storeId: String? = macrosBundle.storeId
-                    url = replaceMacros(url, value, storeId)
+                Macros.BUNDLE_ID -> {
+                    val appBundleId: String? = macrosBundle.appBundleId
+                    url = replaceMacros(url, value, appBundleId)
                 }
                 Macros.DEVICE_ID -> {
                     val deviceId: String? = macrosBundle.deviceId
@@ -94,8 +83,11 @@ object InsideAdHelper {
                 Macros.IP -> {
                     url = replaceMacros(url, value, macrosBundle.ipAddress)
                 }
-                Macros.PLAYSTORE_URL -> {
-                    url = replaceMacros(url, value, macrosBundle.playstoreUrl)
+                Macros.SITE_URL -> {
+                    url = replaceMacros(url, value, macrosBundle.siteUrl)
+                }
+                Macros.STORE_URL -> {
+                    url = replaceMacros(url, value, macrosBundle.storeUrl)
                 }
                 Macros.NETWORK -> {
                     url = replaceMacros(url, value, macrosBundle.network)
@@ -183,34 +175,82 @@ object InsideAdHelper {
     }
 
     fun populateVASTURL(
-        context: Context?,
-        insideAd: InsideAd,
-        geoIp: GeoIp,
-        siteUrl: String? = "",
-        storeUrl: String? = "",
-        descriptionUrl: String? = "",
-        userBirthYear: Int? = 0,
-        userGender: String? = "",
+        context: Context?, insideAd: InsideAd, geoIp: GeoIp, bundleId: String? = "",
+        appName: String? = "", appVersion: String? = "", appDomain: String? = "",
+        siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
+        userBirthYear: Int = 0, userGender: String? = "",
     ): String? {
         var url: String? = insideAd.url
 
         val macros: MacrosBundle = MacrosUtil.createDefaultMacroBuilder()
+            .appendsBundleId(bundleId)
+            .appendsAppName(appName)
+            .appendsAppVersion(appVersion)
+            .appendsDomain(appDomain)
+            .appendsPlayerWidth(0)
+            .appendsPlayerHeight(0)
             .appendsLatitude(geoIp.latitude!!.toDouble())
             .appendsLongitude(geoIp.longitude!!.toDouble())
             .appendsNetwork(geoIp.connType)
             .appendsCarrier(geoIp.asName)
             .appendsIpAddress(geoIp.ip)
             .appendsCountry(geoIp.countryCode)
+            .appendsStoreUrl(storeUrl)
             .appendsSiteUrl(siteUrl)
-            .appendsStoreId(storeUrl)
-            .appendsSiteUrl(siteUrl)
-            .appendsSiteUrl(siteUrl)
-            .appendsSiteUrl(siteUrl)
+            .appendsDescriptionUrl(descriptionUrl)
+            .appendsBirthYear(userBirthYear)
+            .appendsGender(userGender)
+            .appendsUserAgent(WebSettings.getDefaultUserAgent(context))
             .build()
 
         url = url?.let { populateMacros(it, macros) }
 
         return url
+    }
+
+    private fun getMacrosHashMap(): HashMap<String, Any> {
+        val macrosHashMap: HashMap<String, Any> = HashMap()
+
+        macrosHashMap["PLAYER_WIDTH"] = "[STREANN-PLAYER-WIDTH]"
+        macrosHashMap["PLAYER_HEIGHT"] = "[STREANN-PLAYER-HEIGHT]"
+        macrosHashMap["BUNDLE_ID"] = "[STREANN-APP-BUNDLE-ID]"
+        macrosHashMap["APP_NAME"] = "[STREANN-APP-NAME]"
+        macrosHashMap["APP_VERSION"] = "[STREANN-APP-VERSION]"
+        macrosHashMap["DOMAIN"] = "[STREANN-APP-DOMAIN]"
+        macrosHashMap["STORE_URL"] = "[STREANN-APP-STORE-URL]"
+        macrosHashMap["SITE_URL"] = "[STREANN-SITE-URL]"
+        macrosHashMap["CONTENT_ID"] = "[STREANN-CONTENT-ID]"
+        macrosHashMap["CONTENT_TITLE"] = "[STREANN-CONTENT-TITLE]"
+        macrosHashMap["CONTENT_LENGTH"] = "[STREANN-CONTENT-LENGTH]"
+        macrosHashMap["CONTENT_URL"] = "[STREANN-CONTENT-URL]"
+        macrosHashMap["CONTENT_ENCODED"] = "[STREANN-CONTENT-ENCODED-URL]"
+        macrosHashMap["DESCRIPTION_URL_VAR"] = "[STREANN-DESCRIPTION-URL]"
+        macrosHashMap["DEVICE_ID"] = "[STREANN-DEVICE-ID]"
+        macrosHashMap["NETWORK"] = "[STREANN-NETWORK]"
+        macrosHashMap["CARRIER"] = "[STREANN-CARRIER]"
+        macrosHashMap["DEVICE_MANUFACTURER"] = "[STREANN-DEVICE-MANUFACTURER]"
+        macrosHashMap["DEVICE_MODEL"] = "[STREANN-DEVICE-MODEL]"
+        macrosHashMap["DEVICE_OS"] = "[STREANN-DEVICE-OS]"
+        macrosHashMap["DEVICE_OS_VERSION"] = "[STREANN-DEVICE-OS-VERSION]"
+        macrosHashMap["DEVICE_TYPE"] = "[STREANN-DEVICE-TYPE]"
+        macrosHashMap["IP"] = "[STREANN-IP]"
+        macrosHashMap["USER_AGENT"] = "[STREANN-UA]"
+        macrosHashMap["IFA_TYPE"] = "[STREANN-IFA-TYPE]"
+        macrosHashMap["AD_ID"] = "[STREANN-ADVERTISING-ID]"
+        macrosHashMap["AD_ID_HEX"] = "[STREANN-ADVERTISING-ID-HEX]"
+        macrosHashMap["AD_ID_MD5"] = "[STREANN-ADVERTISING-ID-MD5]"
+        macrosHashMap["LOCATION_LAT"] = "[STREANN-LOCATION-LAT]"
+        macrosHashMap["LOCATION_LONG"] = "[STREANN-LOCATION-LONG]"
+        macrosHashMap["COUNTRY"] = "[STREANN-COUNTRY-ID]"
+        macrosHashMap["AD_NOT_TRACKING"] = "[STREANN-DO-NOT-TRACK]"
+        macrosHashMap["GDPR"] = "[STREANN-GDPR]"
+        macrosHashMap["GDPR_CONSENT"] = "[STREANN-GDPR-CONSENT]"
+        macrosHashMap["BIRTH_YEAR"] = "[STREANN-USER-BIRTHYEAR]"
+        macrosHashMap["GENDER"] = "[STREANN-USER-GENDER]"
+        macrosHashMap["CACHEBUSTER"] = "[STREANN-CACHEBUSTER]"
+        macrosHashMap["US_PRIVACY"] = "[STREANN-US-PRIVACY]"
+
+        return macrosHashMap
     }
 
 }

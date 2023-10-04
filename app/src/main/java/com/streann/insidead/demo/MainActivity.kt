@@ -14,17 +14,18 @@ class MainActivity : AppCompatActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         setupInsideAdView()
     }
 
     private fun setupInsideAdView() {
         mInsideAdView = findViewById(R.id.insideAdView)
-        mInsideAdView!!.initializeSdk("559ff7ade4b0d0aff40888dd")
+        mInsideAdView!!.initializeSdk(
+            "559ff7ade4b0d0aff40888dd", bundleId = packageName,
+            appName = getString(R.string.app_name), appVersion = "1.0", userGender = "Female"
+        )
 
         val showInsideAd = findViewById<TextView>(R.id.showInsideAd)
         showInsideAd.setOnClickListener {
-
             mInsideAdView?.requestAd("", object : InsideAdCallback {
                 override fun insideAdReceived() {
                     Log.i(TAG, "insideAdReceived: ")
