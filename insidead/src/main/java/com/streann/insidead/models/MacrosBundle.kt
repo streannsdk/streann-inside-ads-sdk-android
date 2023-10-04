@@ -19,6 +19,7 @@ class MacrosBundle {
     var userAgent: String? = null
     var ipAddress: String? = null
     var usPrivacy: String? = null
+    var siteUrl: String? = null
     var storeUrl: String? = null
     var domain: String? = null
     var contentId: String? = null
@@ -40,7 +41,6 @@ class MacrosBundle {
     var longitude: Double? = null
     var carrier: String? = null
     var country: String? = null
-    var storeId: String? = null
     var cachebuster: String? = null
 
     class Builder {
@@ -82,7 +82,6 @@ class MacrosBundle {
         private var country: String? = null
         private var carrier: String? = null
         private var cachebuster: String? = null
-        private var storeId: String? = null
 
         fun appendsCarrier(carrier: String?): Builder {
             this.carrier = carrier
@@ -247,11 +246,6 @@ class MacrosBundle {
             return this
         }
 
-        fun appendsStoreId(storeId: String?): Builder {
-            this.storeId = storeId
-            return this
-        }
-
         fun build(): MacrosBundle {
             val macrosBundle = MacrosBundle()
             macrosBundle.playerHeight = playerHeight
@@ -290,7 +284,6 @@ class MacrosBundle {
             macrosBundle.country = encode(country)
             macrosBundle.carrier = encode(carrier)
             macrosBundle.cachebuster = encode(cachebuster)
-            macrosBundle.storeId = encode(storeId)
             return macrosBundle
         }
 

@@ -5,9 +5,7 @@ object Macros {
 
     const val PLAYER_HEIGHT = "[STREANN-PLAYER-HEIGHT]"
 
-    const val STORE_ID = "[STREANN-STORE-BUNDLE-ID]"
-
-    const val PACKAGE = "[STREANN-APP-BUNDLE-ID]"
+    const val BUNDLE_ID = "[STREANN-APP-BUNDLE-ID]"
 
     const val APP_NAME = "[STREANN-APP-NAME]"
 
@@ -15,9 +13,9 @@ object Macros {
 
     const val DOMAIN = "[STREANN-APP-DOMAIN]"
 
-    const val PLAYSTORE_URL = "[STREANN-APP-STORE-URL]"
+    const val STORE_URL = "[STREANN-APP-STORE-URL]"
 
-    const val SITE_URL = "[STREANN-SITE_URL]"
+    const val SITE_URL = "[STREANN-SITE-URL]"
 
     const val CONTENT_ID = "[STREANN-CONTENT-ID]"
 
