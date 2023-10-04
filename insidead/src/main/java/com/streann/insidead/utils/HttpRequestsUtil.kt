@@ -2,6 +2,7 @@ package com.streann.insidead.utils
 
 import android.util.Log
 import com.streann.insidead.callbacks.CampaignCallback
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import org.json.JSONException
 import org.json.JSONObject
@@ -17,7 +18,7 @@ import javax.net.ssl.HttpsURLConnection
 object HttpRequestsUtil {
     private val TAG = "InsideAdStreann"
 
-    fun getGeoIp(): JSONObject? {
+    fun getGeoIp(): GeoIp? {
         var jsonObject: JSONObject? = null
 
         try {
@@ -39,7 +40,6 @@ object HttpRequestsUtil {
                     inputStream.close()
 
                     jsonObject = JSONObject(response.toString())
-                    return jsonObject
                 } finally {
                     urlConnection.disconnect()
                 }
@@ -48,7 +48,80 @@ object HttpRequestsUtil {
             e.printStackTrace()
         }
 
-        return jsonObject
+        var geoIp: GeoIp? = null
+        try {
+            geoIp = jsonObject?.let { parseGeoIpJSONResponse(it) }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+
+        return geoIp
+    }
+
+    private fun parseGeoIpJSONResponse(jsonObject: JSONObject): GeoIp? {
+        val geoIp = GeoIp()
+
+        if (jsonObject.has("AsName")) {
+            try {
+                geoIp.asName = jsonObject.getString("AsName")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.asName = ""
+        }
+
+        if (jsonObject.has("ConnType")) {
+            try {
+                geoIp.connType = jsonObject.getString("ConnType")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.connType = ""
+        }
+
+        if (jsonObject.has("countryCode")) {
+            try {
+                geoIp.countryCode = jsonObject.getString("countryCode")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.countryCode = ""
+        }
+
+        if (jsonObject.has("latitude")) {
+            try {
+                geoIp.latitude = jsonObject.getString("latitude")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.latitude = ""
+        }
+
+        if (jsonObject.has("longitude")) {
+            try {
+                geoIp.longitude = jsonObject.getString("longitude")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.longitude = ""
+        }
+
+        if (jsonObject.has("ip")) {
+            try {
+                geoIp.ip = jsonObject.getString("ip")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.ip = ""
+        }
+
+        return geoIp
     }
 
     fun getCampaign(

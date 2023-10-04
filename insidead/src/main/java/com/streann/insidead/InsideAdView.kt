@@ -5,8 +5,10 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
+import com.streann.insidead.application.AppController
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.HttpRequestsUtil
 import java.util.concurrent.Executors
@@ -29,41 +31,46 @@ class InsideAdView @JvmOverloads constructor(
         addView(mGoogleImaPlayer)
     }
 
-    fun requestAd(resellerId: String, screen: String, insideAdCallback: InsideAdCallback?) {
+    fun requestAd(screen: String, insideAdCallback: InsideAdCallback?) {
+        val resellerId = AppController.reseller.resellerId
+
         if (TextUtils.isEmpty(resellerId)) {
             insideAdCallback?.insideAdError("ID is required.")
             return
         }
 
         executor.execute {
-            val geoIpJsonObject = HttpRequestsUtil.getGeoIp()
-            if (geoIpJsonObject != null) {
-                if (geoIpJsonObject.has("countryCode")) {
-                    var geoCountryCode = geoIpJsonObject.get("countryCode").toString()
-                    if (resellerId.isNotBlank() && geoCountryCode.isNotBlank()) {
-                        HttpRequestsUtil.getCampaign(
-                            resellerId,
-                            geoCountryCode,
-                            screen,
-                            object : CampaignCallback {
-                                override fun onSuccess(insideAd: InsideAd) {
-                                    Log.d(LOGTAG, "onSuccess $insideAd")
-                                    insideAdCallback?.let { showAd(insideAd, it) }
-                                }
+            val geoIp = HttpRequestsUtil.getGeoIp()
+            if (geoIp != null) {
+                var geoCountryCode = geoIp.countryCode
+                if (resellerId.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
+                    HttpRequestsUtil.getCampaign(
+                        resellerId,
+                        geoCountryCode,
+                        screen,
+                        object : CampaignCallback {
+                            override fun onSuccess(insideAd: InsideAd) {
+                                Log.d(LOGTAG, "onSuccess $insideAd")
+                                insideAdCallback?.let { showAd(insideAd, geoIp, it) }
+                            }
 
-                                override fun onError(error: String?) {
-                                    Log.d(LOGTAG, "onError $error")
-                                }
-                            })
-                    }
+                            override fun onError(error: String?) {
+                                Log.d(LOGTAG, "onError $error")
+                            }
+                        })
                 }
+
             }
         }
     }
 
-    private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+    private fun showAd(
+        insideAd: InsideAd,
+        geoIp: GeoIp,
+        insideAdCallback: InsideAdCallback
+    ) {
         mGoogleImaPlayer?.visibility = VISIBLE
-        mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
+        mGoogleImaPlayer?.playAd(insideAd, geoIp, insideAdCallback)
     }
 
     fun shutdownInsideAdExecutor() {

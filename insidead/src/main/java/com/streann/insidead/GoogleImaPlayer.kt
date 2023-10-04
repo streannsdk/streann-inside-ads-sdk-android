@@ -16,7 +16,9 @@ import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.InsideAdHelper
 
 class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     FrameLayout(context) {
@@ -154,10 +156,15 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
         })
     }
 
-    fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
+    fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
         insideAdListener = listener
         setImaAdsCallback()
-        insideAd.url?.let { requestAds(it) }
+        Log.d("mano", "BEFORE: " + insideAd.url.toString())
+        val url = InsideAdHelper.populateVASTURL(insideAd, geoIp, context)
+        url?.let {
+            Log.d("mano", "AFTER: $it");
+            requestAds(it)
+        }
     }
 
 }
