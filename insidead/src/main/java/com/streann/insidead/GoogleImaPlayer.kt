@@ -20,7 +20,7 @@ import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
+class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdStreann"
@@ -160,7 +160,7 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
         insideAdListener = listener
         setImaAdsCallback()
         Log.d(LOGTAG, "BEFORE: " + insideAd.url.toString())
-        val url = InsideAdHelper.populateVASTURL(insideAd, geoIp, context)
+        val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
         url?.let {
             Log.d(LOGTAG, "AFTER: $it");
             requestAds(it)

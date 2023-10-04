@@ -8,8 +8,8 @@ class AppController : Application() {
 
     companion object {
         lateinit var mInstance: AppController
-        lateinit var reseller: ResellerInfo
-        lateinit var user: UserInfo
+//        lateinit var reseller: ResellerInfo
+//        lateinit var user: UserInfo
 
         lateinit var macrosHashMap: HashMap<String, Any>
     }

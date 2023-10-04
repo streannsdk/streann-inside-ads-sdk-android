@@ -183,9 +183,14 @@ object InsideAdHelper {
     }
 
     fun populateVASTURL(
+        context: Context?,
         insideAd: InsideAd,
         geoIp: GeoIp,
-        context: Context?
+        siteUrl: String? = "",
+        storeUrl: String? = "",
+        descriptionUrl: String? = "",
+        userBirthYear: Int? = 0,
+        userGender: String? = "",
     ): String? {
         var url: String? = insideAd.url
 
@@ -196,6 +201,11 @@ object InsideAdHelper {
             .appendsCarrier(geoIp.asName)
             .appendsIpAddress(geoIp.ip)
             .appendsCountry(geoIp.countryCode)
+            .appendsSiteUrl(siteUrl)
+            .appendsStoreId(storeUrl)
+            .appendsSiteUrl(siteUrl)
+            .appendsSiteUrl(siteUrl)
+            .appendsSiteUrl(siteUrl)
             .build()
 
         url = url?.let { populateMacros(it, macros) }

@@ -5,10 +5,7 @@ import android.util.Log
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.streann.insidead.InsideAdView
-import com.streann.insidead.application.AppController
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.models.ResellerInfo
-import com.streann.insidead.models.UserInfo
 
 class MainActivity : AppCompatActivity() {
     private val TAG = "InsideAdStreann"
@@ -18,14 +15,13 @@ class MainActivity : AppCompatActivity() {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
 
-        AppController.reseller = ResellerInfo("559ff7ade4b0d0aff40888dd")
-        AppController.user = UserInfo(userGender = "Female")
-
         setupInsideAdView()
     }
 
     private fun setupInsideAdView() {
         mInsideAdView = findViewById(R.id.insideAdView)
+        mInsideAdView!!.initializeSdk("559ff7ade4b0d0aff40888dd")
+
         val showInsideAd = findViewById<TextView>(R.id.showInsideAd)
         showInsideAd.setOnClickListener {
 

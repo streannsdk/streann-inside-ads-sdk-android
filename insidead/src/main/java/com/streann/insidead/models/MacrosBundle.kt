@@ -19,7 +19,7 @@ class MacrosBundle {
     var userAgent: String? = null
     var ipAddress: String? = null
     var usPrivacy: String? = null
-    var playstoreUrl: String? = null
+    var storeUrl: String? = null
     var domain: String? = null
     var contentId: String? = null
     var contentTitle: String? = null
@@ -56,7 +56,7 @@ class MacrosBundle {
         private var userAgent: String? = null
         private var ipAddress: String? = null
         private var usPrivacy: String? = null
-        private var playstoreUrl: String? = null
+        private var storeUrl: String? = null
         private var siteUrl: String? = null
         private var appBundleId: String? = null
         private var domain: String? = null
@@ -212,8 +212,8 @@ class MacrosBundle {
             return this
         }
 
-        fun appendsPlaystoreUrl(playstoreUrl: String?): Builder {
-            this.playstoreUrl = playstoreUrl
+        fun appendsStoreUrl(storeUrl: String?): Builder {
+            this.storeUrl = storeUrl
             return this
         }
 
@@ -266,7 +266,7 @@ class MacrosBundle {
             macrosBundle.userAgent = encode(userAgent)
             macrosBundle.usPrivacy = usPrivacy
             macrosBundle.ipAddress = encode(ipAddress)
-            macrosBundle.playstoreUrl = encode(playstoreUrl)
+            macrosBundle.storeUrl = encode(storeUrl)
             macrosBundle.appBundleId = encode(appBundleId)
             macrosBundle.domain = encode(domain)
             macrosBundle.contentId = encode(contentId)
