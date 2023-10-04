@@ -35,7 +35,7 @@ object InsideAdHelper {
     }
 
     private fun replaceMacros(url: String, keyword: String, replacement: String?): String {
-        Log.d("mano", "replaceMacros $keyword $replacement")
+        Log.d(LOGTAG, "replaceMacros $keyword $replacement")
         var url: String = url
         url = if (!TextUtils.isEmpty(replacement)) replacement?.let {
             url.replace(

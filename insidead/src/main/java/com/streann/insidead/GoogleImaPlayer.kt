@@ -159,10 +159,10 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
         insideAdListener = listener
         setImaAdsCallback()
-        Log.d("mano", "BEFORE: " + insideAd.url.toString())
+        Log.d(LOGTAG, "BEFORE: " + insideAd.url.toString())
         val url = InsideAdHelper.populateVASTURL(insideAd, geoIp, context)
         url?.let {
-            Log.d("mano", "AFTER: $it");
+            Log.d(LOGTAG, "AFTER: $it");
             requestAds(it)
         }
     }
