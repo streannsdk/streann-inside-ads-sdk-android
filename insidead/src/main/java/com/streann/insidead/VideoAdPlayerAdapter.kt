@@ -26,7 +26,7 @@ class VideoAdPlayerAdapter(private val videoPlayer: VideoView, audioManager: Aud
     }
 
     companion object {
-        private const val LOGTAG = "InsideAdStreann"
+        private const val LOGTAG = "InsideAdSdk"
         private const val POLLING_TIME_MS: Long = 250
         private const val INITIAL_DELAY_MS: Long = 250
     }

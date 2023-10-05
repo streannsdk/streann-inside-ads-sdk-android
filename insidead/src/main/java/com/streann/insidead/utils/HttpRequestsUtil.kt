@@ -16,7 +16,7 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 object HttpRequestsUtil {
-    private val TAG = "InsideAdStreann"
+    private val TAG = "InsideAdSdk"
 
     fun getGeoIp(): GeoIp? {
         var jsonObject: JSONObject? = null

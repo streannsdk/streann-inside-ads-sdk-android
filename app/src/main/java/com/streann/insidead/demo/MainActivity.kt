@@ -6,9 +6,11 @@ import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.InsideAd
 
 class MainActivity : AppCompatActivity() {
-    private val TAG = "InsideAdStreann"
+
+    private val TAG = this.javaClass.simpleName
     private var mInsideAdView: InsideAdView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -23,36 +25,36 @@ class MainActivity : AppCompatActivity() {
         val showInsideAd = findViewById<TextView>(R.id.showInsideAd)
         showInsideAd.setOnClickListener {
             mInsideAdView?.requestAd("", object : InsideAdCallback {
-                override fun insideAdReceived() {
-                    Log.i(TAG, "insideAdReceived: ")
+                override fun insideAdReceived(insideAd: InsideAd) {
+                    Log.i(TAG, "insideAdReceived: $insideAd")
                 }
 
                 override fun insideAdBuffering() {
-                    Log.i(TAG, "insideAdBuffering: ")
+                    Log.i(TAG, "insideAdBuffering")
                 }
 
                 override fun insideAdLoaded() {
-                    Log.i(TAG, "insideAdLoaded: ")
+                    Log.i(TAG, "insideAdLoaded")
                 }
 
                 override fun insideAdPlay() {
-                    Log.i(TAG, "insideAdPlay: ")
+                    Log.i(TAG, "insideAdPlay")
                 }
 
                 override fun insideAdResume() {
-                    Log.i(TAG, "insideAdResume: ")
+                    Log.i(TAG, "insideAdResume")
                 }
 
                 override fun insideAdPause() {
-                    Log.i(TAG, "insideAdPause: ")
+                    Log.i(TAG, "insideAdPause")
                 }
 
                 override fun insideAdStop() {
-                    Log.i(TAG, "insideAdStop: ")
+                    Log.i(TAG, "insideAdStop")
                 }
 
                 override fun insideAdError() {
-                    Log.i(TAG, "insideAdError: ")
+                    Log.i(TAG, "insideAdError")
                 }
 
                 override fun insideAdError(error: String) {
@@ -66,8 +68,4 @@ class MainActivity : AppCompatActivity() {
         }
     }
 
-    override fun onDestroy() {
-        super.onDestroy()
-        mInsideAdView?.shutdownInsideAdExecutor()
-    }
 }

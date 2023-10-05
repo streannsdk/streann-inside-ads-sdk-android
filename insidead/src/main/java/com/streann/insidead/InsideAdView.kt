@@ -15,6 +15,7 @@ import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
 import com.streann.insidead.utils.constants.SharedPrefKeys
+import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
 class InsideAdView @JvmOverloads constructor(
@@ -23,9 +24,10 @@ class InsideAdView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : FrameLayout(context, attrs, defStyle) {
 
-    private val LOGTAG = "InsideAdStreann"
+    private val LOGTAG = "InsideAdSdk"
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
-    private val executor = Executors.newSingleThreadExecutor()
+    private var populateSdkExecutor: ExecutorService? = null
+    private var requestAdExecutor: ExecutorService? = null
     private var apiKey: String = ""
     private var scale: Float = 0f
 
@@ -55,7 +57,8 @@ class InsideAdView @JvmOverloads constructor(
                 Application.MODE_PRIVATE
             )
 
-            executor.execute {
+            populateSdkExecutor = Executors.newSingleThreadExecutor()
+            populateSdkExecutor!!.execute {
                 try {
                     val info = AdvertisingIdClient.getAdvertisingIdInfo(it)
                     SharedPreferencesHelper.putAdId(info.id)
@@ -69,6 +72,7 @@ class InsideAdView @JvmOverloads constructor(
                 InsideAdSdk.playerWidth = (width / scale).toInt()
                 InsideAdSdk.playerHeight = (height / scale).toInt()
             }
+            populateSdkExecutor!!.shutdown()
         }
     }
 
@@ -79,7 +83,8 @@ class InsideAdView @JvmOverloads constructor(
             return
         }
 
-        executor.execute {
+        requestAdExecutor = Executors.newSingleThreadExecutor()
+        requestAdExecutor!!.execute {
             val geoIp = HttpRequestsUtil.getGeoIp()
             if (geoIp != null) {
                 var geoCountryCode = geoIp.countryCode
@@ -90,17 +95,24 @@ class InsideAdView @JvmOverloads constructor(
                         screen,
                         object : CampaignCallback {
                             override fun onSuccess(insideAd: InsideAd) {
-                                Log.d(LOGTAG, "onSuccess $insideAd")
-                                insideAdCallback?.let { showAd(insideAd, geoIp, it) }
+                                Log.i(LOGTAG, "onSuccess: $insideAd")
+                                insideAdCallback?.let {
+                                    it.insideAdReceived(insideAd)
+                                    showAd(insideAd, geoIp, it)
+                                }
                             }
 
                             override fun onError(error: String?) {
-                                Log.d(LOGTAG, "onError $error")
+                                Log.i(LOGTAG, "onError $error")
+                                error?.let {
+                                    insideAdCallback?.insideAdError(it)
+                                } ?: kotlin.run { insideAdCallback?.insideAdError() }
                             }
                         })
                 }
             }
         }
+        requestAdExecutor!!.shutdown()
     }
 
     private fun showAd(
@@ -109,10 +121,6 @@ class InsideAdView @JvmOverloads constructor(
         insideAdCallback: InsideAdCallback
     ) {
         mGoogleImaPlayer?.playAd(insideAd, geoIp, insideAdCallback)
-    }
-
-    fun shutdownInsideAdExecutor() {
-        executor.shutdown()
     }
 
 }

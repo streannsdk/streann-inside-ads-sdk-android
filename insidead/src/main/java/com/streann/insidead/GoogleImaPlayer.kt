@@ -23,14 +23,13 @@ import com.streann.insidead.utils.InsideAdHelper
 class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     FrameLayout(context) {
 
-    private val LOGTAG = "InsideAdStreann"
+    private val LOGTAG = "InsideAdSdk"
 
     private var sdkFactory: ImaSdkFactory? = null
     private var adsLoader: AdsLoader? = null
     private var adsManager: AdsManager? = null
 
     private var videoPlayer: VideoView? = null
-    private var mediaController: MediaController? = null
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
 
     private var insideAdListener: InsideAdCallback? = null
@@ -42,13 +41,10 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.google_ima_player, this)
 
-        mediaController = MediaController(context);
-        videoPlayer = findViewById(R.id.videoView);
-        mediaController?.setAnchorView(videoPlayer);
-        videoPlayer?.setMediaController(mediaController);
-
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        videoPlayer = findViewById(R.id.videoView);
         videoPlayer?.let {
             videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, audioManager)
         }
@@ -65,6 +61,7 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
             Log.i(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+            insideAdListener?.insideAdError(adErrorEvent.error.message)
         }
 
         adsLoader!!.addAdsLoadedListener { adsManagerLoadedEvent ->
@@ -72,13 +69,13 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
             adsManager?.addAdErrorListener { adErrorEvent ->
                 Log.e(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+                insideAdListener?.insideAdError(adErrorEvent.error.message)
+
                 val universalAdIds: String =
                     adsManager!!.currentAd.universalAdIds.contentToString()
                 Log.i(
                     LOGTAG,
-                    "Discarding the current ad break with universal "
-                            + "ad Ids: "
-                            + universalAdIds
+                    "Discarding the current ad break with universal ad Ids: $universalAdIds"
                 )
                 adsManager!!.discardAdBreak()
             }
@@ -106,9 +103,9 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     }
 
     private fun requestAds(adTagUrl: String) {
+        Log.i(LOGTAG, "adUrl: $adTagUrl")
         val request = sdkFactory!!.createAdsRequest()
         request.adTagUrl = adTagUrl
-
         adsLoader!!.requestAds(request)
     }
 
@@ -157,14 +154,8 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
         insideAdListener = listener
         setImaAdsCallback()
-
-        Log.d(LOGTAG, "BEFORE: " + insideAd.url.toString())
         val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
-
-        url?.let {
-            Log.d(LOGTAG, "AFTER: $it");
-            requestAds(it)
-        }
+        url?.let { requestAds(it) }
     }
 
 }

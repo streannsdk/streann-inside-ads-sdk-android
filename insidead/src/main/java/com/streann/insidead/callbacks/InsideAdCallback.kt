@@ -1,8 +1,10 @@
 package com.streann.insidead.callbacks
 
+import com.streann.insidead.models.InsideAd
+
 interface InsideAdCallback {
 
-    fun insideAdReceived()
+    fun insideAdReceived(insideAd: InsideAd)
 
     fun insideAdBuffering()
 
