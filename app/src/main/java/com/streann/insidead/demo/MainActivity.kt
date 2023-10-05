@@ -36,12 +36,12 @@ class MainActivity : AppCompatActivity() {
 
                 override fun insideAdLoaded() {
                     Log.i(TAG, "insideAdLoaded")
-                    adProgressText.text = ""
-                    mInsideAdView?.visibility = View.VISIBLE
                 }
 
                 override fun insideAdPlay() {
                     Log.i(TAG, "insideAdPlay")
+                    adProgressText.text = ""
+                    mInsideAdView?.visibility = View.VISIBLE
                 }
 
                 override fun insideAdResume() {
