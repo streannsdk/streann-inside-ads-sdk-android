@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.MediaController
 import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
@@ -49,13 +48,14 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, audioManager)
         }
 
-        sdkFactory = ImaSdkFactory.getInstance()
+        setImaAdsCallback()
 
         val adDisplayContainer = ImaSdkFactory.createAdDisplayContainer(
             videoPlayerContainer,
             videoAdPlayerAdapter!!
         )
 
+        sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
         adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
 
@@ -153,7 +153,6 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
     fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
         insideAdListener = listener
-        setImaAdsCallback()
         val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
         url?.let { requestAds(it) }
     }

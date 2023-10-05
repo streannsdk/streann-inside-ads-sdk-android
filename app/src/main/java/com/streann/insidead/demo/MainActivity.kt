@@ -55,7 +55,7 @@ class MainActivity : AppCompatActivity() {
                 override fun insideAdStop() {
                     Log.i(TAG, "insideAdStop")
                     adProgressText.text = "Show Ad"
-                    mInsideAdView?.visibility = View.GONE
+                    mInsideAdView?.visibility = View.INVISIBLE
                 }
 
                 override fun insideAdError() {
