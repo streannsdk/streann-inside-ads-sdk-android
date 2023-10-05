@@ -2,6 +2,7 @@ package com.streann.insidead.demo
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.streann.insidead.InsideAdView
@@ -22,8 +23,8 @@ class MainActivity : AppCompatActivity() {
     private fun setupInsideAdView() {
         mInsideAdView = findViewById(R.id.insideAdView)
 
-        val showInsideAd = findViewById<TextView>(R.id.showInsideAd)
-        showInsideAd.setOnClickListener {
+        val adProgressText = findViewById<TextView>(R.id.adProgressText)
+        adProgressText.setOnClickListener {
             mInsideAdView?.requestAd("", object : InsideAdCallback {
                 override fun insideAdReceived(insideAd: InsideAd) {
                     Log.i(TAG, "insideAdReceived: $insideAd")
@@ -35,6 +36,8 @@ class MainActivity : AppCompatActivity() {
 
                 override fun insideAdLoaded() {
                     Log.i(TAG, "insideAdLoaded")
+                    adProgressText.text = ""
+                    mInsideAdView?.visibility = View.VISIBLE
                 }
 
                 override fun insideAdPlay() {
@@ -51,6 +54,8 @@ class MainActivity : AppCompatActivity() {
 
                 override fun insideAdStop() {
                     Log.i(TAG, "insideAdStop")
+                    adProgressText.text = "Show Ad"
+                    mInsideAdView?.visibility = View.GONE
                 }
 
                 override fun insideAdError() {
@@ -59,6 +64,7 @@ class MainActivity : AppCompatActivity() {
 
                 override fun insideAdError(error: String) {
                     Log.i(TAG, "insideAdError: $error")
+                    adProgressText.text = "Error: $error \nShow Ad"
                 }
 
                 override fun insideAdVolumeChanged(level: Float) {

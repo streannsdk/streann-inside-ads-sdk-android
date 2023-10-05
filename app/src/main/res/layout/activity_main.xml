@@ -7,11 +7,14 @@
     tools:context=".MainActivity">
 
     <TextView
-        android:id="@+id/showInsideAd"
+        android:id="@+id/adProgressText"
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
-        android:padding="10dp"
-        android:text="Show AD"
+        android:gravity="center"
+        android:padding="15dp"
+        android:text="Show Ad"
+        android:textColor="@color/black"
+        android:textSize="16sp"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -19,7 +22,8 @@
         android:id="@+id/insideAdView"
         android:layout_width="wrap_content"
         android:layout_height="300dp"
+        android:visibility="gone"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@+id/showInsideAd" />
+        app:layout_constraintTop_toBottomOf="@+id/adProgressText" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
