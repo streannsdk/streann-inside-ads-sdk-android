@@ -57,6 +57,12 @@ object Macros {
 
     const val AD_ID_MD5 = "[STREANN-ADVERTISING-ID-MD5]"
 
+    const val AD_IDFA = "[STREANN-IDFA]"
+
+    const val AD_IDFA_MD5 = "[STREANN-IDFA-MD5]"
+
+    const val AD_IDFA_HEX = "[STREANN-IDFA-HEX]"
+
     const val LOCATION_LAT = "[STREANN-LOCATION-LAT]"
 
     const val LOCATION_LONG = "[STREANN-LOCATION-LONG]"

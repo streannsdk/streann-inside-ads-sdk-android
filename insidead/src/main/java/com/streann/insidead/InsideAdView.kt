@@ -1,15 +1,20 @@
 package com.streann.insidead
 
+import android.app.Application
 import android.content.Context
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
+import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
+import com.streann.insidead.utils.SharedPreferencesHelper
+import com.streann.insidead.utils.constants.SharedPrefKeys
 import java.util.concurrent.Executors
 
 class InsideAdView @JvmOverloads constructor(
@@ -17,20 +22,12 @@ class InsideAdView @JvmOverloads constructor(
     attrs: AttributeSet? = null,
     defStyle: Int = 0
 ) : FrameLayout(context, attrs, defStyle) {
+
     private val LOGTAG = "InsideAdStreann"
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private val executor = Executors.newSingleThreadExecutor()
-
     private var apiKey: String = ""
-    private var bundleId: String? = ""
-    private var appName: String? = ""
-    private var appVersion: String? = ""
-    private var appDomain: String? = ""
-    private var siteUrl: String? = ""
-    private var storeUrl: String? = ""
-    private var descriptionUrl: String? = ""
-    private var userBirthYear: Int? = 0
-    private var userGender: String? = ""
+    private var scale: Float = 0f
 
     init {
         init()
@@ -39,29 +36,45 @@ class InsideAdView @JvmOverloads constructor(
     private fun init() {
         mGoogleImaPlayer = GoogleImaPlayer(context)
         addView(mGoogleImaPlayer)
+
+        scale = resources.displayMetrics.density
+        populateSdkInfo(context)
     }
 
-    fun initializeSdk(
-        apiKey: String, bundleId: String? = "",
-        appName: String? = "", appVersion: String? = "", appDomain: String? = "",
-        siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
-        userBirthYear: Int? = 0, userGender: String? = ""
-    ) {
+    private fun populateSdkInfo(context: Context?) {
+        apiKey = InsideAdSdk.apiKey
 
-        this.apiKey = apiKey
-        this.bundleId = bundleId
-        this.appName = appName
-        this.appVersion = appVersion
-        this.appDomain = appDomain
-        this.siteUrl = siteUrl
-        this.storeUrl = storeUrl
-        this.descriptionUrl = descriptionUrl
-        this.userBirthYear = userBirthYear
-        this.userGender = userGender
+        context?.let {
+            InsideAdSdk.bundleId = it.packageName
+            InsideAdSdk.appName = it.applicationInfo.loadLabel(it.packageManager).toString()
+            InsideAdSdk.appVersion =
+                Helper.getPackageVersionCode(it.packageManager, it.packageName).toString()
+
+            InsideAdSdk.appPreferences = it.getSharedPreferences(
+                SharedPrefKeys.PREF_APP_PREFERENCES,
+                Application.MODE_PRIVATE
+            )
+
+            executor.execute {
+                try {
+                    val info = AdvertisingIdClient.getAdvertisingIdInfo(it)
+                    SharedPreferencesHelper.putAdId(info.id)
+                    SharedPreferencesHelper.putAdLimitTracking(info.isLimitAdTrackingEnabled)
+                    InsideAdSdk.adId = SharedPreferencesHelper.getAdId()
+                    InsideAdSdk.adLimitTracking = SharedPreferencesHelper.getAdLimitTracking()
+                } catch (e: Exception) {
+                    SharedPreferencesHelper.putAdId("")
+                }
+
+                InsideAdSdk.playerWidth = (width / scale).toInt()
+                InsideAdSdk.playerHeight = (height / scale).toInt()
+            }
+        }
     }
 
     fun requestAd(screen: String, insideAdCallback: InsideAdCallback?) {
         if (TextUtils.isEmpty(apiKey)) {
+            Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
             insideAdCallback?.insideAdError("Api Key is required.")
             return
         }
@@ -86,7 +99,6 @@ class InsideAdView @JvmOverloads constructor(
                             }
                         })
                 }
-
             }
         }
     }
@@ -96,14 +108,7 @@ class InsideAdView @JvmOverloads constructor(
         geoIp: GeoIp,
         insideAdCallback: InsideAdCallback
     ) {
-        mGoogleImaPlayer?.visibility = VISIBLE
-        mGoogleImaPlayer?.playAd(
-            insideAd, geoIp, bundleId,
-            appName, appVersion, appDomain,
-            storeUrl, siteUrl, descriptionUrl,
-            userBirthYear ?: 0, userGender,
-            insideAdCallback
-        )
+        mGoogleImaPlayer?.playAd(insideAd, geoIp, insideAdCallback)
     }
 
     fun shutdownInsideAdExecutor() {

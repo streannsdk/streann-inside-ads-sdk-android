@@ -1,6 +1,7 @@
 package com.streann.insidead.models
 
 import android.text.TextUtils
+import com.streann.insidead.utils.Helper
 import java.io.UnsupportedEncodingException
 import java.net.URLEncoder
 
@@ -11,7 +12,6 @@ class MacrosBundle {
     var birthYear = 0
     var gdp = 0
     var gdpConsent: String? = null
-    var packageName: String? = null
     var deviceId: String? = null
     var appName: String? = null
     var appBundleId: String? = null
@@ -36,6 +36,7 @@ class MacrosBundle {
     var deviceType: String? = null
     var adId: String? = null
     var adIdMd5: String? = null
+    var adIdHex: String? = null
     var adNotTracking = 0
     var latitude: Double? = null
     var longitude: Double? = null
@@ -50,7 +51,6 @@ class MacrosBundle {
         private var birthYear = 0
         private var gdp = 0
         private var gdpConsent: String? = null
-        private var packageName: String? = null
         private var deviceId: String? = null
         private var appName: String? = null
         private var userAgent: String? = null
@@ -133,10 +133,12 @@ class MacrosBundle {
             return this
         }
 
-        fun appendCryptoAdId(): Builder {
-            if (!TextUtils.isEmpty(adId)) {
-//                adIdMD5 = Util.convertToMd5(adId)
-//                adIdHex = Util.toHex(adId)
+        fun appendsCryptoAdId(): Builder {
+            adId?.let {
+                if (!TextUtils.isEmpty(it)) {
+                    adIdMD5 = Helper.convertToMd5(it)
+                    adIdHex = Helper.toHex(it)
+                }
             }
             return this
         }
@@ -178,11 +180,6 @@ class MacrosBundle {
 
         fun appendsGdpConsent(gdpConsent: String?): Builder {
             this.gdpConsent = gdpConsent
-            return this
-        }
-
-        fun appendsPackageName(packageName: String?): Builder {
-            this.packageName = packageName
             return this
         }
 
@@ -254,7 +251,6 @@ class MacrosBundle {
             macrosBundle.gdpConsent = gdpConsent
             macrosBundle.birthYear = birthYear
             macrosBundle.gender = gender
-            macrosBundle.packageName = encode(packageName)
             macrosBundle.deviceId = encode(deviceId)
             macrosBundle.appName = encode(appName)
             macrosBundle.userAgent = encode(userAgent)
@@ -299,5 +295,4 @@ class MacrosBundle {
             } else ""
         }
     }
-
 }

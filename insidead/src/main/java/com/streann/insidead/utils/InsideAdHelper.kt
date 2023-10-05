@@ -3,12 +3,14 @@ package com.streann.insidead.utils
 import android.content.Context
 import android.text.TextUtils
 import android.webkit.WebSettings
+import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Macros
 import com.streann.insidead.models.MacrosBundle
 
 object InsideAdHelper {
+
     private fun replaceMacros(url: String, keyword: String, replacement: Double?): String {
         var url: String = url
         url =
@@ -40,13 +42,12 @@ object InsideAdHelper {
         return url
     }
 
-    private fun populateMacros(url: String, macrosBundle: MacrosBundle): String {
-        var url = url
+    private fun populateMacros(adUrl: String, macrosBundle: MacrosBundle): String {
+        var url = adUrl
 
         val macrosHashMap = getMacrosHashMap()
         for (macro in macrosHashMap.keys) {
-            var value = macrosHashMap[macro] as String
-            when (value) {
+            when (val value = macrosHashMap[macro] as String) {
                 Macros.PLAYER_WIDTH -> {
                     val playerWidth: Int = macrosBundle.playerWidth
                     url = replaceMacros(url, value, playerWidth)
@@ -92,11 +93,14 @@ object InsideAdHelper {
                 Macros.NETWORK -> {
                     url = replaceMacros(url, value, macrosBundle.network)
                 }
-                Macros.AD_ID -> {
+                Macros.AD_ID, Macros.AD_IDFA -> {
                     url = replaceMacros(url, value, macrosBundle.adId)
                 }
-                Macros.AD_ID_MD5 -> {
+                Macros.AD_ID_MD5, Macros.AD_IDFA_MD5 -> {
                     url = replaceMacros(url, value, macrosBundle.adIdMd5)
+                }
+                Macros.AD_ID_HEX, Macros.AD_IDFA_HEX -> {
+                    url = replaceMacros(url, value, macrosBundle.adIdHex)
                 }
                 Macros.IFA_TYPE -> {
                     url = replaceMacros(url, value, "")
@@ -174,21 +178,18 @@ object InsideAdHelper {
         return url
     }
 
-    fun populateVASTURL(
-        context: Context?, insideAd: InsideAd, geoIp: GeoIp, bundleId: String? = "",
-        appName: String? = "", appVersion: String? = "", appDomain: String? = "",
-        siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
-        userBirthYear: Int = 0, userGender: String? = "",
-    ): String? {
-        var url: String? = insideAd.url
+    fun populateVASTURL(context: Context?, insideAd: InsideAd, geoIp: GeoIp): String? {
+        val appDomain: String? = InsideAdSdk.appDomain
+        val siteUrl: String? = InsideAdSdk.siteUrl
+        val storeUrl: String? = InsideAdSdk.storeUrl
+        val descriptionUrl: String? = InsideAdSdk.descriptionUrl
+        val userBirthYear: Int = InsideAdSdk.userBirthYear ?: 0
+        val userGender: String? = InsideAdSdk.userGender
 
         val macros: MacrosBundle = MacrosUtil.createDefaultMacroBuilder()
-            .appendsBundleId(bundleId)
-            .appendsAppName(appName)
-            .appendsAppVersion(appVersion)
             .appendsDomain(appDomain)
-            .appendsPlayerWidth(0)
-            .appendsPlayerHeight(0)
+            .appendsPlayerWidth(InsideAdSdk.playerWidth)
+            .appendsPlayerHeight(InsideAdSdk.playerHeight)
             .appendsLatitude(geoIp.latitude!!.toDouble())
             .appendsLongitude(geoIp.longitude!!.toDouble())
             .appendsNetwork(geoIp.connType)
@@ -203,8 +204,8 @@ object InsideAdHelper {
             .appendsUserAgent(WebSettings.getDefaultUserAgent(context))
             .build()
 
+        var url: String? = insideAd.url
         url = url?.let { populateMacros(it, macros) }
-
         return url
     }
 
@@ -239,6 +240,9 @@ object InsideAdHelper {
         macrosHashMap["AD_ID"] = "[STREANN-ADVERTISING-ID]"
         macrosHashMap["AD_ID_HEX"] = "[STREANN-ADVERTISING-ID-HEX]"
         macrosHashMap["AD_ID_MD5"] = "[STREANN-ADVERTISING-ID-MD5]"
+        macrosHashMap["AD_IDFA"] = "[STREANN-IDFA]"
+        macrosHashMap["AD_IDFA_MD5"] = "[STREANN-IDFA-MD5]"
+        macrosHashMap["AD_IDFA_HEX"] = "[STREANN-IDFA-HEX]"
         macrosHashMap["LOCATION_LAT"] = "[STREANN-LOCATION-LAT]"
         macrosHashMap["LOCATION_LONG"] = "[STREANN-LOCATION-LONG]"
         macrosHashMap["COUNTRY"] = "[STREANN-COUNTRY-ID]"
