@@ -25,7 +25,6 @@ object InsideAdSdk {
         siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
         userBirthYear: Int? = 0, userGender: String? = ""
     ) {
-
         this.apiKey = apiKey
         this.appDomain = appDomain
         this.siteUrl = siteUrl
