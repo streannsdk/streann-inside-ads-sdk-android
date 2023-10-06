@@ -80,7 +80,7 @@ class InsideAdView @JvmOverloads constructor(
     fun requestAd(screen: String, insideAdCallback: InsideAdCallback?) {
         if (TextUtils.isEmpty(apiKey)) {
             Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
-            insideAdCallback?.insideAdError("Api Key is required.")
+            insideAdCallback?.insideAdError("Api Key is required. Please implement the initializeSdk method.")
             return
         }
 
@@ -110,7 +110,8 @@ class InsideAdView @JvmOverloads constructor(
                                 Log.i(LOGTAG, "onError: $error")
                                 error?.let {
                                     insideAdCallback?.insideAdError(it)
-                                } ?: kotlin.run { insideAdCallback?.insideAdError() }
+                                }
+                                    ?: kotlin.run { insideAdCallback?.insideAdError("Error while getting AD.") }
                             }
                         })
                 }

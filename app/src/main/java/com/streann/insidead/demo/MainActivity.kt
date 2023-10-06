@@ -30,10 +30,6 @@ class MainActivity : AppCompatActivity() {
                     Log.i(TAG, "insideAdReceived: $insideAd")
                 }
 
-                override fun insideAdBuffering() {
-                    Log.i(TAG, "insideAdBuffering")
-                }
-
                 override fun insideAdLoaded() {
                     Log.i(TAG, "insideAdLoaded")
                 }
@@ -44,22 +40,10 @@ class MainActivity : AppCompatActivity() {
                     mInsideAdView?.visibility = View.VISIBLE
                 }
 
-                override fun insideAdResume() {
-                    Log.i(TAG, "insideAdResume")
-                }
-
-                override fun insideAdPause() {
-                    Log.i(TAG, "insideAdPause")
-                }
-
                 override fun insideAdStop() {
                     Log.i(TAG, "insideAdStop")
                     adProgressText.text = "Show Ad"
                     mInsideAdView?.visibility = View.INVISIBLE
-                }
-
-                override fun insideAdError() {
-                    Log.i(TAG, "insideAdError")
                 }
 
                 override fun insideAdError(error: String) {
