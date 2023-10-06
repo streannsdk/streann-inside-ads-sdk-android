@@ -246,8 +246,8 @@ class MacrosBundle {
         fun build(): MacrosBundle {
             val macrosBundle = MacrosBundle()
             macrosBundle.playerHeight = playerHeight
-            macrosBundle.gdp = gdp
             macrosBundle.playerWidth = playerWidth
+            macrosBundle.gdp = gdp
             macrosBundle.gdpConsent = gdpConsent
             macrosBundle.birthYear = birthYear
             macrosBundle.gender = gender
