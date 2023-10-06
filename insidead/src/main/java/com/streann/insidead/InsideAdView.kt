@@ -107,11 +107,10 @@ class InsideAdView @JvmOverloads constructor(
                             }
 
                             override fun onError(error: String?) {
-                                Log.i(LOGTAG, "onError: $error")
-                                error?.let {
-                                    insideAdCallback?.insideAdError(it)
-                                }
-                                    ?: kotlin.run { insideAdCallback?.insideAdError("Error while getting AD.") }
+                                var errorMsg = "Error while getting AD."
+                                if (!error.isNullOrBlank()) errorMsg = error
+                                Log.i(LOGTAG, "onError: $errorMsg")
+                                insideAdCallback?.insideAdError(errorMsg)
                             }
                         })
                 }

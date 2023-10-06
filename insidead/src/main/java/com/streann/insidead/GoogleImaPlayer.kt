@@ -115,7 +115,6 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             }
 
             override fun onBuffering(p0: AdMediaInfo) {
-                insideAdListener?.insideAdBuffering()
             }
 
             override fun onContentComplete() {
@@ -126,7 +125,7 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             }
 
             override fun onError(p0: AdMediaInfo) {
-                insideAdListener?.insideAdError()
+                insideAdListener?.insideAdError("Error while playing AD.")
             }
 
             override fun onLoaded(p0: AdMediaInfo) {
@@ -134,7 +133,6 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             }
 
             override fun onPause(p0: AdMediaInfo) {
-                insideAdListener?.insideAdPause()
             }
 
             override fun onPlay(p0: AdMediaInfo) {
@@ -142,7 +140,6 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             }
 
             override fun onResume(p0: AdMediaInfo) {
-                insideAdListener?.insideAdResume()
             }
 
             override fun onVolumeChanged(p0: AdMediaInfo, p1: Int) {
