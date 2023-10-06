@@ -10,8 +10,6 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.Campaign
-import com.streann.insidead.models.GeoIp
-import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
@@ -101,7 +99,7 @@ class InsideAdView @JvmOverloads constructor(
                                     val insideAd = campaign.insideAd
                                     insideAd?.let { ad ->
                                         it.insideAdReceived(ad)
-                                        showAd(ad, geoIp, it)
+                                        mGoogleImaPlayer?.playAd(ad, geoIp, it)
                                     }
                                 }
                             }
@@ -117,14 +115,6 @@ class InsideAdView @JvmOverloads constructor(
             }
         }
         requestAdExecutor!!.shutdown()
-    }
-
-    private fun showAd(
-        insideAd: InsideAd,
-        geoIp: GeoIp,
-        insideAdCallback: InsideAdCallback
-    ) {
-        mGoogleImaPlayer?.playAd(insideAd, geoIp, insideAdCallback)
     }
 
 }
