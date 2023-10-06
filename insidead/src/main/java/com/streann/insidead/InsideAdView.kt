@@ -9,6 +9,7 @@ import android.widget.FrameLayout
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
@@ -94,16 +95,19 @@ class InsideAdView @JvmOverloads constructor(
                         geoCountryCode,
                         screen,
                         object : CampaignCallback {
-                            override fun onSuccess(insideAd: InsideAd) {
-                                Log.i(LOGTAG, "onSuccess: $insideAd")
+                            override fun onSuccess(campaign: Campaign) {
+                                Log.i(LOGTAG, "onSuccess: $campaign")
                                 insideAdCallback?.let {
-                                    it.insideAdReceived(insideAd)
-                                    showAd(insideAd, geoIp, it)
+                                    val insideAd = campaign.insideAd
+                                    insideAd?.let { ad ->
+                                        it.insideAdReceived(ad)
+                                        showAd(ad, geoIp, it)
+                                    }
                                 }
                             }
 
                             override fun onError(error: String?) {
-                                Log.i(LOGTAG, "onError $error")
+                                Log.i(LOGTAG, "onError: $error")
                                 error?.let {
                                     insideAdCallback?.insideAdError(it)
                                 } ?: kotlin.run { insideAdCallback?.insideAdError() }

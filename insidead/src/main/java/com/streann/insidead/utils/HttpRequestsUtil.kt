@@ -2,6 +2,7 @@ package com.streann.insidead.utils
 
 import android.util.Log
 import com.streann.insidead.callbacks.CampaignCallback
+import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import org.json.JSONException
@@ -193,7 +194,8 @@ object HttpRequestsUtil {
         }
 
         if (campaignCallback != null) {
-            campaignCallback.onSuccess(insideAd);
+            val campaign = Campaign(insideAd)
+            campaignCallback.onSuccess(campaign);
         }
     }
 
