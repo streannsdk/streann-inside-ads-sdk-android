@@ -9,7 +9,8 @@ class AppController : Application() {
         super.onCreate()
 
         InsideAdSdk.initializeSdk(
-            "559ff7ade4b0d0aff40888dd", userGender = "Female"
+            "559ff7ade4b0d0aff40888dd",
+            "https://inside-ads.services.c1.streann.com/"
         )
     }
 

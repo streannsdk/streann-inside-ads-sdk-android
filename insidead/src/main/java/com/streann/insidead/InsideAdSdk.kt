@@ -5,6 +5,7 @@ import android.content.SharedPreferences
 object InsideAdSdk {
 
     var apiKey: String = ""
+    var baseUrl: String = ""
     var bundleId: String? = ""
     var appName: String? = ""
     var appVersion: String? = ""
@@ -21,11 +22,12 @@ object InsideAdSdk {
     var appPreferences: SharedPreferences? = null
 
     fun initializeSdk(
-        apiKey: String, appDomain: String? = "",
+        apiKey: String, baseUrl: String, appDomain: String? = "",
         siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
         userBirthYear: Int? = 0, userGender: String? = ""
     ) {
         this.apiKey = apiKey
+        this.baseUrl = baseUrl
         this.appDomain = appDomain
         this.siteUrl = siteUrl
         this.storeUrl = storeUrl

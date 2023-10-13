@@ -1,6 +1,7 @@
 package com.streann.insidead.utils
 
 import android.util.Log
+import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
@@ -136,8 +137,9 @@ object HttpRequestsUtil {
         try {
             val urlParameters = "platform=ANDROID&country=" + countryCode +
                     "&r=" + apiKey + "&screen=" + screen
+
             url = URL(
-                "https://inside-ads.services.c1.streann.com/v1/campaigns/app"
+                InsideAdSdk.baseUrl + "v1/campaigns/app"
                         + "?" + urlParameters
             )
 
