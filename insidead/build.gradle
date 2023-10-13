@@ -52,7 +52,7 @@ publishing {
     publications {
         bar(MavenPublication) {
             groupId = "com.github.infostreann"
-            artifactId = "streann-inside-ad-sdk"
+            artifactId = "streann-inside-ad-sdk-android"
             version = "1.0"
         }
     }
