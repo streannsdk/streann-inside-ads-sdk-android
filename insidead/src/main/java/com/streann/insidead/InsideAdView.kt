@@ -84,36 +84,40 @@ class InsideAdView @JvmOverloads constructor(
 
         requestAdExecutor = Executors.newSingleThreadExecutor()
         requestAdExecutor!!.execute {
-            val geoIp = HttpRequestsUtil.getGeoIp()
-            if (geoIp != null) {
-                var geoCountryCode = geoIp.countryCode
-                if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
-                    HttpRequestsUtil.getCampaign(
-                        apiKey,
-                        geoCountryCode,
-                        screen,
-                        object : CampaignCallback {
-                            override fun onSuccess(campaign: Campaign) {
-                                Log.i(LOGTAG, "onSuccess: $campaign")
-                                insideAdCallback?.let {
-                                    val insideAd = campaign.insideAd
-                                    insideAd?.let { ad ->
-                                        it.insideAdReceived(ad)
-                                        mGoogleImaPlayer?.playAd(ad, geoIp, it)
+            val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
+            if (!geoIpUrl.isNullOrBlank()) {
+                val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
+                if (geoIp != null) {
+                    var geoCountryCode = geoIp.countryCode
+                    if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
+                        HttpRequestsUtil.getCampaign(
+                            apiKey,
+                            geoCountryCode,
+                            screen,
+                            object : CampaignCallback {
+                                override fun onSuccess(campaign: Campaign) {
+                                    Log.i(LOGTAG, "onSuccess: $campaign")
+                                    insideAdCallback?.let {
+                                        val insideAd = campaign.insideAd
+                                        insideAd?.let { ad ->
+                                            it.insideAdReceived(ad)
+                                            mGoogleImaPlayer?.playAd(ad, geoIp, it)
+                                        }
                                     }
                                 }
-                            }
 
-                            override fun onError(error: String?) {
-                                var errorMsg = "Error while getting AD."
-                                if (!error.isNullOrBlank()) errorMsg = error
-                                Log.i(LOGTAG, "onError: $errorMsg")
-                                insideAdCallback?.insideAdError(errorMsg)
-                            }
-                        })
+                                override fun onError(error: String?) {
+                                    var errorMsg = "Error while getting AD."
+                                    if (!error.isNullOrBlank()) errorMsg = error
+                                    Log.i(LOGTAG, "onError: $errorMsg")
+                                    insideAdCallback?.insideAdError(errorMsg)
+                                }
+                            })
+                    }
                 }
             }
         }
+
         requestAdExecutor!!.shutdown()
     }
 
