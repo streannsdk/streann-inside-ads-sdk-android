@@ -48,12 +48,16 @@ dependencies {
     implementation 'com.google.ads.interactivemedia.v3:interactivemedia:3.31.0'
 }
 
-publishing {
-    publications {
-        bar(MavenPublication) {
-            groupId = "com.github.streannsdk"
-            artifactId = "streann-inside-ad-sdk-android"
-            version = "1.0"
+afterEvaluate {
+    publishing {
+        publications {
+            release(MavenPublication) {
+                from components.release
+
+                groupId = "com.github.streannsdk"
+                artifactId = "streann-inside-ad-sdk-android"
+                version = "1.0.0"
+            }
         }
     }
 }
