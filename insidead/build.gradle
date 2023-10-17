@@ -51,7 +51,7 @@ dependencies {
 publishing {
     publications {
         bar(MavenPublication) {
-            groupId = "com.github.infostreann"
+            groupId = "com.github.streannsdk"
             artifactId = "streann-inside-ad-sdk-android"
             version = "1.0"
         }
