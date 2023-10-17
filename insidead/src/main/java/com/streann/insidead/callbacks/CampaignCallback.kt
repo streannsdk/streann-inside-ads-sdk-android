@@ -1,9 +1,9 @@
 package com.streann.insidead.callbacks
 
-import com.streann.insidead.models.InsideAd
+import com.streann.insidead.models.Campaign
 
 interface CampaignCallback {
-    fun onSuccess(insideAd: InsideAd)
+    fun onSuccess(campaign: Campaign)
 
     fun onError(error: String?)
 }

@@ -6,7 +6,6 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.MediaController
 import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
@@ -16,21 +15,20 @@ import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
+class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
     FrameLayout(context) {
 
-    private val LOGTAG = "InsideAdStreann"
-    private val VAST_TAG_URL =
-        "https://pubads.g.doubleclick.net/gampad/ads?iu=/21775744923/external/single_ad_samples&sz=640x480&cust_params=sample_ct%3Dlinear&ciu_szs=300x250%2C728x90&gdfp_req=1&output=vast&unviewed_position_start=1&env=vp&impl=s&correlator="
-    private var sdkFactory: ImaSdkFactory? = null
+    private val LOGTAG = "InsideAdSdk"
 
+    private var sdkFactory: ImaSdkFactory? = null
     private var adsLoader: AdsLoader? = null
     private var adsManager: AdsManager? = null
 
     private var videoPlayer: VideoView? = null
-    private var mediaController: MediaController? = null
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
 
     private var insideAdListener: InsideAdCallback? = null
@@ -42,29 +40,28 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.google_ima_player, this)
 
-        mediaController = MediaController(context);
-        videoPlayer = findViewById(R.id.videoView);
-        mediaController?.setAnchorView(videoPlayer);
-        videoPlayer?.setMediaController(mediaController);
-
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+
+        videoPlayer = findViewById(R.id.videoView);
         videoPlayer?.let {
             videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, audioManager)
         }
 
-        sdkFactory = ImaSdkFactory.getInstance()
+        setImaAdsCallback()
 
         val adDisplayContainer = ImaSdkFactory.createAdDisplayContainer(
             videoPlayerContainer,
             videoAdPlayerAdapter!!
         )
 
+        sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
         adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
             Log.i(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+            insideAdListener?.insideAdError(adErrorEvent.error.message)
         }
 
         adsLoader!!.addAdsLoadedListener { adsManagerLoadedEvent ->
@@ -72,13 +69,13 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
 
             adsManager?.addAdErrorListener { adErrorEvent ->
                 Log.e(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+                insideAdListener?.insideAdError(adErrorEvent.error.message)
+
                 val universalAdIds: String =
                     adsManager!!.currentAd.universalAdIds.contentToString()
                 Log.i(
                     LOGTAG,
-                    "Discarding the current ad break with universal "
-                            + "ad Ids: "
-                            + universalAdIds
+                    "Discarding the current ad break with universal ad Ids: $universalAdIds"
                 )
                 adsManager!!.discardAdBreak()
             }
@@ -106,9 +103,9 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
     }
 
     private fun requestAds(adTagUrl: String) {
+        Log.i(LOGTAG, "adUrl: $adTagUrl")
         val request = sdkFactory!!.createAdsRequest()
         request.adTagUrl = adTagUrl
-
         adsLoader!!.requestAds(request)
     }
 
@@ -118,7 +115,6 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
             }
 
             override fun onBuffering(p0: AdMediaInfo) {
-                insideAdListener?.insideAdBuffering()
             }
 
             override fun onContentComplete() {
@@ -129,7 +125,7 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
             }
 
             override fun onError(p0: AdMediaInfo) {
-                insideAdListener?.insideAdError()
+                insideAdListener?.insideAdError("Error while playing AD.")
             }
 
             override fun onLoaded(p0: AdMediaInfo) {
@@ -137,7 +133,6 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
             }
 
             override fun onPause(p0: AdMediaInfo) {
-                insideAdListener?.insideAdStop()
             }
 
             override fun onPlay(p0: AdMediaInfo) {
@@ -145,7 +140,6 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
             }
 
             override fun onResume(p0: AdMediaInfo) {
-                insideAdListener?.insideAdResume()
             }
 
             override fun onVolumeChanged(p0: AdMediaInfo, p1: Int) {
@@ -154,10 +148,10 @@ class GoogleImaPlayer @JvmOverloads constructor(private val context: Context) :
         })
     }
 
-    fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
+    fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
         insideAdListener = listener
-        setImaAdsCallback()
-        insideAd.url?.let { requestAds(it) }
+        val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
+        url?.let { requestAds(it) }
     }
 
 }

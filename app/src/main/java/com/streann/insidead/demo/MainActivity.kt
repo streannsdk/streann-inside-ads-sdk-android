@@ -2,63 +2,60 @@ package com.streann.insidead.demo
 
 import android.os.Bundle
 import android.util.Log
+import android.view.View
+import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.InsideAd
 
 class MainActivity : AppCompatActivity() {
-    private val TAG = "InsideAdStreann"
+
+    private val TAG = this.javaClass.simpleName
     private var mInsideAdView: InsideAdView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-
         setupInsideAdView()
     }
 
     private fun setupInsideAdView() {
         mInsideAdView = findViewById(R.id.insideAdView)
-        mInsideAdView?.requestAd("559ff7ade4b0d0aff40888dd", object : InsideAdCallback {
-            override fun insideAdReceived() {
-                Log.i(TAG, "insideAdReceived: ")
-            }
 
-            override fun insideAdBuffering() {
-                Log.i(TAG, "insideAdBuffering: ")
-            }
+        val adProgressText = findViewById<TextView>(R.id.adProgressText)
+        adProgressText.setOnClickListener {
+            mInsideAdView?.requestAd("", object : InsideAdCallback {
+                override fun insideAdReceived(insideAd: InsideAd) {
+                    Log.i(TAG, "insideAdReceived: $insideAd")
+                }
 
-            override fun insideAdLoaded() {
-                Log.i(TAG, "insideAdLoaded: ")
-            }
+                override fun insideAdLoaded() {
+                    Log.i(TAG, "insideAdLoaded")
+                }
 
-            override fun insideAdPlay() {
-                Log.i(TAG, "insideAdPlay: ")
-            }
+                override fun insideAdPlay() {
+                    Log.i(TAG, "insideAdPlay")
+                    adProgressText.text = ""
+                    mInsideAdView?.visibility = View.VISIBLE
+                }
 
-            override fun insideAdResume() {
-                Log.i(TAG, "insideAdResume: ")
-            }
+                override fun insideAdStop() {
+                    Log.i(TAG, "insideAdStop")
+                    adProgressText.text = "Show Ad"
+                    mInsideAdView?.visibility = View.INVISIBLE
+                }
 
-            override fun insideAdPause() {
-                Log.i(TAG, "insideAdPause: ")
-            }
+                override fun insideAdError(error: String) {
+                    Log.i(TAG, "insideAdError: $error")
+                    adProgressText.text = "Error: $error \nShow Ad"
+                }
 
-            override fun insideAdStop() {
-                Log.i(TAG, "insideAdStop: ")
-            }
-
-            override fun insideAdError() {
-                Log.i(TAG, "insideAdError: ")
-            }
-
-            override fun insideAdError(error: String) {
-                Log.i(TAG, "insideAdError: $error")
-            }
-
-            override fun insideAdVolumeChanged(level: Float) {
-                Log.i(TAG, "insideAdVolumeChanged: $level")
-            }
-        })
+                override fun insideAdVolumeChanged(level: Float) {
+                    Log.i(TAG, "insideAdVolumeChanged: $level")
+                }
+            })
+        }
     }
+
 }

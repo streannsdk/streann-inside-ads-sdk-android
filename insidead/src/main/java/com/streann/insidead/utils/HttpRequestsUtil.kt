@@ -1,7 +1,10 @@
-package com.streann.insidead
+package com.streann.insidead.utils
 
 import android.util.Log
+import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
+import com.streann.insidead.models.Campaign
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import org.json.JSONException
 import org.json.JSONObject
@@ -15,13 +18,57 @@ import java.net.URL
 import javax.net.ssl.HttpsURLConnection
 
 object HttpRequestsUtil {
-    private val TAG = "InsideAdStreann"
+    private val TAG = "InsideAdSdk"
 
-    fun getGeoIp(): JSONObject? {
+    fun getGeoIpUrl(): String? {
         var jsonObject: JSONObject? = null
 
         try {
-            val url = URL("https://geoip.streann.com/")
+            val url = URL(
+                InsideAdSdk.baseUrl + "v1/geo-ip-config"
+            )
+
+            val urlConnection = url.openConnection() as HttpURLConnection
+            urlConnection.requestMethod = "GET"
+            urlConnection.instanceFollowRedirects = true
+
+            val responseCode: Int = urlConnection.responseCode
+            if (responseCode == HttpURLConnection.HTTP_OK) {
+                try {
+                    val inputStream =
+                        BufferedReader(InputStreamReader(urlConnection.inputStream))
+                    var inputLine: String?
+                    val response = StringBuffer()
+
+                    while (inputStream.readLine().also { inputLine = it } != null) {
+                        response.append(inputLine)
+                    }
+                    inputStream.close()
+
+                    jsonObject = JSONObject(response.toString())
+                } finally {
+                    urlConnection.disconnect()
+                }
+            }
+        } catch (e: IOException) {
+            e.printStackTrace()
+        }
+
+        var geoIpUrl: String? = null
+        try {
+            geoIpUrl = jsonObject?.let { jsonObject.getString("geoIpUrl") }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+
+        return geoIpUrl
+    }
+
+    fun getGeoIp(geoIpUrl: String): GeoIp? {
+        var jsonObject: JSONObject? = null
+
+        try {
+            val url = URL(geoIpUrl)
             val urlConnection = url.openConnection() as HttpURLConnection
             urlConnection.requestMethod = "GET"
             urlConnection.instanceFollowRedirects = true
@@ -39,7 +86,6 @@ object HttpRequestsUtil {
                     inputStream.close()
 
                     jsonObject = JSONObject(response.toString())
-                    return jsonObject
                 } finally {
                     urlConnection.disconnect()
                 }
@@ -48,21 +94,96 @@ object HttpRequestsUtil {
             e.printStackTrace()
         }
 
-        return jsonObject
+        var geoIp: GeoIp? = null
+        try {
+            geoIp = jsonObject?.let { parseGeoIpJSONResponse(it) }
+        } catch (e: JSONException) {
+            e.printStackTrace()
+        }
+
+        return geoIp
+    }
+
+    private fun parseGeoIpJSONResponse(jsonObject: JSONObject): GeoIp? {
+        val geoIp = GeoIp()
+
+        if (jsonObject.has("AsName")) {
+            try {
+                geoIp.asName = jsonObject.getString("AsName")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.asName = ""
+        }
+
+        if (jsonObject.has("ConnType")) {
+            try {
+                geoIp.connType = jsonObject.getString("ConnType")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.connType = ""
+        }
+
+        if (jsonObject.has("countryCode")) {
+            try {
+                geoIp.countryCode = jsonObject.getString("countryCode")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.countryCode = ""
+        }
+
+        if (jsonObject.has("latitude")) {
+            try {
+                geoIp.latitude = jsonObject.getString("latitude")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.latitude = ""
+        }
+
+        if (jsonObject.has("longitude")) {
+            try {
+                geoIp.longitude = jsonObject.getString("longitude")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.longitude = ""
+        }
+
+        if (jsonObject.has("ip")) {
+            try {
+                geoIp.ip = jsonObject.getString("ip")
+            } catch (e: JSONException) {
+                e.printStackTrace()
+            }
+        } else {
+            geoIp.ip = ""
+        }
+
+        return geoIp
     }
 
     fun getCampaign(
-        resellerId: String,
+        apiKey: String,
         countryCode: String,
+        screen: String,
         campaignCallback: CampaignCallback
     ) {
         val url: URL
         var jsonObject: JSONObject? = null
         try {
             val urlParameters = "platform=ANDROID&country=" + countryCode +
-                    "&r=" + resellerId
+                    "&r=" + apiKey + "&screen=" + screen
+
             url = URL(
-                "https://inside-ads.services.c1.streann.com/v1/campaigns/app"
+                InsideAdSdk.baseUrl + "v1/campaigns/app"
                         + "?" + urlParameters
             )
 
@@ -119,7 +240,8 @@ object HttpRequestsUtil {
         }
 
         if (campaignCallback != null) {
-            campaignCallback.onSuccess(insideAd);
+            val campaign = Campaign(insideAd)
+            campaignCallback.onSuccess(campaign);
         }
     }
 
