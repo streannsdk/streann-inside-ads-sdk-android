@@ -28,6 +28,7 @@ class InsideAdView @JvmOverloads constructor(
     private var populateSdkExecutor: ExecutorService? = null
     private var requestAdExecutor: ExecutorService? = null
     private var apiKey: String = ""
+    private var baseUrl: String = ""
     private var scale: Float = 0f
 
     init {
@@ -44,6 +45,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private fun populateSdkInfo(context: Context?) {
         apiKey = InsideAdSdk.apiKey
+        baseUrl = InsideAdSdk.baseUrl
 
         context?.let {
             InsideAdSdk.bundleId = it.packageName
@@ -79,6 +81,12 @@ class InsideAdView @JvmOverloads constructor(
         if (TextUtils.isEmpty(apiKey)) {
             Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
             insideAdCallback?.insideAdError("Api Key is required. Please implement the initializeSdk method.")
+            return
+        }
+
+        if (TextUtils.isEmpty(baseUrl)) {
+            Log.e(LOGTAG, "Base Url is required. Please implement the initializeSdk method.")
+            insideAdCallback?.insideAdError("Base Url is required. Please implement the initializeSdk method.")
             return
         }
 
