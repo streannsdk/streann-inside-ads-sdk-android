@@ -45,8 +45,8 @@ To use the InsideAdView in your project, follow these steps:
 - The apiKey and baseUrl are mandatory parameters in order to initialize our SDK, and they will be provided:
   ```js
   InsideAdSdk.initializeSdk(
-        apiKey = "your_api_key",
-        baseUrl = "our_base_url"
+        apiKey = "api_key",
+        baseUrl = "base_url"
   )
 
   ```
@@ -55,8 +55,8 @@ To use the InsideAdView in your project, follow these steps:
   userBirthYear and userGender. Ex:
    ```js
    InsideAdSdk.initializeSdk(
-        apiKey = "your_api_key",
-        baseUrl = "our_base_url",
+        apiKey = "api_key",
+        baseUrl = "base_url",
         userGender = "Female"
    )
    ```
