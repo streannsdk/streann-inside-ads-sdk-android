@@ -51,7 +51,7 @@ class MainActivity : AppCompatActivity() {
                     adProgressText.text = "Error: $error \nShow Ad"
                 }
 
-                override fun insideAdVolumeChanged(level: Float) {
+                override fun insideAdVolumeChanged(level: Int) {
                     Log.i(TAG, "insideAdVolumeChanged: $level")
                 }
             })
