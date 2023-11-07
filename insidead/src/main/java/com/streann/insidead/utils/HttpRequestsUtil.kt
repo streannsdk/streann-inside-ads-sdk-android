@@ -298,7 +298,7 @@ object HttpRequestsUtil {
             insideAd.adType = ""
         }
 
-        if (jsonObject.has("properties")) {
+        if (jsonObject.has("properties") && !jsonObject.isNull("properties")) {
             try {
                 insideAd.properties = jsonObject.getJSONObject("properties")
             } catch (e: JSONException) {
