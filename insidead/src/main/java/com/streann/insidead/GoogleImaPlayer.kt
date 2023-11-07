@@ -5,11 +5,11 @@ import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.FrameLayout
-import android.widget.VideoView
+import android.widget.*
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
 import com.google.ads.interactivemedia.v3.api.AdsManager
+import com.google.ads.interactivemedia.v3.api.FriendlyObstructionPurpose
 import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
@@ -30,6 +30,7 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
     private var videoPlayer: VideoView? = null
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
+    private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdListener: InsideAdCallback? = null
 
@@ -43,10 +44,9 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
-        videoPlayer = findViewById(R.id.videoView);
-        videoPlayer?.let {
-            videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, audioManager)
-        }
+        videoPlayer = findViewById(R.id.videoView)
+        videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
+        videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
 
         setImaAdsCallback()
 
@@ -54,6 +54,23 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             videoPlayerContainer,
             videoAdPlayerAdapter!!
         )
+
+        val myTransparentTapOverlay = findViewById<ViewGroup>(R.id.overlay)
+
+        val overlayObstruction = ImaSdkFactory.getInstance().createFriendlyObstruction(
+            myTransparentTapOverlay,
+            FriendlyObstructionPurpose.NOT_VISIBLE,
+            "This overlay is transparent"
+        )
+
+        val volumeButtonObstruction = ImaSdkFactory.getInstance().createFriendlyObstruction(
+            videoPlayerVolumeButton!!,
+            FriendlyObstructionPurpose.VIDEO_CONTROLS,
+            "This is the video player volume button"
+        )
+
+        adDisplayContainer.registerFriendlyObstruction(overlayObstruction)
+        adDisplayContainer.registerFriendlyObstruction(volumeButtonObstruction)
 
         sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
@@ -143,7 +160,7 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
             }
 
             override fun onVolumeChanged(p0: AdMediaInfo, p1: Int) {
-                insideAdListener?.insideAdVolumeChanged(p1.toFloat())
+                insideAdListener?.insideAdVolumeChanged(p1)
             }
         })
     }

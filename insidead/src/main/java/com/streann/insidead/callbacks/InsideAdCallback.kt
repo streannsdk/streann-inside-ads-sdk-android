@@ -14,6 +14,6 @@ interface InsideAdCallback {
 
     fun insideAdError(error: String)
 
-    fun insideAdVolumeChanged(level: Float)
+    fun insideAdVolumeChanged(level: Int)
 
 }

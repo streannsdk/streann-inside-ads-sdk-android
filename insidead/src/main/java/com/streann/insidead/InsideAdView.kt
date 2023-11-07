@@ -77,7 +77,13 @@ class InsideAdView @JvmOverloads constructor(
         }
     }
 
-    fun requestAd(screen: String, insideAdCallback: InsideAdCallback?) {
+    fun requestAd(
+        screen: String,
+        isAdMuted: Boolean? = false,
+        insideAdCallback: InsideAdCallback?
+    ) {
+        InsideAdSdk.isAdMuted = isAdMuted
+
         if (TextUtils.isEmpty(apiKey)) {
             Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
             insideAdCallback?.insideAdError("Api Key is required. Please implement the initializeSdk method.")
@@ -96,7 +102,7 @@ class InsideAdView @JvmOverloads constructor(
             if (!geoIpUrl.isNullOrBlank()) {
                 val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
                 if (geoIp != null) {
-                    var geoCountryCode = geoIp.countryCode
+                    val geoCountryCode = geoIp.countryCode
                     if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
                         HttpRequestsUtil.getCampaign(
                             apiKey,
