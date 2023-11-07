@@ -19,11 +19,11 @@ your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.0
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.1
 }
 ```
 
-In order to use our library you need to add the JitPack maven repository to the list of repositories
+To use our library you need to add the JitPack maven repository to the list of repositories
 in your settings.gradle file:
 
 ```gradle
@@ -41,8 +41,8 @@ dependencyResolutionManagement {
 
 To use the InsideAdView in your project, follow these steps:
 
-- Implement the initializeSdk method in your application in order to initialize our SDK.
-- The apiKey and baseUrl are mandatory parameters in order to initialize our SDK, and they will be provided:
+- Implement the initializeSdk method in your application to initialize our SDK.
+- The apiKey and baseUrl are mandatory parameters to initialize our SDK, and they will be provided:
   ```js
   InsideAdSdk.initializeSdk(
         apiKey = "api_key",
@@ -91,7 +91,7 @@ To use the InsideAdView in your project, follow these steps:
 
  - screen - enter the screen where you wish to load the ad 
     ex. Login, Splash screen, etc.
- - InsideAdCallback - implement our callback in order to receive events from the ads' progress
+ - InsideAdCallback - implement our callback to receive events from the ads' progress
 ```
 
 - Handle ad events such as ads received, loaded, played, stopped, ad volume changed, and ad errors
@@ -99,4 +99,4 @@ To use the InsideAdView in your project, follow these steps:
 
 ## Sample App
 
-Check out our InsideAdDemo App to see the InsideAdView in action.
+You can check out our InsideAdDemo App to see the InsideAdView in action.
