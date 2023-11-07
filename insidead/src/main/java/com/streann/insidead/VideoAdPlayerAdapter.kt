@@ -201,18 +201,18 @@ class VideoAdPlayerAdapter(
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         adSoundPlaying = if (InsideAdSdk.isAdMuted == true) {
-            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off_24)
+            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
             false
         } else {
-            setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up_24)
+            setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true
         }
 
         videoPlayerVolumeButton.setOnClickListener {
             if (adSoundPlaying) {
-                setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off_24)
+                setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
             } else {
-                setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up_24)
+                setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             }
             adSoundPlaying = !adSoundPlaying;
         }
