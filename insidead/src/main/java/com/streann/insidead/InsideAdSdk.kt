@@ -19,6 +19,7 @@ object InsideAdSdk {
     var adLimitTracking: Int? = 0
     var playerWidth: Int = 0
     var playerHeight: Int = 0
+    var isAdMuted: Boolean? = false
     var appPreferences: SharedPreferences? = null
 
     fun initializeSdk(

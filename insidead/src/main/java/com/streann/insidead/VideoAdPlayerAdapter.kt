@@ -1,7 +1,6 @@
 package com.streann.insidead
 
 import android.media.AudioManager
-import android.media.Image
 import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
@@ -28,7 +27,7 @@ class VideoAdPlayerAdapter(
     private var savedAdPosition = 0
     private var loadedAdMediaInfo: AdMediaInfo? = null
 
-    private var volumePlaying = false
+    private var adSoundPlaying = true
     private var videoPlayerVolumeButton: FrameLayout
 
     init {
@@ -170,10 +169,7 @@ class VideoAdPlayerAdapter(
                 mediaPlayer.seekTo(savedAdPosition)
             }
 
-            videoPlayerVolumeButton.setOnClickListener {
-                setVolumeControl(mediaPlayer)
-            }
-
+            setAdVolumeControl(mediaPlayer)
             mediaPlayer.start()
             startAdTracking()
             notifyImaSdkAboutAdStarted()
@@ -203,21 +199,30 @@ class VideoAdPlayerAdapter(
         stopAdTracking();
     }
 
-    private fun setVolumeControl(mediaPlayer: MediaPlayer) {
-        videoPlayerVolumeButton.setOnClickListener {
-            if (volumePlaying) {
-                mediaPlayer.setVolume(0f, 0f)
-                videoPlayerVolumeButton.findViewById<ImageView>(R.id.adVolumeIcon)
-                    .setImageResource(R.drawable.ic_volume_off_24)
-                notifyImaSdkAboutAdVolumeChanged(0)
-            } else {
-                mediaPlayer.setVolume(1f, 1f)
-                videoPlayerVolumeButton.findViewById<ImageView>(R.id.adVolumeIcon)
-                    .setImageResource(R.drawable.ic_volume_up_24)
-                notifyImaSdkAboutAdVolumeChanged(1)
-            }
-            volumePlaying = !volumePlaying;
+    private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
+        adSoundPlaying = if (InsideAdSdk.isAdMuted == true) {
+            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off_24)
+            false
+        } else {
+            setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up_24)
+            true
         }
+
+        videoPlayerVolumeButton.setOnClickListener {
+            if (adSoundPlaying) {
+                setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off_24)
+            } else {
+                setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up_24)
+            }
+            adSoundPlaying = !adSoundPlaying;
+        }
+    }
+
+    private fun setAdSound(mediaPlayer: MediaPlayer, sound: Int, soundIcon: Int) {
+        mediaPlayer.setVolume(sound.toFloat(), sound.toFloat())
+        videoPlayerVolumeButton.findViewById<ImageView>(R.id.adVolumeIcon)
+            .setImageResource(soundIcon)
+        notifyImaSdkAboutAdVolumeChanged(sound)
     }
 
 }
