@@ -74,25 +74,29 @@ To use the InsideAdView in your project, follow these steps:
 
 - In your activity or fragment, request an ad:
 
-```kotlin
-   mInsideAdView?.requestAd("screen", object : InsideAdCallback {
-        override fun insideAdReceived(insideAd: InsideAd) { }
-
-        override fun insideAdLoaded() { }
-
-        override fun insideAdPlay() { }
-
-        override fun insideAdStop() { }
-
-        override fun insideAdError(error: String) { }
-
-        override fun insideAdVolumeChanged(level: Float) { }
-    })
-
- - screen - enter the screen where you wish to load the ad 
-    ex. Login, Splash screen, etc.
- - InsideAdCallback - implement our callback to receive events from the ads' progress
-```
+  ```kotlin
+      mInsideAdView?.requestAd(
+       screen = "",
+       isAdMuted = true,
+       insideAdCallback = object : InsideAdCallback {
+          override fun insideAdReceived(insideAd: InsideAd) { }
+  
+          override fun insideAdLoaded() { }
+  
+          override fun insideAdPlay() { }
+  
+          override fun insideAdStop() { }
+  
+          override fun insideAdError(error: String) { }
+  
+          override fun insideAdVolumeChanged(level: Float) { }
+      })
+  
+   - screen - enter the screen where you wish to load the ad
+      ex. Login, Splash screen, etc.
+   - isAdMuted - choose if you want your ad to be muted or not
+   - InsideAdCallback - implement our callback to receive events from the ads' progress
+  ```
 
 - Handle ad events such as ads received, loaded, played, stopped, ad volume changed, and ad errors
   by overriding the event listeners.
