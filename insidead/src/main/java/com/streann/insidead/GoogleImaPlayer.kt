@@ -5,7 +5,8 @@ import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
-import android.widget.*
+import android.widget.FrameLayout
+import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
 import com.google.ads.interactivemedia.v3.api.AdsManager
@@ -15,11 +16,10 @@ import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
+class GoogleImaPlayer constructor(context: Context) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
@@ -165,9 +165,9 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
         })
     }
 
-    fun playAd(insideAd: InsideAd, geoIp: GeoIp, listener: InsideAdCallback) {
+    fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
-        val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
+        val url = InsideAdHelper.populateVASTURL(context, insideAd)
         url?.let { requestAds(it) }
     }
 

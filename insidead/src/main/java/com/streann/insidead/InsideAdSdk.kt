@@ -1,6 +1,7 @@
 package com.streann.insidead
 
 import android.content.SharedPreferences
+import com.streann.insidead.models.GeoIp
 
 object InsideAdSdk {
 
@@ -19,6 +20,7 @@ object InsideAdSdk {
     var adLimitTracking: Int? = 0
     var playerWidth: Int = 0
     var playerHeight: Int = 0
+    var geoIp: GeoIp? = null
     var isAdMuted: Boolean? = false
     var appPreferences: SharedPreferences? = null
 

@@ -10,9 +10,11 @@ import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.Campaign
+import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
+import com.streann.insidead.utils.constants.Constants
 import com.streann.insidead.utils.constants.SharedPrefKeys
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
@@ -24,6 +26,7 @@ class InsideAdView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyle) {
 
     private val LOGTAG = "InsideAdSdk"
+    private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private var populateSdkExecutor: ExecutorService? = null
     private var requestAdExecutor: ExecutorService? = null
@@ -36,6 +39,8 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun init() {
+        mInsideAdPlayer = InsideAdPlayer(context)
+        addView(mInsideAdPlayer)
         mGoogleImaPlayer = GoogleImaPlayer(context)
         addView(mGoogleImaPlayer)
 
@@ -102,6 +107,7 @@ class InsideAdView @JvmOverloads constructor(
             if (!geoIpUrl.isNullOrBlank()) {
                 val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
                 if (geoIp != null) {
+                    InsideAdSdk.geoIp = geoIp
                     val geoCountryCode = geoIp.countryCode
                     if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
                         HttpRequestsUtil.getCampaign(
@@ -115,7 +121,7 @@ class InsideAdView @JvmOverloads constructor(
                                         val insideAd = campaign.insideAd
                                         insideAd?.let { ad ->
                                             it.insideAdReceived(ad)
-                                            mGoogleImaPlayer?.playAd(ad, geoIp, it)
+                                            showAd(ad, it)
                                         }
                                     }
                                 }
@@ -133,6 +139,13 @@ class InsideAdView @JvmOverloads constructor(
         }
 
         requestAdExecutor!!.shutdown()
+    }
+
+    private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        when (insideAd.adType) {
+            Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
+            Constants.AD_TYPE_LOCAL_VIDEO -> mInsideAdPlayer?.playAd(insideAd, insideAdCallback)
+        }
     }
 
 }
