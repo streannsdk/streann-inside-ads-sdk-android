@@ -94,7 +94,7 @@ To use the InsideAdView in your project, follow these steps:
   
    - screen - enter the screen where you wish to load the ad
       ex. Login, Splash screen, etc.
-   - isAdMuted - choose if you want your ad to be muted or not
+   - isAdMuted - choose if you want your ad to be muted or not (default value: false)
    - InsideAdCallback - implement our callback to receive events from the ads' progress
   ```
 
