@@ -19,7 +19,7 @@ import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
+class GoogleImaPlayer constructor(context: Context) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
@@ -46,7 +46,8 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
-        videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
+        videoAdPlayerAdapter =
+            VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
 
         setImaAdsCallback()
 
