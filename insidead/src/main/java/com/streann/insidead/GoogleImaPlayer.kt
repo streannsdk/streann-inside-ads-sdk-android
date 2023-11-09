@@ -6,11 +6,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.*
+import com.google.ads.interactivemedia.v3.api.*
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
-import com.google.ads.interactivemedia.v3.api.AdsLoader
-import com.google.ads.interactivemedia.v3.api.AdsManager
-import com.google.ads.interactivemedia.v3.api.FriendlyObstructionPurpose
-import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
@@ -110,7 +107,12 @@ class GoogleImaPlayer constructor(context: Context) :
                         adsManager!!.destroy()
                         adsManager = null
                     }
-                    AdEventType.CLICKED -> {}
+                    AdEventType.SKIPPED -> {
+                        insideAdListener?.insideAdSkipped()
+                    }
+                    AdEventType.CLICKED -> {
+                        insideAdListener?.insideAdClicked()
+                    }
                     else -> {}
                 }
             }

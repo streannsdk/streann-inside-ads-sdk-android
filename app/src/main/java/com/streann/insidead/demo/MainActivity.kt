@@ -49,6 +49,14 @@ class MainActivity : AppCompatActivity() {
                         mInsideAdView?.visibility = View.INVISIBLE
                     }
 
+                    override fun insideAdSkipped() {
+                        Log.i(TAG, "insideAdSkipped")
+                    }
+
+                    override fun insideAdClicked() {
+                        Log.i(TAG, "insideAdClicked")
+                    }
+
                     override fun insideAdError(error: String) {
                         Log.i(TAG, "insideAdError: $error")
                         adProgressText.text = "Error: $error \nShow Ad"
