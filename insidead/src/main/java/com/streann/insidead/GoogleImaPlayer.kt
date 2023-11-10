@@ -6,11 +6,8 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.*
+import com.google.ads.interactivemedia.v3.api.*
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
-import com.google.ads.interactivemedia.v3.api.AdsLoader
-import com.google.ads.interactivemedia.v3.api.AdsManager
-import com.google.ads.interactivemedia.v3.api.FriendlyObstructionPurpose
-import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
@@ -19,7 +16,7 @@ import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
+class GoogleImaPlayer constructor(context: Context) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
@@ -46,7 +43,8 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
-        videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
+        videoAdPlayerAdapter =
+            VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
 
         setImaAdsCallback()
 
@@ -109,7 +107,12 @@ class GoogleImaPlayer @JvmOverloads constructor(context: Context) :
                         adsManager!!.destroy()
                         adsManager = null
                     }
-                    AdEventType.CLICKED -> {}
+                    AdEventType.SKIPPED -> {
+                        insideAdListener?.insideAdSkipped()
+                    }
+                    AdEventType.CLICKED -> {
+                        insideAdListener?.insideAdClicked()
+                    }
                     else -> {}
                 }
             }

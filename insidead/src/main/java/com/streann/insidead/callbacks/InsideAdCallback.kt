@@ -12,6 +12,10 @@ interface InsideAdCallback {
 
     fun insideAdStop()
 
+    fun insideAdSkipped()
+
+    fun insideAdClicked()
+
     fun insideAdError(error: String)
 
     fun insideAdVolumeChanged(level: Int)
