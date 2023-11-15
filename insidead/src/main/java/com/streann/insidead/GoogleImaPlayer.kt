@@ -87,24 +87,24 @@ class GoogleImaPlayer constructor(context: Context) :
                 insideAdListener?.insideAdError(adErrorEvent.error.message)
 
                 val universalAdIds: String =
-                    adsManager!!.currentAd.universalAdIds.contentToString()
+                    adsManager?.currentAd?.universalAdIds.contentToString()
                 Log.i(
                     LOGTAG,
                     "Discarding the current ad break with universal ad Ids: $universalAdIds"
                 )
-                adsManager!!.discardAdBreak()
+                adsManager?.discardAdBreak()
             }
 
-            adsManager!!.addAdEventListener { adEvent ->
+            adsManager?.addAdEventListener { adEvent ->
                 if (adEvent.type != AdEventType.AD_PROGRESS) {
                     Log.i(LOGTAG, "Event: " + adEvent.type)
                 }
 
                 when (adEvent.type) {
                     AdEventType.LOADED ->
-                        adsManager!!.start()
+                        adsManager?.start()
                     AdEventType.ALL_ADS_COMPLETED -> {
-                        adsManager!!.destroy()
+                        adsManager?.destroy()
                         adsManager = null
                     }
                     AdEventType.SKIPPED -> {
@@ -118,7 +118,7 @@ class GoogleImaPlayer constructor(context: Context) :
             }
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
-            adsManager!!.init(adsRenderingSettings)
+            adsManager?.init(adsRenderingSettings)
         }
     }
 
@@ -172,6 +172,12 @@ class GoogleImaPlayer constructor(context: Context) :
         insideAdListener = listener
         val url = InsideAdHelper.populateVASTURL(context, insideAd, geoIp)
         url?.let { requestAds(it) }
+    }
+
+    fun stopAd() {
+        adsManager?.let {
+            videoAdPlayerAdapter?.stopAdPlaying()
+        }
     }
 
 }
