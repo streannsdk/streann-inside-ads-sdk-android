@@ -175,9 +175,7 @@ class GoogleImaPlayer constructor(context: Context) :
     }
 
     fun stopAd() {
-        adsManager?.let {
-            videoAdPlayerAdapter?.stopAdPlaying()
-        }
+        videoAdPlayerAdapter?.stopAdPlaying()
     }
 
 }
