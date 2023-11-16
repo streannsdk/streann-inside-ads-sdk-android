@@ -1,16 +1,15 @@
 # streann-inside-ads-sdk-android
 
 Streann Inside Ad is an Android library that provides a simple way to integrate ad playback
-functionality into your Android applications using the Interactive Media Ads (IMA) SDK by Google. With Streann Inside Ad library, you can seamlessly
+functionality into your Android applications using the Interactive Media Ads (IMA) SDK by Google.
+With Streann Inside Ad library, you can seamlessly
 incorporate ads into your projects.
-
 
 ## Features
 
 - Easily integrate ad playback into your Android app.
 - Seamless integration of VAST video ads into your Android app.
 - Customizable ad display options.
-  
 
 ## Installation
 
@@ -19,7 +18,7 @@ your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.1
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.2
 }
 ```
 
@@ -64,42 +63,51 @@ To use the InsideAdView in your project, follow these steps:
 - Add the InsideAdView to your layout XML file:
   ```xml
   <com.streann.insidead.InsideAdView
-        android:id="@+id/insideAdView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-  
+    android:id="@+id/insideAdView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+
 - In your activity or fragment, initialize the InsideAdView:
 
-  ```val insideAdView = findViewById(R.id.insideAdView);```
+  ```kotlin 
+  val insideAdView = findViewById(R.id.insideAdView);
 
 - In your activity or fragment, request an ad:
 
   ```kotlin
-      mInsideAdView?.requestAd(
-       screen = "",
-       isAdMuted = true,
-       insideAdCallback = object : InsideAdCallback {
-          override fun insideAdReceived(insideAd: InsideAd) { }
-  
-          override fun insideAdLoaded() { }
-  
-          override fun insideAdPlay() { }
-  
-          override fun insideAdStop() { }
-  
-          override fun insideAdError(error: String) { }
-  
-          override fun insideAdVolumeChanged(level: Float) { }
+  mInsideAdView?.requestAd(
+    screen = "",
+    isAdMuted = true,
+    insideAdCallback = object : InsideAdCallback {
+        override fun insideAdReceived(insideAd: InsideAd) { }
+
+        override fun insideAdLoaded() { }
+
+        override fun insideAdPlay() { }
+
+        override fun insideAdStop() { }
+
+        override fun insideAdSkipped() { }
+
+        override fun insideAdClicked() { }
+
+        override fun insideAdError(error: String) { }
+
+        override fun insideAdVolumeChanged(level: Int) { }
       })
   
-   - screen - enter the screen where you wish to load the ad
-      ex. Login, Splash screen, etc.
+   - screen - enter the screen where you wish to load the ad (ex. Login, Splash screen, etc.)
    - isAdMuted - choose if you want your ad to be muted or not (default value: false)
-   - InsideAdCallback - implement our callback to receive events from the ads' progress
+   - InsideAdCallback - implement our interface to receive events from the ads' progress
   ```
 
-- Handle ad events such as ads received, loaded, played, stopped, ad volume changed, and ad errors
-  by overriding the event listeners.
+- By overriding the event listeners, handle ad events such as ads received, loaded, played, stopped,
+  ad volume changed, ad errors, etc.
+
+- If you want to manually stop the ad while it's playing:
+  ```kotlin
+  mInsideAdView?.stopAd()
+  ```
 
 ## Sample App
 
