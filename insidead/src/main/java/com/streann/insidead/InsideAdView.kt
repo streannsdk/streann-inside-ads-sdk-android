@@ -135,4 +135,8 @@ class InsideAdView @JvmOverloads constructor(
         requestAdExecutor!!.shutdown()
     }
 
+    fun stopAd() {
+        mGoogleImaPlayer?.stopAd()
+    }
+
 }

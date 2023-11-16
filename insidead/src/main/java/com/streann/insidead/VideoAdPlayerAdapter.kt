@@ -187,6 +187,16 @@ class VideoAdPlayerAdapter(
         }
     }
 
+    fun stopAdPlaying() {
+        Log.i(LOGTAG, "stopAdPlaying")
+        if (videoPlayer.isPlaying) {
+            stopAdTracking()
+            videoPlayer.stopPlayback()
+            savedAdPosition = 0
+            notifyImaSdkAboutAdEnded()
+        }
+    }
+
     override fun release() {
     }
 
