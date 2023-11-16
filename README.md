@@ -69,7 +69,7 @@ To use the InsideAdView in your project, follow these steps:
 
 - In your activity or fragment, initialize the InsideAdView:
 
-  ```kotlin 
+  ```js
   val insideAdView = findViewById(R.id.insideAdView);
 
 - In your activity or fragment, request an ad:
@@ -105,7 +105,7 @@ To use the InsideAdView in your project, follow these steps:
   ad volume changed, ad errors, etc.
 
 - If you want to manually stop the ad while it's playing:
-  ```kotlin
+  ```js
   mInsideAdView?.stopAd()
   ```
 
