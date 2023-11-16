@@ -1,16 +1,15 @@
 # streann-inside-ads-sdk-android
 
 Streann Inside Ad is an Android library that provides a simple way to integrate ad playback
-functionality into your Android applications using the Interactive Media Ads (IMA) SDK by Google. With Streann Inside Ad library, you can seamlessly
+functionality into your Android applications using the Interactive Media Ads (IMA) SDK by Google.
+With Streann Inside Ad library, you can seamlessly
 incorporate ads into your projects.
-
 
 ## Features
 
 - Easily integrate ad playback into your Android app.
 - Seamless integration of VAST video ads into your Android app.
 - Customizable ad display options.
-  
 
 ## Installation
 
@@ -19,11 +18,11 @@ your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.0
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.2
 }
 ```
 
-In order to use our library you need to add the JitPack maven repository to the list of repositories
+To use our library you need to add the JitPack maven repository to the list of repositories
 in your settings.gradle file:
 
 ```gradle
@@ -41,8 +40,8 @@ dependencyResolutionManagement {
 
 To use the InsideAdView in your project, follow these steps:
 
-- Implement the initializeSdk method in your application in order to initialize our SDK.
-- The apiKey and baseUrl are mandatory parameters in order to initialize our SDK, and they will be provided:
+- Implement the initializeSdk method in your application to initialize our SDK.
+- The apiKey and baseUrl are mandatory parameters to initialize our SDK, and they will be provided:
   ```js
   InsideAdSdk.initializeSdk(
         apiKey = "api_key",
@@ -64,18 +63,22 @@ To use the InsideAdView in your project, follow these steps:
 - Add the InsideAdView to your layout XML file:
   ```xml
   <com.streann.insidead.InsideAdView
-        android:id="@+id/insideAdView"
-        android:layout_width="wrap_content"
-        android:layout_height="wrap_content" />
-  
+    android:id="@+id/insideAdView"
+    android:layout_width="wrap_content"
+    android:layout_height="wrap_content" />
+
 - In your activity or fragment, initialize the InsideAdView:
 
-  ```val insideAdView = findViewById(R.id.insideAdView);```
+  ```js
+  val insideAdView = findViewById(R.id.insideAdView);
 
 - In your activity or fragment, request an ad:
 
-```kotlin
-   mInsideAdView?.requestAd("screen", object : InsideAdCallback {
+  ```kotlin
+  mInsideAdView?.requestAd(
+    screen = "",
+    isAdMuted = true,
+    insideAdCallback = object : InsideAdCallback {
         override fun insideAdReceived(insideAd: InsideAd) { }
 
         override fun insideAdLoaded() { }
@@ -84,19 +87,28 @@ To use the InsideAdView in your project, follow these steps:
 
         override fun insideAdStop() { }
 
+        override fun insideAdSkipped() { }
+
+        override fun insideAdClicked() { }
+
         override fun insideAdError(error: String) { }
 
-        override fun insideAdVolumeChanged(level: Float) { }
-    })
+        override fun insideAdVolumeChanged(level: Int) { }
+      })
+  
+   - screen - enter the screen where you wish to load the ad (ex. Login, Splash screen, etc.)
+   - isAdMuted - choose if you want your ad to be muted or not (default value: false)
+   - InsideAdCallback - implement our interface to receive events from the ads' progress
+  ```
 
- - screen - enter the screen where you wish to load the ad 
-    ex. Login, Splash screen, etc.
- - InsideAdCallback - implement our callback in order to receive events from the ads' progress
-```
+- By overriding the event listeners, handle ad events such as ads received, loaded, played, stopped,
+  ad volume changed, ad errors, etc.
 
-- Handle ad events such as ads received, loaded, played, stopped, ad volume changed, and ad errors
-  by overriding the event listeners.
+- If you want to manually stop the ad while it's playing:
+  ```js
+  mInsideAdView?.stopAd()
+  ```
 
 ## Sample App
 
-Check out our InsideAdDemo App to see the InsideAdView in action.
+You can check out our InsideAdDemo App to see the InsideAdView in action.
