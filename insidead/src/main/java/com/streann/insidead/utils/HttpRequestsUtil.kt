@@ -241,7 +241,7 @@ object HttpRequestsUtil {
 
         if (campaignCallback != null) {
             val campaign = Campaign(insideAd)
-            campaignCallback.onSuccess(campaign);
+            campaignCallback.onSuccess(campaign)
         }
     }
 

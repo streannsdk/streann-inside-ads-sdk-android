@@ -142,24 +142,24 @@ class VideoAdPlayerAdapter(
     }
 
     override fun addCallback(videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback) {
-        videoAdPlayerCallbacks.add(videoAdPlayerCallback);
+        videoAdPlayerCallbacks.add(videoAdPlayerCallback)
     }
 
     override fun loadAd(adMediaInfo: AdMediaInfo, adPodInfo: AdPodInfo) {
-        Log.i(LOGTAG, "loadAd");
-        loadedAdMediaInfo = adMediaInfo;
+        Log.i(LOGTAG, "loadAd")
+        loadedAdMediaInfo = adMediaInfo
         notifyImaSdkAboutAdLoaded()
     }
 
     override fun pauseAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "pauseAd");
-        savedAdPosition = videoPlayer.currentPosition;
-        stopAdTracking();
+        Log.i(LOGTAG, "pauseAd")
+        savedAdPosition = videoPlayer.currentPosition
+        stopAdTracking()
         notifyImaSdkAboutAdPaused()
     }
 
     override fun playAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "playAd");
+        Log.i(LOGTAG, "playAd")
         videoPlayer.setVideoURI(Uri.parse(adMediaInfo.url))
 
         videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
@@ -201,12 +201,12 @@ class VideoAdPlayerAdapter(
     }
 
     override fun removeCallback(videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback) {
-        videoAdPlayerCallbacks.remove(videoAdPlayerCallback);
+        videoAdPlayerCallbacks.remove(videoAdPlayerCallback)
     }
 
     override fun stopAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "stopAd");
-        stopAdTracking();
+        Log.i(LOGTAG, "stopAd")
+        stopAdTracking()
     }
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
@@ -224,7 +224,7 @@ class VideoAdPlayerAdapter(
             } else {
                 setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             }
-            adSoundPlaying = !adSoundPlaying;
+            adSoundPlaying = !adSoundPlaying
         }
     }
 
