@@ -24,10 +24,11 @@ class MainActivity : AppCompatActivity() {
         mInsideAdView = findViewById(R.id.insideAdView)
 
         val adProgressText = findViewById<TextView>(R.id.adProgressText)
+        val adStopText = findViewById<TextView>(R.id.adStopText)
+
         adProgressText.setOnClickListener {
             mInsideAdView?.requestAd(
                 screen = "",
-                isAdMuted = true,
                 insideAdCallback = object : InsideAdCallback {
                     override fun insideAdReceived(insideAd: InsideAd) {
                         Log.i(TAG, "insideAdReceived: $insideAd")
@@ -40,13 +41,24 @@ class MainActivity : AppCompatActivity() {
                     override fun insideAdPlay() {
                         Log.i(TAG, "insideAdPlay")
                         adProgressText.text = ""
+                        adStopText?.visibility = View.VISIBLE
                         mInsideAdView?.visibility = View.VISIBLE
                     }
 
                     override fun insideAdStop() {
                         Log.i(TAG, "insideAdStop")
                         adProgressText.text = "Show Ad"
+                        adStopText?.visibility = View.INVISIBLE
                         mInsideAdView?.visibility = View.INVISIBLE
+                    }
+
+                    override fun insideAdSkipped() {
+                        Log.i(TAG, "insideAdSkipped")
+                        mInsideAdView?.stopAd()
+                    }
+
+                    override fun insideAdClicked() {
+                        Log.i(TAG, "insideAdClicked")
                     }
 
                     override fun insideAdError(error: String) {
@@ -59,6 +71,11 @@ class MainActivity : AppCompatActivity() {
                     }
                 })
         }
+
+        adStopText?.setOnClickListener {
+            mInsideAdView?.stopAd()
+        }
+
     }
 
 }

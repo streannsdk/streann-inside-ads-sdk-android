@@ -5,17 +5,16 @@ import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import android.widget.*
+import com.google.ads.interactivemedia.v3.api.*
 import android.widget.FrameLayout
 import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
-import com.google.ads.interactivemedia.v3.api.AdsLoader
-import com.google.ads.interactivemedia.v3.api.AdsManager
-import com.google.ads.interactivemedia.v3.api.FriendlyObstructionPurpose
-import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
@@ -46,7 +45,8 @@ class GoogleImaPlayer constructor(context: Context) :
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
-        videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
+        videoAdPlayerAdapter =
+            VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
 
         setImaAdsCallback()
 
@@ -89,33 +89,38 @@ class GoogleImaPlayer constructor(context: Context) :
                 insideAdListener?.insideAdError(adErrorEvent.error.message)
 
                 val universalAdIds: String =
-                    adsManager!!.currentAd.universalAdIds.contentToString()
+                    adsManager?.currentAd?.universalAdIds.contentToString()
                 Log.i(
                     LOGTAG,
                     "Discarding the current ad break with universal ad Ids: $universalAdIds"
                 )
-                adsManager!!.discardAdBreak()
+                adsManager?.discardAdBreak()
             }
 
-            adsManager!!.addAdEventListener { adEvent ->
+            adsManager?.addAdEventListener { adEvent ->
                 if (adEvent.type != AdEventType.AD_PROGRESS) {
                     Log.i(LOGTAG, "Event: " + adEvent.type)
                 }
 
                 when (adEvent.type) {
                     AdEventType.LOADED ->
-                        adsManager!!.start()
+                        adsManager?.start()
                     AdEventType.ALL_ADS_COMPLETED -> {
-                        adsManager!!.destroy()
+                        adsManager?.destroy()
                         adsManager = null
                     }
-                    AdEventType.CLICKED -> {}
+                    AdEventType.SKIPPED -> {
+                        insideAdListener?.insideAdSkipped()
+                    }
+                    AdEventType.CLICKED -> {
+                        insideAdListener?.insideAdClicked()
+                    }
                     else -> {}
                 }
             }
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
-            adsManager!!.init(adsRenderingSettings)
+            adsManager?.init(adsRenderingSettings)
         }
     }
 
@@ -169,6 +174,10 @@ class GoogleImaPlayer constructor(context: Context) :
         insideAdListener = listener
         val url = InsideAdHelper.populateVASTURL(context, insideAd)
         url?.let { requestAds(it) }
+    }
+
+    fun stopAd() {
+        videoAdPlayerAdapter?.stopAdPlaying()
     }
 
 }
