@@ -2,6 +2,8 @@ package com.streann.insidead
 
 import android.app.Application
 import android.content.Context
+import android.os.Handler
+import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
@@ -26,10 +28,16 @@ class InsideAdView @JvmOverloads constructor(
 ) : FrameLayout(context, attrs, defStyle) {
 
     private val LOGTAG = "InsideAdSdk"
+
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
+
+    private var insideAd: InsideAd? = null
+
     private var populateSdkExecutor: ExecutorService? = null
     private var requestAdExecutor: ExecutorService? = null
+    private var stopAdHandler: Handler? = null
+
     private var apiKey: String = ""
     private var baseUrl: String = ""
     private var scale: Float = 0f
@@ -117,11 +125,11 @@ class InsideAdView @JvmOverloads constructor(
                             object : CampaignCallback {
                                 override fun onSuccess(campaign: Campaign) {
                                     Log.i(LOGTAG, "onSuccess: $campaign")
-                                    insideAdCallback?.let {
-                                        val insideAd = campaign.insideAd
+                                    insideAdCallback?.let { callback ->
+                                        insideAd = campaign.insideAd
                                         insideAd?.let { ad ->
-                                            it.insideAdReceived(ad)
-                                            showAd(ad, it)
+                                            callback.insideAdReceived(ad)
+                                            showAd(ad, callback)
                                         }
                                     }
                                 }
@@ -142,14 +150,42 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        insideAd.adType = "local_video"
+        stopAdHandler = Handler(Looper.getMainLooper())
+
         when (insideAd.adType) {
-            Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
-            Constants.AD_TYPE_LOCAL_VIDEO -> mInsideAdPlayer?.playAd(insideAd, insideAdCallback)
+            Constants.AD_TYPE_VAST -> {
+                stopAdHandler?.post {
+                    mInsideAdPlayer?.visibility = GONE
+                    mGoogleImaPlayer?.visibility = VISIBLE
+                    mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
+                }
+            }
+            Constants.AD_TYPE_LOCAL_VIDEO -> {
+                stopAdHandler?.post {
+                    mGoogleImaPlayer?.visibility = GONE
+                    mInsideAdPlayer?.visibility = VISIBLE
+                    mInsideAdPlayer?.playAd(insideAd, insideAdCallback)
+                }
+            }
         }
     }
 
     fun stopAd() {
-        mGoogleImaPlayer?.stopAd()
+        insideAd?.let {
+            when (insideAd!!.adType) {
+                Constants.AD_TYPE_VAST -> {
+                    mGoogleImaPlayer?.stopAd()
+                }
+                Constants.AD_TYPE_LOCAL_VIDEO -> {
+                    mInsideAdPlayer?.stopAd()
+                }
+                else -> {}
+            }
+        }
+
+        stopAdHandler?.removeCallbacksAndMessages(null)
+        stopAdHandler = null
     }
 
 }
