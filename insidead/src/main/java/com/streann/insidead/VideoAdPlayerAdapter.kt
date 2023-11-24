@@ -192,7 +192,6 @@ class VideoAdPlayerAdapter(
         if (videoPlayer.isPlaying) {
             stopAdTracking()
             videoPlayer.stopPlayback()
-            savedAdPosition = 0
             notifyImaSdkAboutAdEnded()
         }
     }
