@@ -43,9 +43,7 @@ class InsideAdPlayer constructor(context: Context) :
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback?) {
         insideAdListener = listener
 
-        val insideAdUrl =
-            "https://streann-res.s3.us-west-004.backblazeb2.com/61290efae4b0304f3eb75567/uploads/videos/8a20dad4-6e4e-44c3-973f-a52ba71132be/SampleVideo_1280x720_5mb.mp4"
-        //        insideAdUrl = insideAd.url
+        val insideAdUrl = insideAd.url
         Log.i(LOGTAG, "adUrl: $insideAdUrl")
 
         videoPlayer.setVideoURI(Uri.parse(insideAdUrl))

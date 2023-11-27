@@ -150,7 +150,6 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        insideAd.adType = "local_video"
         stopAdHandler = Handler(Looper.getMainLooper())
 
         when (insideAd.adType) {
