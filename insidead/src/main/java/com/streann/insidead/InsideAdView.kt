@@ -117,9 +117,8 @@ class InsideAdView @JvmOverloads constructor(
                 if (geoIp != null) {
                     InsideAdSdk.geoIp = geoIp
                     val geoCountryCode = geoIp.countryCode
-                    if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
+                    if (geoCountryCode?.isNotBlank() == true) {
                         HttpRequestsUtil.getCampaign(
-                            apiKey,
                             geoCountryCode,
                             screen,
                             object : CampaignCallback {
