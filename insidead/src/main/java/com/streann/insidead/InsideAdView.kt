@@ -103,9 +103,8 @@ class InsideAdView @JvmOverloads constructor(
                 val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
                 if (geoIp != null) {
                     val geoCountryCode = geoIp.countryCode
-                    if (apiKey.isNotBlank() && geoCountryCode?.isNotBlank() == true) {
+                    if (geoCountryCode?.isNotBlank() == true) {
                         HttpRequestsUtil.getCampaign(
-                            apiKey,
                             geoCountryCode,
                             screen,
                             object : CampaignCallback {
