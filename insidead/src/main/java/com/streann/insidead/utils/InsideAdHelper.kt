@@ -178,7 +178,8 @@ object InsideAdHelper {
         return url
     }
 
-    fun populateVASTURL(context: Context?, insideAd: InsideAd, geoIp: GeoIp): String? {
+    fun populateVASTURL(context: Context?, insideAd: InsideAd): String? {
+        val geoIp: GeoIp? = InsideAdSdk.geoIp
         val appDomain: String? = InsideAdSdk.appDomain
         val siteUrl: String? = InsideAdSdk.siteUrl
         val storeUrl: String? = InsideAdSdk.storeUrl
@@ -190,7 +191,7 @@ object InsideAdHelper {
             .appendsDomain(appDomain)
             .appendsPlayerWidth(InsideAdSdk.playerWidth)
             .appendsPlayerHeight(InsideAdSdk.playerHeight)
-            .appendsLatitude(geoIp.latitude!!.toDouble())
+            .appendsLatitude(geoIp?.latitude!!.toDouble())
             .appendsLongitude(geoIp.longitude!!.toDouble())
             .appendsNetwork(geoIp.connType)
             .appendsCarrier(geoIp.asName)
