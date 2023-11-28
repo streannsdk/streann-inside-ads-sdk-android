@@ -31,7 +31,7 @@ object HttpRequestsUtil {
             val urlConnection = url.openConnection() as HttpURLConnection
             urlConnection.requestMethod = "GET"
             urlConnection.instanceFollowRedirects = true
-            urlConnection.setRequestProperty("Authorization", "ApiToken ${InsideAdSdk.apiKey}")
+            urlConnection.setRequestProperty("Authorization", "ApiToken ${InsideAdSdk.apiToken}")
 
             val responseCode: Int = urlConnection.responseCode
             if (responseCode == HttpURLConnection.HTTP_OK) {
@@ -179,15 +179,17 @@ object HttpRequestsUtil {
     ) {
         val url: URL
         var jsonObject: JSONObject? = null
+
         try {
-            val urlParameters = "platform=ANDROID&country=$countryCode&screen=$screen"
+            val urlParameters = "platform=ANDROID&country=" + countryCode +
+                    "&r=" + InsideAdSdk.apiKey + "&screen=" + screen
             url = URL(InsideAdSdk.baseUrl + "v1/campaigns/app?" + urlParameters)
 
             val connection = url.openConnection() as HttpsURLConnection
             connection.requestMethod = "GET"
             connection.instanceFollowRedirects = true
             connection.useCaches = false
-            connection.setRequestProperty("Authorization", "ApiToken ${InsideAdSdk.apiKey}")
+            connection.setRequestProperty("Authorization", "ApiToken ${InsideAdSdk.apiToken}")
             connection.connect()
 
             if (connection.responseCode == HttpsURLConnection.HTTP_OK) {
