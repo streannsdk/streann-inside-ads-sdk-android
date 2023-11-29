@@ -1,15 +1,15 @@
 # streann-inside-ads-sdk-android
 
-Streann Inside Ad is an Android library that provides a simple way to integrate ad playback
-functionality into your Android applications using the Interactive Media Ads (IMA) SDK by Google.
-With Streann Inside Ad library, you can seamlessly
-incorporate ads into your projects.
+Streann Inside Ad is an Android library designed to seamlessly incorporate ad playback functionality
+into your Android applications.
+This library offers support for various ad formats in your Android applications, and seamlessly
+supports the playback of VAST ads, using the Interactive Media Ads (IMA) SDK by Google.
 
 ## Features
 
-- Easily integrate ad playback into your Android app.
-- Seamless integration of VAST video ads into your Android app.
-- Customizable ad display options.
+- Effortless integration of ad playback within your Android app.
+- Seamless support for VAST video ads through the Google IMA SDK.
+- Full compatibility with different video types, including MP4, m3u8, etc.
 
 ## Installation
 
@@ -18,7 +18,7 @@ your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.2
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.3
 }
 ```
 
@@ -41,10 +41,12 @@ dependencyResolutionManagement {
 To use the InsideAdView in your project, follow these steps:
 
 - Implement the initializeSdk method in your application to initialize our SDK.
-- The apiKey and baseUrl are mandatory parameters to initialize our SDK, and they will be provided:
+- The apiKey, apiToken and baseUrl are mandatory parameters to initialize our SDK, and they will be
+  provided:
   ```js
   InsideAdSdk.initializeSdk(
         apiKey = "api_key",
+        apiToken = "api_token",
         baseUrl = "base_url"
   )
 
@@ -55,6 +57,7 @@ To use the InsideAdView in your project, follow these steps:
    ```js
    InsideAdSdk.initializeSdk(
         apiKey = "api_key",
+        apiToken = "api_token",
         baseUrl = "base_url",
         userGender = "Female"
    )
@@ -97,7 +100,7 @@ To use the InsideAdView in your project, follow these steps:
       })
   
    - screen - enter the screen where you wish to load the ad (ex. Login, Splash screen, etc.)
-   - isAdMuted - choose if you want your ad to be muted or not (default value: false)
+   - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: false)
    - InsideAdCallback - implement our interface to receive events from the ads' progress
   ```
 
