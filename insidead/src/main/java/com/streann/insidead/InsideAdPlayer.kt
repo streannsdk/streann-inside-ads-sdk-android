@@ -1,6 +1,7 @@
 package com.streann.insidead
 
 import android.content.Context
+import android.graphics.Bitmap
 import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
@@ -16,6 +17,7 @@ class InsideAdPlayer constructor(context: Context) :
 
     private val LOGTAG = "InsideAdSdk"
 
+    private lateinit var imageAdView: ImageView
     private lateinit var videoPlayer: VideoView
     private var adCloseButton: ImageView? = null
     private var adVolumeButton: ImageView? = null
@@ -31,6 +33,8 @@ class InsideAdPlayer constructor(context: Context) :
 
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.inside_ad_player, this)
+
+        imageAdView = findViewById(R.id.imageView)
         videoPlayer = findViewById(R.id.videoView)
         adVolumeButton = findViewById(R.id.adVolumeIcon)
 
@@ -40,36 +44,49 @@ class InsideAdPlayer constructor(context: Context) :
         }
     }
 
-    fun playAd(insideAd: InsideAd, listener: InsideAdCallback?) {
+    fun playAd(bitmap: Bitmap?, insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
 
-        val insideAdUrl = insideAd.url
-        Log.i(LOGTAG, "adUrl: $insideAdUrl")
+        if (bitmap != null) {
+            videoPlayer.visibility = GONE
+            imageAdView.visibility = VISIBLE
 
-        videoPlayer.setVideoURI(Uri.parse(insideAdUrl))
+            imageAdView.setImageBitmap(bitmap)
 
-        videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
-            Log.i(LOGTAG, "loadAd")
-            insideAdListener?.insideAdLoaded()
+            Log.d(LOGTAG, "playAd")
+            insideAdListener?.insideAdPlay()
+        } else {
+            imageAdView.visibility = GONE
+            videoPlayer.visibility = VISIBLE
 
-            if (savedAdPosition > 0) {
-                mediaPlayer.seekTo(savedAdPosition)
+            val insideAdUrl = insideAd.url
+            Log.i(LOGTAG, "adUrl: $insideAdUrl")
+
+            videoPlayer.setVideoURI(Uri.parse(insideAdUrl))
+
+            videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
+                Log.i(LOGTAG, "loadAd")
+                insideAdListener?.insideAdLoaded()
+
+                if (savedAdPosition > 0) {
+                    mediaPlayer.seekTo(savedAdPosition)
+                }
+
+                setAdVolumeControl(mediaPlayer)
+
+                Log.i(LOGTAG, "playAd")
+                mediaPlayer.start()
+                insideAdListener?.insideAdPlay()
             }
 
-            setAdVolumeControl(mediaPlayer)
+            videoPlayer.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
+                notifySdkAboutAdError(errorType)
+            }
 
-            Log.i(LOGTAG, "playAd")
-            mediaPlayer.start()
-            insideAdListener?.insideAdPlay()
-        }
-
-        videoPlayer.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
-            notifySdkAboutAdError(errorType)
-        }
-
-        videoPlayer.setOnCompletionListener { mediaPlayer: MediaPlayer? ->
-            savedAdPosition = 0
-            insideAdListener?.insideAdStop()
+            videoPlayer.setOnCompletionListener { mediaPlayer: MediaPlayer? ->
+                savedAdPosition = 0
+                insideAdListener?.insideAdStop()
+            }
         }
     }
 
@@ -120,6 +137,7 @@ class InsideAdPlayer constructor(context: Context) :
 
     private fun setAdSound(mediaPlayer: MediaPlayer, sound: Int, soundIcon: Int) {
         mediaPlayer.setVolume(sound.toFloat(), sound.toFloat())
+        adVolumeButton?.visibility = VISIBLE
         adVolumeButton?.setImageResource(soundIcon)
         insideAdListener?.insideAdVolumeChanged(sound)
     }
@@ -129,6 +147,10 @@ class InsideAdPlayer constructor(context: Context) :
         if (videoPlayer.isPlaying) {
             videoPlayer.stopPlayback()
             savedAdPosition = 0
+            adVolumeButton?.visibility = GONE
+            insideAdListener?.insideAdStop()
+        } else if (imageAdView.visibility == VISIBLE) {
+            imageAdView.setImageBitmap(null)
             insideAdListener?.insideAdStop()
         }
     }

@@ -163,8 +163,24 @@ class InsideAdView @JvmOverloads constructor(
                 stopAdHandler?.post {
                     mGoogleImaPlayer?.visibility = GONE
                     mInsideAdPlayer?.visibility = VISIBLE
-                    mInsideAdPlayer?.playAd(insideAd, insideAdCallback)
+                    mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
                 }
+            }
+            Constants.AD_TYPE_LOCAL_IMAGE -> {
+                val bitmap = insideAd.url?.let { Helper.getBitmapFromURL(it, resources) }
+                stopAdHandler?.postDelayed({
+                    bitmap?.let {
+                        Log.i(LOGTAG, "loadAd")
+                        insideAdCallback.insideAdLoaded()
+
+                        mGoogleImaPlayer?.visibility = GONE
+                        mInsideAdPlayer?.visibility = VISIBLE
+
+                        mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
+                    } ?: run {
+                        insideAdCallback.insideAdError("Error while getting AD.")
+                    }
+                }, 500)
             }
         }
     }
@@ -175,7 +191,7 @@ class InsideAdView @JvmOverloads constructor(
                 Constants.AD_TYPE_VAST -> {
                     mGoogleImaPlayer?.stopAd()
                 }
-                Constants.AD_TYPE_LOCAL_VIDEO -> {
+                Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> {
                     mInsideAdPlayer?.stopAd()
                 }
                 else -> {}
