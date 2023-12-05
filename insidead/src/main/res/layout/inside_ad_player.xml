@@ -9,10 +9,17 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
+        <ImageView
+            android:id="@+id/imageView"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:visibility="visible" />
+
         <VideoView
             android:id="@+id/videoView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="match_parent"
+            android:visibility="gone" />
 
         <FrameLayout
             android:id="@+id/adVolumeLayout"
@@ -26,7 +33,8 @@
                 android:id="@+id/adVolumeIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="visible" />
+                android:src="@drawable/ic_volume_up"
+                android:visibility="gone" />
         </FrameLayout>
 
         <FrameLayout
