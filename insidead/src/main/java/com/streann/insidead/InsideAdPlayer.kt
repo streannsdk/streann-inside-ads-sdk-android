@@ -51,6 +51,7 @@ class InsideAdPlayer constructor(context: Context) :
             videoPlayer.visibility = GONE
             imageAdView.visibility = VISIBLE
 
+            adCloseButton?.visibility = VISIBLE
             imageAdView.setImageBitmap(bitmap)
 
             Log.d(LOGTAG, "playAd")
@@ -72,6 +73,7 @@ class InsideAdPlayer constructor(context: Context) :
                     mediaPlayer.seekTo(savedAdPosition)
                 }
 
+                adCloseButton?.visibility = VISIBLE
                 setAdVolumeControl(mediaPlayer)
 
                 Log.i(LOGTAG, "playAd")
