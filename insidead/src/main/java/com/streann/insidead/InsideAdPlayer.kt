@@ -57,7 +57,7 @@ class InsideAdPlayer constructor(context: Context) :
             adCloseButton?.visibility = VISIBLE
             imageAdView.setImageBitmap(bitmap)
 
-            Log.d(LOGTAG, "playAd")
+            Log.i(LOGTAG, "playAd")
             insideAdListener?.insideAdPlay()
         } else {
             imageAdView.visibility = GONE
