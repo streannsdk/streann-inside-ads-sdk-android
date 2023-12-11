@@ -65,10 +65,10 @@ class InsideAdPlayer constructor(context: Context) :
 
             videoPlayer.setVideoURI(Uri.parse(insideAdUrl))
 
-            videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
-                Log.i(LOGTAG, "loadAd")
-                insideAdListener?.insideAdLoaded()
+            Log.i(LOGTAG, "loadAd")
+            insideAdListener?.insideAdLoaded()
 
+            videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
                 if (savedAdPosition > 0) {
                     mediaPlayer.seekTo(savedAdPosition)
                 }
