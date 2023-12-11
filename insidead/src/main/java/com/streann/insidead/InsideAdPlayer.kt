@@ -8,6 +8,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.widget.FrameLayout
 import android.widget.ImageView
+import android.widget.ProgressBar
 import android.widget.VideoView
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
@@ -21,6 +22,7 @@ class InsideAdPlayer constructor(context: Context) :
     private lateinit var videoPlayer: VideoView
     private var adCloseButton: ImageView? = null
     private var adVolumeButton: ImageView? = null
+    private var videoProgressBar: ProgressBar? = null
 
     private var insideAdListener: InsideAdCallback? = null
 
@@ -37,6 +39,7 @@ class InsideAdPlayer constructor(context: Context) :
         imageAdView = findViewById(R.id.imageView)
         videoPlayer = findViewById(R.id.videoView)
         adVolumeButton = findViewById(R.id.adVolumeIcon)
+        videoProgressBar = findViewById(R.id.videoProgressBar)
 
         adCloseButton = findViewById(R.id.adCloseIcon)
         adCloseButton?.setOnClickListener {
@@ -59,26 +62,33 @@ class InsideAdPlayer constructor(context: Context) :
         } else {
             imageAdView.visibility = GONE
             videoPlayer.visibility = VISIBLE
+            videoProgressBar?.visibility = VISIBLE
 
             val insideAdUrl = insideAd.url
             Log.i(LOGTAG, "adUrl: $insideAdUrl")
 
             videoPlayer.setVideoURI(Uri.parse(insideAdUrl))
 
-            Log.i(LOGTAG, "loadAd")
-            insideAdListener?.insideAdLoaded()
-
             videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
+                Log.i(LOGTAG, "loadAd")
+                insideAdListener?.insideAdLoaded()
+
                 if (savedAdPosition > 0) {
                     mediaPlayer.seekTo(savedAdPosition)
                 }
 
                 adCloseButton?.visibility = VISIBLE
                 setAdVolumeControl(mediaPlayer)
-
-                Log.i(LOGTAG, "playAd")
                 mediaPlayer.start()
-                insideAdListener?.insideAdPlay()
+
+                videoPlayer.setOnInfoListener { mp, what, extra ->
+                    if (what == MediaPlayer.MEDIA_INFO_VIDEO_RENDERING_START) {
+                        Log.i(LOGTAG, "playAd")
+                        insideAdListener?.insideAdPlay()
+                        videoProgressBar?.visibility = GONE
+                    }
+                    true
+                }
             }
 
             videoPlayer.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
