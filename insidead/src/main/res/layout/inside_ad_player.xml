@@ -9,10 +9,30 @@
         android:layout_width="match_parent"
         android:layout_height="wrap_content">
 
-        <VideoView
-            android:id="@+id/videoView"
+        <ImageView
+            android:id="@+id/imageView"
             android:layout_width="match_parent"
-            android:layout_height="match_parent" />
+            android:layout_height="wrap_content"
+            android:visibility="visible" />
+
+        <RelativeLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content">
+
+            <VideoView
+                android:id="@+id/videoView"
+                android:layout_width="match_parent"
+                android:layout_height="match_parent"
+                android:visibility="gone" />
+
+            <ProgressBar
+                android:id="@+id/videoProgressBar"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_centerInParent="true"
+                android:visibility="gone" />
+
+        </RelativeLayout>
 
         <FrameLayout
             android:id="@+id/adVolumeLayout"
@@ -26,7 +46,8 @@
                 android:id="@+id/adVolumeIcon"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:visibility="visible" />
+                android:src="@drawable/ic_volume_up"
+                android:visibility="gone" />
         </FrameLayout>
 
         <FrameLayout
@@ -42,7 +63,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:src="@drawable/ic_close"
-                android:visibility="visible" />
+                android:visibility="gone" />
         </FrameLayout>
 
     </RelativeLayout>

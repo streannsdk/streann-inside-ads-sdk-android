@@ -36,7 +36,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private var populateSdkExecutor: ExecutorService? = null
     private var requestAdExecutor: ExecutorService? = null
-    private var stopAdHandler: Handler? = null
+    private var showAdHandler: Handler? = null
 
     private var apiKey: String = ""
     private var baseUrl: String = ""
@@ -149,22 +149,38 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        stopAdHandler = Handler(Looper.getMainLooper())
+        showAdHandler = Handler(Looper.getMainLooper())
 
         when (insideAd.adType) {
             Constants.AD_TYPE_VAST -> {
-                stopAdHandler?.post {
+                showAdHandler?.post {
                     mInsideAdPlayer?.visibility = GONE
                     mGoogleImaPlayer?.visibility = VISIBLE
                     mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
                 }
             }
             Constants.AD_TYPE_LOCAL_VIDEO -> {
-                stopAdHandler?.post {
+                showAdHandler?.post {
                     mGoogleImaPlayer?.visibility = GONE
                     mInsideAdPlayer?.visibility = VISIBLE
-                    mInsideAdPlayer?.playAd(insideAd, insideAdCallback)
+                    mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
                 }
+            }
+            Constants.AD_TYPE_LOCAL_IMAGE -> {
+                val bitmap = insideAd.url?.let { Helper.getBitmapFromURL(it, resources) }
+                showAdHandler?.postDelayed({
+                    bitmap?.let {
+                        Log.i(LOGTAG, "loadAd")
+                        insideAdCallback.insideAdLoaded()
+
+                        mGoogleImaPlayer?.visibility = GONE
+                        mInsideAdPlayer?.visibility = VISIBLE
+
+                        mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
+                    } ?: run {
+                        insideAdCallback.insideAdError("Error while getting AD.")
+                    }
+                }, 500)
             }
         }
     }
@@ -175,15 +191,15 @@ class InsideAdView @JvmOverloads constructor(
                 Constants.AD_TYPE_VAST -> {
                     mGoogleImaPlayer?.stopAd()
                 }
-                Constants.AD_TYPE_LOCAL_VIDEO -> {
+                Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> {
                     mInsideAdPlayer?.stopAd()
                 }
                 else -> {}
             }
         }
 
-        stopAdHandler?.removeCallbacksAndMessages(null)
-        stopAdHandler = null
+        showAdHandler?.removeCallbacksAndMessages(null)
+        showAdHandler = null
     }
 
 }

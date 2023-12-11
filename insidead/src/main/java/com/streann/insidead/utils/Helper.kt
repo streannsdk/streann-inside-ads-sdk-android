@@ -1,8 +1,13 @@
 package com.streann.insidead.utils
 
 import android.content.pm.PackageManager
+import android.content.res.Resources
+import android.graphics.Bitmap
+import android.graphics.BitmapFactory
 import android.os.Build
 import java.math.BigInteger
+import java.net.HttpURLConnection
+import java.net.URL
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.*
@@ -52,6 +57,53 @@ object Helper {
 
     fun toHex(input: String): String? {
         return String.format("%040x", BigInteger(1, input.toByteArray()))
+    }
+
+    fun getBitmapFromURL(
+        imageUrl: String,
+        resources: Resources,
+    ): Bitmap? {
+        var bitmap: Bitmap?
+        return try {
+            val url = URL(imageUrl)
+            val connection = url.openConnection() as HttpURLConnection
+            connection.connect()
+            val inputStream = connection.inputStream
+            bitmap = BitmapFactory.decodeStream(inputStream)
+            inputStream.close()
+            connection.disconnect()
+            bitmap?.let { bitmap = getResizedBitmap(it, resources) }
+            bitmap
+        } catch (e: Exception) {
+            null
+        }
+    }
+
+    private fun getResizedBitmap(
+        bitmap: Bitmap,
+        resources: Resources
+    ): Bitmap? {
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
+
+        val bitmapWidth = bitmap.width
+        val bitmapHeight = bitmap.height
+
+        val desiredWidth: Int
+        val desiredHeight: Int
+
+        if (bitmapWidth > bitmapHeight) {
+            desiredWidth = screenWidth
+            desiredHeight =
+                (bitmapHeight.toFloat() / bitmapWidth.toFloat() * screenWidth).toInt()
+        } else {
+            desiredHeight = screenHeight
+            desiredWidth =
+                (bitmapWidth.toFloat() / bitmapHeight.toFloat() * screenHeight).toInt()
+        }
+
+        return Bitmap.createScaledBitmap(bitmap, desiredWidth, desiredHeight, true)
     }
 
 }
