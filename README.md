@@ -1,24 +1,25 @@
 # streann-inside-ads-sdk-android
 
-Streann Inside Ad is an Android library designed to seamlessly incorporate ad playback functionality
-into your Android applications.
-This library offers support for various ad formats in your Android applications, and seamlessly
-supports the playback of VAST ads, using the Interactive Media Ads (IMA) SDK by Google.
+Streann Inside Ad is an Android library designed to seamlessly incorporate playback functionality
+of diverse ad formats into your Android applications.
+This library supports the playback of VAST ads using the Interactive Media Ads (IMA) SDK by Google,
+along with various video ad formats and the presentation of image-based ads.
 
 ## Features
 
 - Effortless integration of ad playback within your Android app.
 - Seamless support for VAST video ads through the Google IMA SDK.
 - Full compatibility with different video types, including MP4, m3u8, etc.
+- Capability to seamlessly display image-based advertisements.
 
 ## Installation
 
-To integrate Streann Inside Ad library into your Android project, add the following dependency to
-your app-level build.gradle file:
+To integrate the Streann Inside Ad library into your Android project, add the following dependency
+to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.3
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.4
 }
 ```
 
@@ -67,7 +68,7 @@ To use the InsideAdView in your project, follow these steps:
   ```xml
   <com.streann.insidead.InsideAdView
     android:id="@+id/insideAdView"
-    android:layout_width="wrap_content"
+    android:layout_width="match_parent"
     android:layout_height="wrap_content" />
 
 - In your activity or fragment, initialize the InsideAdView:
