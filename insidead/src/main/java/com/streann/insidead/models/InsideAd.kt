@@ -1,12 +1,12 @@
 package com.streann.insidead.models
 
-import org.json.JSONObject
-
 data class InsideAd(
-    var adId: String? = null,
-    var campaignId: String? = null,
+    var id: String? = null,
+    var name: String? = null,
+    var weight: Int? = null,
     var adType: String? = null,
+    var resellerId: String? = null,
+    var fallbackId: String? = null,
     var url: String? = null,
-    var placementId: String? = null,
-    var properties: JSONObject? = null
+    var durationInSeconds: Int? = null
 )
