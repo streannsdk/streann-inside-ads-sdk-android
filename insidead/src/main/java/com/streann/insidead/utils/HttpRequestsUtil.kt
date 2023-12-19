@@ -1,11 +1,12 @@
 package com.streann.insidead.utils
 
 import android.util.Log
+import com.google.gson.Gson
+import com.google.gson.reflect.TypeToken
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
-import com.streann.insidead.models.Campaign
-import com.streann.insidead.models.GeoIp
-import com.streann.insidead.models.InsideAd
+import com.streann.insidead.models.*
+import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
 import java.io.BufferedReader
@@ -15,6 +16,8 @@ import java.net.HttpURLConnection
 import java.net.MalformedURLException
 import java.net.ProtocolException
 import java.net.URL
+import java.time.DayOfWeek
+import java.time.Instant
 import javax.net.ssl.HttpsURLConnection
 
 object HttpRequestsUtil {
@@ -174,16 +177,15 @@ object HttpRequestsUtil {
 
     fun getCampaign(
         countryCode: String,
-        screen: String,
         campaignCallback: CampaignCallback
     ) {
         val url: URL
-        var jsonObject: JSONObject? = null
+        var campaignResponseArray: JSONArray? = null
 
         try {
-            val urlParameters = "platform=ANDROID&country=" + countryCode +
-                    "&r=" + InsideAdSdk.apiKey + "&screen=" + screen
-            url = URL(InsideAdSdk.baseUrl + "v1/campaigns/app?" + urlParameters)
+            val urlParameters = "country=$countryCode"
+            url =
+                URL(InsideAdSdk.baseUrl + "v1/r/" + InsideAdSdk.apiKey + "/campaigns/ANDROID?" + urlParameters)
 
             val connection = url.openConnection() as HttpsURLConnection
             connection.requestMethod = "GET"
@@ -204,7 +206,7 @@ object HttpRequestsUtil {
                         response.append(line)
                     }
 
-                    jsonObject = JSONObject(response.toString())
+                    campaignResponseArray = JSONArray(response.toString())
                 } finally {
                     connection.disconnect()
                 }
@@ -221,93 +223,369 @@ object HttpRequestsUtil {
             Log.e(TAG, "Exception: ", e)
         }
 
-        if (jsonObject == null) {
-            if (campaignCallback != null) campaignCallback.onError("Error while getting AD.")
+        if (campaignResponseArray == null) {
+            if (campaignCallback != null) campaignCallback.onError("No campaigns at the moment.")
             return
         }
 
-        var insideAd: InsideAd? = null
+        var campaigns: ArrayList<Campaign>? = null
         try {
-            insideAd = parseInsideAdJSONResponse(jsonObject)
+            campaigns = parseCampaignJSONResponse(campaignResponseArray)
         } catch (e: JSONException) {
             e.printStackTrace()
         }
 
-        if (insideAd == null) {
-            if (campaignCallback != null) campaignCallback.onError("No AD at the moment.")
+        if (campaigns == null) {
+            if (campaignCallback != null) campaignCallback.onError("No campaigns at the moment.")
             return
         }
 
         if (campaignCallback != null) {
-            val campaign = Campaign(insideAd)
-            campaignCallback.onSuccess(campaign)
+            campaignCallback.onSuccess(campaigns)
         }
     }
 
-    private fun parseInsideAdJSONResponse(jsonObject: JSONObject): InsideAd? {
-        val insideAd = InsideAd()
+    private fun parseCampaignJSONResponse(campaignArray: JSONArray): ArrayList<Campaign> {
+        val campaigns = ArrayList<Campaign>()
 
-        if (jsonObject.has("adId")) {
-            try {
-                insideAd.adId = jsonObject.getString("adId")
-            } catch (e: JSONException) {
-                e.printStackTrace()
+        for (i in 0 until campaignArray.length()) {
+            val campaignObject: JSONObject = campaignArray.getJSONObject(i)
+            val campaign = Campaign()
+
+            if (campaignObject.has("id")) {
+                try {
+                    campaign.id = campaignObject.getString("id")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.id = ""
             }
-        } else {
-            insideAd.adId = ""
+
+            if (campaignObject.has("name")) {
+                try {
+                    campaign.name = campaignObject.getString("name")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.name = ""
+            }
+
+            if (campaignObject.has("startDate")) {
+                try {
+                    val campaignStartDate = campaignObject.getString("startDate")
+                    campaign.startDate = Instant.parse(campaignStartDate)
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.startDate = null
+            }
+
+            if (campaignObject.has("endDate")) {
+                try {
+                    val campaignEndDate = campaignObject.getString("endDate")
+                    campaign.endDate = Instant.parse(campaignEndDate)
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.endDate = null
+            }
+
+            if (campaignObject.has("intervalInMinutes") && !campaignObject.isNull("intervalInMinutes")) {
+                try {
+                    campaign.intervalInMinutes = campaignObject.getInt("intervalInMinutes")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.intervalInMinutes = 0
+            }
+
+            if (campaignObject.has("timePeriods") && !campaignObject.isNull("timePeriods")) {
+                try {
+                    campaign.timePeriods =
+                        parseTimePeriodJSONResponse(campaignObject.getJSONArray("timePeriods"))
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.timePeriods = arrayListOf()
+            }
+
+            if (campaignObject.has("weight")) {
+                try {
+                    campaign.weight = campaignObject.getInt("weight")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.weight = 0
+            }
+
+            if (campaignObject.has("placements") && !campaignObject.isNull("placements")) {
+                try {
+                    campaign.placements =
+                        parsePlacementsJSONResponse(campaignObject.getJSONArray("placements"))
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.placements = arrayListOf()
+            }
+
+            campaigns.add(campaign)
         }
 
-        if (jsonObject.has("campaignId")) {
-            try {
-                insideAd.campaignId = jsonObject.getString("campaignId")
-            } catch (e: JSONException) {
-                e.printStackTrace()
+        return campaigns
+    }
+
+    private fun parseTimePeriodJSONResponse(timePeriodArray: JSONArray): ArrayList<TimePeriod> {
+        val timePeriods = ArrayList<TimePeriod>()
+
+        for (i in 0 until timePeriodArray.length()) {
+            val timePeriodObject: JSONObject = timePeriodArray.getJSONObject(i)
+            val timePeriod = TimePeriod()
+
+            if (timePeriodObject.has("daysOfWeek")) {
+                try {
+                    val daysOfWeekObject = timePeriodObject.getJSONArray("daysOfWeek").toString()
+
+                    val gson = Gson()
+                    val daysOfWeekList: List<DayOfWeek> =
+                        gson.fromJson(daysOfWeekObject, Array<String>::class.java)
+                            .map { dayString -> DayOfWeek.valueOf(dayString) }
+
+                    timePeriod.daysOfWeek = daysOfWeekList
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                timePeriod.daysOfWeek = arrayListOf()
             }
-        } else {
-            insideAd.campaignId = ""
+
+            if (timePeriodObject.has("startTime")) {
+                try {
+                    timePeriod.startTime = timePeriodObject.getString("startTime")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                timePeriod.startTime = ""
+            }
+
+            if (timePeriodObject.has("endTime")) {
+                try {
+                    timePeriod.endTime = timePeriodObject.getString("endTime")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                timePeriod.endTime = ""
+            }
+
+            timePeriods.add(timePeriod)
         }
 
-        if (jsonObject.has("placementId")) {
-            try {
-                insideAd.placementId = jsonObject.getString("placementId")
-            } catch (e: JSONException) {
-                e.printStackTrace()
+        return timePeriods
+    }
+
+    private fun parsePlacementsJSONResponse(placementsArray: JSONArray): ArrayList<Placement> {
+        val placements = ArrayList<Placement>()
+
+        for (i in 0 until placementsArray.length()) {
+            val placementObject: JSONObject = placementsArray.getJSONObject(i)
+            val placement = Placement()
+
+            if (placementObject.has("id")) {
+                try {
+                    placement.id = placementObject.getString("id")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.id = ""
             }
-        } else {
-            insideAd.placementId = ""
+
+            if (placementObject.has("name")) {
+                try {
+                    placement.name = placementObject.getString("name")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.name = ""
+            }
+
+            if (placementObject.has("viewType")) {
+                try {
+                    placement.viewType = placementObject.getString("viewType")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.viewType = ""
+            }
+
+            if (placementObject.has("screens") && !placementObject.isNull("screens")) {
+                try {
+                    val screensObject = placementObject.getJSONArray("screens").toString()
+
+                    val gson = Gson()
+                    val screensList: ArrayList<String> = gson.fromJson(
+                        screensObject,
+                        object : TypeToken<ArrayList<String>>() {}.type
+                    )
+
+                    placement.screens = screensList
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.screens = arrayListOf()
+            }
+
+            if (placementObject.has("startAfterSeconds") && !placementObject.isNull("startAfterSeconds")) {
+                try {
+                    placement.startAfterSeconds = placementObject.getInt("startAfterSeconds")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.startAfterSeconds = 0
+            }
+
+            if (placementObject.has("showCloseButtonAfterSeconds") && !placementObject.isNull("showCloseButtonAfterSeconds")) {
+                try {
+                    placement.showCloseButtonAfterSeconds =
+                        placementObject.getInt("showCloseButtonAfterSeconds")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.showCloseButtonAfterSeconds = 0
+            }
+
+            if (placementObject.has("properties") && !placementObject.isNull("properties")) {
+                try {
+                    placement.properties = placementObject.getJSONObject("properties")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.properties = JSONObject()
+            }
+
+            if (placementObject.has("ads") && !placementObject.isNull("ads")) {
+                try {
+                    placement.ads =
+                        parseInsideAdJSONResponse(placementObject.getJSONArray("ads"))
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.ads = arrayListOf()
+            }
+
+            placements.add(placement)
         }
 
-        if (jsonObject.has("url")) {
-            try {
-                insideAd.url = jsonObject.getString("url")
-            } catch (e: JSONException) {
-                e.printStackTrace()
+        return placements
+    }
+
+    private fun parseInsideAdJSONResponse(adsArray: JSONArray): ArrayList<InsideAd> {
+        val ads = ArrayList<InsideAd>()
+
+        for (i in 0 until adsArray.length()) {
+            val adsObject: JSONObject = adsArray.getJSONObject(i)
+            val insideAd = InsideAd()
+
+            if (adsObject.has("id")) {
+                try {
+                    insideAd.id = adsObject.getString("id")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.id = ""
             }
-        } else {
-            insideAd.url = ""
+
+            if (adsObject.has("name")) {
+                try {
+                    insideAd.name = adsObject.getString("name")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.name = ""
+            }
+
+            if (adsObject.has("weight") && !adsObject.isNull("weight")) {
+                try {
+                    insideAd.weight = adsObject.getInt("weight")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.weight = 0
+            }
+
+            if (adsObject.has("adType")) {
+                try {
+                    insideAd.adType = adsObject.getString("adType")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.adType = ""
+            }
+
+            if (adsObject.has("resellerId")) {
+                try {
+                    insideAd.resellerId = adsObject.getString("resellerId")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.resellerId = ""
+            }
+
+            if (adsObject.has("fallbackId")) {
+                try {
+                    insideAd.fallbackId = adsObject.getString("fallbackId")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.fallbackId = ""
+            }
+
+            if (adsObject.has("url") && !adsObject.isNull("url")) {
+                try {
+                    insideAd.url = adsObject.getString("url")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.url = ""
+            }
+
+            if (adsObject.has("durationInSeconds") && !adsObject.isNull("durationInSeconds")) {
+                try {
+                    insideAd.durationInSeconds = adsObject.getInt("durationInSeconds")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.durationInSeconds = 0
+            }
+
+            ads.add(insideAd)
         }
 
-        if (jsonObject.has("adType")) {
-            try {
-                insideAd.adType = jsonObject.getString("adType")
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            }
-        } else {
-            insideAd.adType = ""
-        }
-
-        if (jsonObject.has("properties") && !jsonObject.isNull("properties")) {
-            try {
-                insideAd.properties = jsonObject.getJSONObject("properties")
-            } catch (e: JSONException) {
-                e.printStackTrace()
-            }
-        } else {
-            insideAd.properties = JSONObject()
-        }
-
-        return insideAd
+        return ads
     }
 
 }
