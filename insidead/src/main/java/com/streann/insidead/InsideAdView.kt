@@ -13,6 +13,7 @@ import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
@@ -120,12 +121,11 @@ class InsideAdView @JvmOverloads constructor(
                     if (geoCountryCode?.isNotBlank() == true) {
                         HttpRequestsUtil.getCampaign(
                             geoCountryCode,
-                            screen,
                             object : CampaignCallback {
-                                override fun onSuccess(campaign: Campaign) {
-                                    Log.i(LOGTAG, "onSuccess: $campaign")
+                                override fun onSuccess(campaigns: ArrayList<Campaign>?) {
+                                    Log.i(LOGTAG, "onSuccess: $campaigns")
+                                    insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
                                     insideAdCallback?.let { callback ->
-                                        insideAd = campaign.insideAd
                                         insideAd?.let { ad ->
                                             callback.insideAdReceived(ad)
                                             showAd(ad, callback)
