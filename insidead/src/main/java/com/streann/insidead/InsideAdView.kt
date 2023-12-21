@@ -202,4 +202,9 @@ class InsideAdView @JvmOverloads constructor(
         showAdHandler = null
     }
 
+    fun playAd() {
+        if (insideAd?.adType == Constants.AD_TYPE_LOCAL_VIDEO) {
+            mInsideAdPlayer?.startPlayingAd()
+        }
+    }
 }

@@ -36,20 +36,21 @@ class MainActivity : AppCompatActivity() {
 
                     override fun insideAdLoaded() {
                         Log.i(TAG, "insideAdLoaded")
+                        adProgressText.text = ""
+                        adStopText?.visibility = View.VISIBLE
+                        mInsideAdView?.visibility = View.VISIBLE
+                        mInsideAdView?.playAd()
                     }
 
                     override fun insideAdPlay() {
                         Log.i(TAG, "insideAdPlay")
-                        adProgressText.text = ""
-                        adStopText?.visibility = View.VISIBLE
-                        mInsideAdView?.visibility = View.VISIBLE
                     }
 
                     override fun insideAdStop() {
                         Log.i(TAG, "insideAdStop")
                         adProgressText.text = "Show Ad"
-                        adStopText?.visibility = View.INVISIBLE
-                        mInsideAdView?.visibility = View.INVISIBLE
+                        adStopText?.visibility = View.GONE
+                        mInsideAdView?.visibility = View.GONE
                     }
 
                     override fun insideAdSkipped() {
