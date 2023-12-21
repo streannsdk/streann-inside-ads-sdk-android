@@ -56,6 +56,7 @@ class InsideAdPlayer constructor(context: Context) :
         insideAdListener = listener
         surfaceView = SurfaceView(context)
         surfaceViewLayout.addView(surfaceView)
+        setSurfaceViewSize()
 
         if (bitmap != null) {
             surfaceView.visibility = GONE
@@ -188,6 +189,30 @@ class InsideAdPlayer constructor(context: Context) :
                 mediaPlayer = null
             }
         })
+    }
+
+    private fun setSurfaceViewSize() {
+        val aspectRatioWidth = 16
+        val aspectRatioHeight = 9
+
+        val screenWidth = resources.displayMetrics.widthPixels
+        val screenHeight = resources.displayMetrics.heightPixels
+
+        val aspectRatio = aspectRatioWidth.toDouble() / aspectRatioHeight.toDouble()
+
+        val calculatedWidth: Int
+        val calculatedHeight: Int
+
+        if (screenWidth < (screenHeight * aspectRatio).toInt()) {
+            calculatedWidth = screenWidth
+            calculatedHeight = (screenWidth / aspectRatio).toInt()
+        } else {
+            calculatedWidth = (screenHeight * aspectRatio).toInt()
+            calculatedHeight = screenHeight
+        }
+
+        surfaceView.layoutParams.width = calculatedWidth
+        surfaceView.layoutParams.height = calculatedHeight
     }
 
     fun startPlayingAd() {
