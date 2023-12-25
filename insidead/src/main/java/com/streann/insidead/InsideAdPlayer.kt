@@ -5,24 +5,24 @@ import android.graphics.Bitmap
 import android.media.MediaPlayer
 import android.net.Uri
 import android.util.Log
+import android.view.Gravity
 import android.view.LayoutInflater
 import android.view.SurfaceHolder
 import android.view.SurfaceView
+import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
-import android.widget.RelativeLayout
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
 
-class InsideAdPlayer constructor(context: Context) :
-    FrameLayout(context) {
+class InsideAdPlayer constructor(context: Context) : FrameLayout(context), SurfaceHolder.Callback {
 
     private val LOGTAG = "InsideAdSdk"
 
     private lateinit var imageAdView: ImageView
-    private lateinit var surfaceView: SurfaceView
-    private lateinit var surfaceViewLayout: RelativeLayout
+    private var surfaceView: SurfaceView? = null
+
     private var mediaPlayer: MediaPlayer? = null
     private var adCloseButton: ImageView? = null
     private var adVolumeButton: ImageView? = null
@@ -39,46 +39,109 @@ class InsideAdPlayer constructor(context: Context) :
 
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.inside_ad_player, this)
-
         imageAdView = findViewById(R.id.imageView)
-        surfaceViewLayout = findViewById(R.id.surfaceViewLayout)
-
-        adVolumeButton = findViewById(R.id.adVolumeIcon)
-        videoProgressBar = findViewById(R.id.videoProgressBar)
-
-        adCloseButton = findViewById(R.id.adCloseIcon)
-        adCloseButton?.setOnClickListener {
-            stopAd()
-        }
     }
 
     fun playAd(bitmap: Bitmap?, insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
-        surfaceView = SurfaceView(context)
-        surfaceViewLayout.addView(surfaceView)
-        setSurfaceViewSize()
 
         if (bitmap != null) {
-            surfaceView.visibility = GONE
-            imageAdView.visibility = VISIBLE
-            adCloseButton?.visibility = VISIBLE
-
-            imageAdView.setImageBitmap(bitmap)
-
-            Log.i(LOGTAG, "playAd")
-            insideAdListener?.insideAdPlay()
+            showLocalImageAd(bitmap)
         } else {
-            imageAdView.visibility = GONE
-            surfaceView.visibility = VISIBLE
-            videoProgressBar?.visibility = VISIBLE
-            videoProgressBar?.bringToFront()
+            setupLocalVideoAd()
+            setupProgressBar()
+            setupCloseButton()
+            setupVolumeButton()
 
             val insideAdUrl = insideAd.url
             Log.i(LOGTAG, "adUrl: $insideAdUrl")
 
             prepareMediaPlayer(Uri.parse(insideAdUrl))
-            setupSurfaceView()
         }
+    }
+
+    private fun setupLocalVideoAd() {
+        surfaceView = SurfaceView(context)
+        surfaceView?.holder?.addCallback(this)
+
+        addView(surfaceView)
+        setSurfaceViewSize()
+
+        imageAdView.visibility = GONE
+        surfaceView?.visibility = VISIBLE
+        videoProgressBar?.visibility = VISIBLE
+    }
+
+    private fun showLocalImageAd(bitmap: Bitmap) {
+        imageAdView.visibility = VISIBLE
+        adCloseButton?.visibility = VISIBLE
+        surfaceView?.visibility = GONE
+
+        imageAdView.setImageBitmap(bitmap)
+
+        Log.i(LOGTAG, "playAd")
+        insideAdListener?.insideAdPlay()
+    }
+
+    private fun prepareMediaPlayer(videoUrl: Uri) {
+        mediaPlayer = MediaPlayer().apply {
+            setDataSource(context, videoUrl)
+            prepareAsync()
+
+            setOnPreparedListener { mediaPlayer ->
+                Log.i(LOGTAG, "loadAd")
+                insideAdListener?.insideAdLoaded()
+
+                if (savedAdPosition > 0) {
+                    mediaPlayer.seekTo(savedAdPosition)
+                }
+
+                adCloseButton?.visibility = VISIBLE
+                setAdVolumeControl(mediaPlayer)
+            }
+        }
+    }
+
+    fun startPlayingAd() {
+        mediaPlayer?.start()
+
+        Log.i(LOGTAG, "playAd")
+        insideAdListener?.insideAdPlay()
+        videoProgressBar?.visibility = GONE
+
+        mediaPlayer?.setOnCompletionListener {
+            stopLocalVideoAd()
+        }
+
+        mediaPlayer?.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
+            notifySdkAboutAdError(errorType)
+            true
+        }
+    }
+
+    fun stopAd() {
+        Log.i(LOGTAG, "stopAd")
+
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.stop()
+            stopLocalVideoAd()
+        } else if (imageAdView.visibility == VISIBLE) {
+            imageAdView.setImageBitmap(null)
+            insideAdListener?.insideAdStop()
+        }
+
+        mediaPlayer?.release()
+        mediaPlayer = null
+    }
+
+    private fun stopLocalVideoAd() {
+        savedAdPosition = 0
+        insideAdListener?.insideAdStop()
+        adVolumeButton?.visibility = GONE
+        removeView(surfaceView)
+        removeView(adCloseButton)
+        removeView(adVolumeButton)
+        removeView(videoProgressBar)
     }
 
     private fun notifySdkAboutAdError(errorType: Int): Boolean {
@@ -107,6 +170,42 @@ class InsideAdPlayer constructor(context: Context) :
         return true
     }
 
+    private fun setupProgressBar() {
+        videoProgressBar = ProgressBar(context)
+
+        val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        params.gravity = Gravity.CENTER
+
+        addView(videoProgressBar, params)
+    }
+
+    private fun setupCloseButton() {
+        adCloseButton = ImageView(context)
+        adCloseButton?.setImageResource(R.drawable.ic_close)
+
+        val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        params.gravity = Gravity.TOP or Gravity.START
+        params.marginStart = 20
+        params.topMargin = 20
+
+        addView(adCloseButton, params)
+
+        adCloseButton?.setOnClickListener {
+            stopAd()
+        }
+    }
+
+    private fun setupVolumeButton() {
+        adVolumeButton = ImageView(context)
+
+        val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        params.gravity = Gravity.TOP or Gravity.END
+        params.marginEnd = 20
+        params.topMargin = 20
+
+        addView(adVolumeButton, params)
+    }
+
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         adSoundPlaying = if (InsideAdSdk.isAdMuted == true) {
             setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
@@ -133,64 +232,6 @@ class InsideAdPlayer constructor(context: Context) :
         insideAdListener?.insideAdVolumeChanged(sound)
     }
 
-    fun stopAd() {
-        Log.i(LOGTAG, "stopAdPlaying")
-
-        if (mediaPlayer?.isPlaying == true) {
-            mediaPlayer?.stop()
-            savedAdPosition = 0
-            adVolumeButton?.visibility = GONE
-            insideAdListener?.insideAdStop()
-            surfaceViewLayout.removeView(surfaceView)
-        } else if (imageAdView.visibility == VISIBLE) {
-            imageAdView.setImageBitmap(null)
-            insideAdListener?.insideAdStop()
-        }
-
-        mediaPlayer?.release()
-        mediaPlayer = null
-    }
-
-    private fun prepareMediaPlayer(videoUrl: Uri) {
-        mediaPlayer = MediaPlayer().apply {
-            setDataSource(context, videoUrl)
-            prepareAsync()
-
-            setOnPreparedListener { mediaPlayer ->
-                Log.i(LOGTAG, "loadAd")
-                insideAdListener?.insideAdLoaded()
-
-                if (savedAdPosition > 0) {
-                    mediaPlayer.seekTo(savedAdPosition)
-                }
-
-                adCloseButton?.visibility = VISIBLE
-                setAdVolumeControl(mediaPlayer)
-            }
-        }
-    }
-
-    private fun setupSurfaceView() {
-        surfaceView.holder.addCallback(object : SurfaceHolder.Callback {
-            override fun surfaceCreated(holder: SurfaceHolder) {
-                mediaPlayer?.setDisplay(holder)
-            }
-
-            override fun surfaceChanged(
-                holder: SurfaceHolder,
-                format: Int,
-                width: Int,
-                height: Int
-            ) {
-            }
-
-            override fun surfaceDestroyed(holder: SurfaceHolder) {
-                mediaPlayer?.release()
-                mediaPlayer = null
-            }
-        })
-    }
-
     private fun setSurfaceViewSize() {
         val aspectRatioWidth = 16
         val aspectRatioHeight = 9
@@ -211,26 +252,25 @@ class InsideAdPlayer constructor(context: Context) :
             calculatedHeight = screenHeight
         }
 
-        surfaceView.layoutParams.width = calculatedWidth
-        surfaceView.layoutParams.height = calculatedHeight
+        surfaceView?.layoutParams?.width = calculatedWidth
+        surfaceView?.layoutParams?.height = calculatedHeight
     }
 
-    fun startPlayingAd() {
-        mediaPlayer?.start()
+    override fun surfaceCreated(holder: SurfaceHolder) {
+        mediaPlayer?.setDisplay(holder)
+    }
 
-        Log.i(LOGTAG, "playAd")
-        insideAdListener?.insideAdPlay()
-        videoProgressBar?.visibility = GONE
+    override fun surfaceChanged(
+        holder: SurfaceHolder,
+        format: Int,
+        width: Int,
+        height: Int
+    ) {
+    }
 
-        mediaPlayer?.setOnCompletionListener {
-            savedAdPosition = 0
-            insideAdListener?.insideAdStop()
-        }
-
-        mediaPlayer?.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
-            notifySdkAboutAdError(errorType)
-            true
-        }
+    override fun surfaceDestroyed(holder: SurfaceHolder) {
+        mediaPlayer?.release()
+        mediaPlayer = null
     }
 
 }
