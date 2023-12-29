@@ -7,8 +7,8 @@ data class Campaign(
     var name: String? = null,
     var startDate: Instant? = null,
     var endDate: Instant? = null,
-    var intervalInMinutes: Int? = null,
     var timePeriods: ArrayList<TimePeriod>? = null,
     var weight: Int? = null,
-    var placements: ArrayList<Placement>? = null
+    var placements: ArrayList<Placement>? = null,
+    var properties: Map<String, Int>? = null
 )
