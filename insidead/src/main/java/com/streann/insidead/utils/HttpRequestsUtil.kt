@@ -294,16 +294,6 @@ object HttpRequestsUtil {
                 campaign.endDate = null
             }
 
-            if (campaignObject.has("intervalInMinutes") && !campaignObject.isNull("intervalInMinutes")) {
-                try {
-                    campaign.intervalInMinutes = campaignObject.getInt("intervalInMinutes")
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            } else {
-                campaign.intervalInMinutes = 0
-            }
-
             if (campaignObject.has("timePeriods") && !campaignObject.isNull("timePeriods")) {
                 try {
                     campaign.timePeriods =
@@ -334,6 +324,22 @@ object HttpRequestsUtil {
                 }
             } else {
                 campaign.placements = arrayListOf()
+            }
+
+            if (campaignObject.has("properties") && !campaignObject.isNull("properties")) {
+                try {
+                    val properties = campaignObject.getJSONObject("properties").toString()
+
+                    val gson = Gson()
+                    val type = object : TypeToken<Map<String, Int>>() {}.type
+                    val map: Map<String, Int> = gson.fromJson(properties, type)
+
+                    campaign.properties = map
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                campaign.properties = mapOf()
             }
 
             campaigns.add(campaign)
@@ -429,53 +435,22 @@ object HttpRequestsUtil {
                 placement.viewType = ""
             }
 
-            if (placementObject.has("screens") && !placementObject.isNull("screens")) {
+            if (placementObject.has("tags") && !placementObject.isNull("tags")) {
                 try {
-                    val screensObject = placementObject.getJSONArray("screens").toString()
+                    val tagsObject = placementObject.getJSONArray("tags").toString()
 
                     val gson = Gson()
-                    val screensList: ArrayList<String> = gson.fromJson(
-                        screensObject,
+                    val tagsList: ArrayList<String> = gson.fromJson(
+                        tagsObject,
                         object : TypeToken<ArrayList<String>>() {}.type
                     )
 
-                    placement.screens = screensList
+                    placement.tags = tagsList
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                placement.screens = arrayListOf()
-            }
-
-            if (placementObject.has("startAfterSeconds") && !placementObject.isNull("startAfterSeconds")) {
-                try {
-                    placement.startAfterSeconds = placementObject.getInt("startAfterSeconds")
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            } else {
-                placement.startAfterSeconds = 0
-            }
-
-            if (placementObject.has("showCloseButtonAfterSeconds") && !placementObject.isNull("showCloseButtonAfterSeconds")) {
-                try {
-                    placement.showCloseButtonAfterSeconds =
-                        placementObject.getInt("showCloseButtonAfterSeconds")
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            } else {
-                placement.showCloseButtonAfterSeconds = 0
-            }
-
-            if (placementObject.has("properties") && !placementObject.isNull("properties")) {
-                try {
-                    placement.properties = placementObject.getJSONObject("properties")
-                } catch (e: JSONException) {
-                    e.printStackTrace()
-                }
-            } else {
-                placement.properties = JSONObject()
+                placement.tags = arrayListOf()
             }
 
             if (placementObject.has("ads") && !placementObject.isNull("ads")) {
@@ -487,6 +462,22 @@ object HttpRequestsUtil {
                 }
             } else {
                 placement.ads = arrayListOf()
+            }
+
+            if (placementObject.has("properties") && !placementObject.isNull("properties")) {
+                try {
+                    val properties = placementObject.getJSONObject("properties").toString()
+
+                    val gson = Gson()
+                    val type = object : TypeToken<Map<String, Int>>() {}.type
+                    val map: Map<String, Int> = gson.fromJson(properties, type)
+
+                    placement.properties = map
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                placement.properties = mapOf()
             }
 
             placements.add(placement)
@@ -572,14 +563,14 @@ object HttpRequestsUtil {
                 insideAd.url = ""
             }
 
-            if (adsObject.has("durationInSeconds") && !adsObject.isNull("durationInSeconds")) {
+            if (adsObject.has("properties") && !adsObject.isNull("properties")) {
                 try {
-                    insideAd.durationInSeconds = adsObject.getInt("durationInSeconds")
+                    insideAd.properties = adsObject.getJSONObject("properties")
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                insideAd.durationInSeconds = 0
+                insideAd.properties = JSONObject()
             }
 
             ads.add(insideAd)
