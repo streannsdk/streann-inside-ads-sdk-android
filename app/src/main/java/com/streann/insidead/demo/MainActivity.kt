@@ -28,7 +28,7 @@ class MainActivity : AppCompatActivity() {
 
         adProgressText.setOnClickListener {
             mInsideAdView?.requestAd(
-                screen = "player",
+                screen = "",
                 insideAdCallback = object : InsideAdCallback {
                     override fun insideAdReceived(insideAd: InsideAd) {
                         Log.i(TAG, "insideAdReceived: $insideAd")
