@@ -13,14 +13,7 @@ object CampaignsFilterUtil {
 
     private val LOGTAG = "InsideAdSdk"
 
-    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
-        val activeInsideAd: InsideAd?
-        val campaign: Campaign? = getCampaign(campaigns)
-        activeInsideAd = getInsideAdByPlacement(campaign?.placements, screen)
-        return activeInsideAd
-    }
-
-    private fun getCampaign(campaigns: ArrayList<Campaign>?): Campaign? {
+    fun getCampaign(campaigns: ArrayList<Campaign>?): Campaign? {
         var activeCampaign: Campaign? = null
         val filteredCampaigns = ArrayList<Campaign>()
 
@@ -86,29 +79,35 @@ object CampaignsFilterUtil {
         return activeCampaign
     }
 
-    private fun getInsideAdByPlacement(
+    fun getPlacements(
         placements: ArrayList<Placement>?,
         screen: String
-    ): InsideAd? {
-        var activeInsideAd: InsideAd? = null
+    ): List<Placement>? {
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
             filteredPlacements = placements.filter { placement ->
                 if (screen.isEmpty()) {
-                    (placement.screens?.isEmpty() == true)
+                    (placement.tags?.isEmpty() == true)
                 } else {
-                    placement.screens?.any { it == screen } == true
+                    placement.tags?.any { it == screen } == true
                 }
             }
         }
 
         Log.i(LOGTAG, "filteredPlacements $filteredPlacements")
+        return filteredPlacements
+    }
 
-        if (filteredPlacements?.isNotEmpty() == true) {
-            activeInsideAd = if (filteredPlacements.size > 1) {
-                getInsideAdByMultiplePlacements(filteredPlacements)
-            } else getInsideAdFilteredByWeight(filteredPlacements[0].ads)
+    fun getInsideAdByPlacement(
+        placements: List<Placement>?,
+    ): InsideAd? {
+        var activeInsideAd: InsideAd? = null
+
+        if (placements?.isNotEmpty() == true) {
+            activeInsideAd = if (placements.size > 1) {
+                getInsideAdByMultiplePlacements(placements)
+            } else getInsideAdFilteredByWeight(placements[0].ads)
         }
 
         Log.i(LOGTAG, "activeInsideAd $activeInsideAd")
@@ -136,7 +135,6 @@ object CampaignsFilterUtil {
 
         return activeInsideAd
     }
-
 
     private fun getInsideAdFilteredByWeight(ads: ArrayList<InsideAd>?): InsideAd? {
         var activeInsideAd: InsideAd? = null

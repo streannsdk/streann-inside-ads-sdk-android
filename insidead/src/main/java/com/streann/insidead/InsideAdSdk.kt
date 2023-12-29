@@ -24,6 +24,8 @@ object InsideAdSdk {
     internal var isAdMuted: Boolean? = false
     internal var geoIp: GeoIp? = null
     internal var appPreferences: SharedPreferences? = null
+    internal var intervalInMinutes: Long = 0
+    internal var showCloseButtonAfterSeconds: Long = 0
 
     fun initializeSdk(
         apiKey: String, apiToken: String, baseUrl: String, appDomain: String? = "",
