@@ -4,6 +4,8 @@ import android.content.Context
 import android.graphics.Bitmap
 import android.media.MediaPlayer
 import android.net.Uri
+import android.os.Handler
+import android.os.Looper
 import android.util.Log
 import android.view.Gravity
 import android.view.LayoutInflater
@@ -33,6 +35,9 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
     private var adSoundPlaying = true
     private var savedAdPosition = 0
 
+    private var showCloseButtonHandler: Handler? = null
+    private var closeImageAdHandler: Handler? = null
+
     init {
         init()
     }
@@ -44,6 +49,8 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
     fun playAd(bitmap: Bitmap?, insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
+        showCloseButtonHandler = Handler(Looper.getMainLooper())
+        closeImageAdHandler = Handler(Looper.getMainLooper())
 
         if (bitmap != null) {
             showLocalImageAd(bitmap)
@@ -74,13 +81,19 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
     private fun showLocalImageAd(bitmap: Bitmap) {
         imageAdView.visibility = VISIBLE
-        adCloseButton?.visibility = VISIBLE
         surfaceView?.visibility = GONE
+        setCloseButtonVisibility()
 
         imageAdView.setImageBitmap(bitmap)
 
         Log.i(LOGTAG, "playAd")
         insideAdListener?.insideAdPlay()
+
+        InsideAdSdk.durationInSeconds?.let {
+            closeImageAdHandler?.postDelayed({
+                stopAd()
+            }, it)
+        }
     }
 
     private fun prepareMediaPlayer(videoUrl: Uri) {
@@ -96,7 +109,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
                     mediaPlayer.seekTo(savedAdPosition)
                 }
 
-                adCloseButton?.visibility = VISIBLE
+                setCloseButtonVisibility()
                 setAdVolumeControl(mediaPlayer)
             }
         }
@@ -111,6 +124,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
         mediaPlayer?.setOnCompletionListener {
             stopLocalVideoAd()
+            removeHandlers()
         }
 
         mediaPlayer?.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
@@ -130,6 +144,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
             insideAdListener?.insideAdStop()
         }
 
+        removeHandlers()
         mediaPlayer?.release()
         mediaPlayer = null
     }
@@ -195,6 +210,14 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
         }
     }
 
+    private fun setCloseButtonVisibility() {
+        InsideAdSdk.showCloseButtonAfterSeconds?.let {
+            showCloseButtonHandler?.postDelayed({
+                adCloseButton?.visibility = VISIBLE
+            }, it)
+        }
+    }
+
     private fun setupVolumeButton() {
         adVolumeButton = ImageView(context)
 
@@ -254,6 +277,13 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
         surfaceView?.layoutParams?.width = calculatedWidth
         surfaceView?.layoutParams?.height = calculatedHeight
+    }
+
+    private fun removeHandlers() {
+        closeImageAdHandler?.removeCallbacksAndMessages(null)
+        closeImageAdHandler = null
+        showCloseButtonHandler?.removeCallbacksAndMessages(null)
+        showCloseButtonHandler = null
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {

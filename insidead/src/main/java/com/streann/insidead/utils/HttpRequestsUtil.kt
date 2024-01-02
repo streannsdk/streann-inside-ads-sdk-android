@@ -566,6 +566,10 @@ object HttpRequestsUtil {
             if (adsObject.has("properties") && !adsObject.isNull("properties")) {
                 try {
                     insideAd.properties = adsObject.getJSONObject("properties")
+                    val durationInSeconds = insideAd.properties?.getInt("durationInSeconds")
+                    InsideAdSdk.durationInSeconds = durationInSeconds?.toLong()?.let {
+                        Helper.getMillisFromSeconds(it)
+                    }
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
