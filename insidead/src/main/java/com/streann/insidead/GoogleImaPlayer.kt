@@ -1,12 +1,14 @@
 package com.streann.insidead
 
 import android.content.Context
+import android.content.Intent
 import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.VideoView
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
 import com.google.ads.interactivemedia.v3.api.AdsManager
@@ -18,6 +20,7 @@ import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
+import com.streann.insidead.utils.constants.Constants
 
 class GoogleImaPlayer constructor(context: Context) :
     FrameLayout(context) {
@@ -33,6 +36,7 @@ class GoogleImaPlayer constructor(context: Context) :
     private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdListener: InsideAdCallback? = null
+    private var broadcaster: LocalBroadcastManager? = null
 
     init {
         init()
@@ -43,6 +47,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
+        broadcaster = LocalBroadcastManager.getInstance(context)
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
@@ -145,6 +150,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
             override fun onEnded(p0: AdMediaInfo) {
                 insideAdListener?.insideAdStop()
+                broadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
             }
 
             override fun onError(p0: AdMediaInfo) {
