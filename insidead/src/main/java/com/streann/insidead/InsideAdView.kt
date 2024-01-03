@@ -1,20 +1,17 @@
 package com.streann.insidead
 
 import android.app.Application
-import android.content.BroadcastReceiver
 import android.content.Context
-import android.content.Intent
-import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.CampaignsFilterUtil
@@ -32,7 +29,7 @@ class InsideAdView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
-) : FrameLayout(context, attrs, defStyle) {
+) : FrameLayout(context, attrs, defStyle), InsideAdStoppedCallback {
 
     private val LOGTAG = "InsideAdSdk"
 
@@ -44,9 +41,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private var requestAdExecutor: ScheduledExecutorService? = null
     private var populateSdkExecutor: ExecutorService? = null
-
     private var showAdHandler: Handler? = null
-    private var insideAdStoppedReceiver: BroadcastReceiver? = null
 
     private var screen: String = ""
     private var apiKey: String = ""
@@ -58,14 +53,13 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun init() {
-        mInsideAdPlayer = InsideAdPlayer(context)
+        mInsideAdPlayer = InsideAdPlayer(context, this)
         addView(mInsideAdPlayer)
-        mGoogleImaPlayer = GoogleImaPlayer(context)
+        mGoogleImaPlayer = GoogleImaPlayer(context, this)
         addView(mGoogleImaPlayer)
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
-        registerBroadcastReceiver()
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -236,36 +230,16 @@ class InsideAdView @JvmOverloads constructor(
         }
     }
 
-    private fun registerBroadcastReceiver() {
-        insideAdStoppedReceiver = object : BroadcastReceiver() {
-            override fun onReceive(context: Context, intent: Intent?) {
-                intent?.let { intent ->
-                    if (intent.action == Constants.AD_STOPPED) {
-                        if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
-                            requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-                            val geoCountryCode = InsideAdSdk.geoIp?.countryCode
-                            if (geoCountryCode?.isNotBlank() == true) {
-                                requestAdExecutor!!.schedule({
-                                    requestCampaign(geoCountryCode, screen, insideAdCallback)
-                                }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
-                            }
-                        }
-                    }
-                }
+    override fun insideAdStopped() {
+        Log.i(LOGTAG, "insideAdStopped")
+        if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
+            requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
+            val geoCountryCode = InsideAdSdk.geoIp?.countryCode
+            if (geoCountryCode?.isNotBlank() == true) {
+                requestAdExecutor!!.schedule({
+                    requestCampaign(geoCountryCode, screen, insideAdCallback)
+                }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
             }
-        }
-
-        LocalBroadcastManager.getInstance(context)
-            .registerReceiver(
-                insideAdStoppedReceiver as BroadcastReceiver,
-                IntentFilter(Constants.AD_STOPPED)
-            )
-    }
-
-    fun unregisterBroadcastReceiver() {
-        insideAdStoppedReceiver?.let { receiver ->
-            LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
-            insideAdStoppedReceiver = null
         }
     }
 

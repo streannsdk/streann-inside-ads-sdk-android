@@ -4,5 +4,4 @@ object Constants {
     const val AD_TYPE_VAST = "VAST"
     const val AD_TYPE_LOCAL_VIDEO = "LOCAL_VIDEO"
     const val AD_TYPE_LOCAL_IMAGE = "LOCAL_IMAGE"
-    const val AD_STOPPED = "AD_STOPPED"
 }

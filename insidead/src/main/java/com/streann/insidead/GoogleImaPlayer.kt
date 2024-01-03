@@ -1,14 +1,13 @@
 package com.streann.insidead
 
+import android.annotation.SuppressLint
 import android.content.Context
-import android.content.Intent
 import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.VideoView
-import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
 import com.google.ads.interactivemedia.v3.api.AdsManager
@@ -18,11 +17,15 @@ import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
-import com.streann.insidead.utils.constants.Constants
 
-class GoogleImaPlayer constructor(context: Context) :
+@SuppressLint("ViewConstructor")
+class GoogleImaPlayer constructor(
+    context: Context,
+    callback: InsideAdStoppedCallback
+) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
@@ -36,7 +39,7 @@ class GoogleImaPlayer constructor(context: Context) :
     private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdListener: InsideAdCallback? = null
-    private var stopAdBroadcaster: LocalBroadcastManager? = null
+    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
 
     init {
         init()
@@ -47,7 +50,6 @@ class GoogleImaPlayer constructor(context: Context) :
 
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        stopAdBroadcaster = LocalBroadcastManager.getInstance(context)
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
@@ -150,7 +152,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
             override fun onEnded(p0: AdMediaInfo) {
                 insideAdListener?.insideAdStop()
-                stopAdBroadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
+                insideAdStoppedCallback?.insideAdStopped()
             }
 
             override fun onError(p0: AdMediaInfo) {
