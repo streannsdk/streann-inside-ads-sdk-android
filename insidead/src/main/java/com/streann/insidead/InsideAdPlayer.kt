@@ -1,22 +1,22 @@
 package com.streann.insidead
 
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
-import android.view.Gravity
-import android.view.LayoutInflater
-import android.view.SurfaceHolder
-import android.view.SurfaceView
+import android.view.*
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.constants.Constants
 
 class InsideAdPlayer constructor(context: Context) : FrameLayout(context), SurfaceHolder.Callback {
 
@@ -37,6 +37,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
     private var showCloseButtonHandler: Handler? = null
     private var closeImageAdHandler: Handler? = null
+    private var stopAdBroadcaster: LocalBroadcastManager? = null
 
     init {
         init()
@@ -45,6 +46,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.inside_ad_player, this)
         imageAdView = findViewById(R.id.imageView)
+        stopAdBroadcaster = LocalBroadcastManager.getInstance(context)
     }
 
     fun playAd(bitmap: Bitmap?, insideAd: InsideAd, listener: InsideAdCallback) {
@@ -54,6 +56,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
 
         if (bitmap != null) {
             showLocalImageAd(bitmap)
+            setupCloseButton()
         } else {
             setupLocalVideoAd()
             setupProgressBar()
@@ -142,6 +145,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
         } else if (imageAdView.visibility == VISIBLE) {
             imageAdView.setImageBitmap(null)
             insideAdListener?.insideAdStop()
+            stopAdBroadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
         }
 
         removeHandlers()
@@ -157,6 +161,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
         removeView(adCloseButton)
         removeView(adVolumeButton)
         removeView(videoProgressBar)
+        stopAdBroadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
     }
 
     private fun notifySdkAboutAdError(errorType: Int): Boolean {
@@ -197,6 +202,7 @@ class InsideAdPlayer constructor(context: Context) : FrameLayout(context), Surfa
     private fun setupCloseButton() {
         adCloseButton = ImageView(context)
         adCloseButton?.setImageResource(R.drawable.ic_close)
+        adCloseButton?.visibility = GONE
 
         val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         params.gravity = Gravity.TOP or Gravity.START
