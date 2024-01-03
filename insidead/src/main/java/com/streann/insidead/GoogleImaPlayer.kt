@@ -1,5 +1,6 @@
 package com.streann.insidead
 
+import android.annotation.SuppressLint
 import android.content.Context
 import android.media.AudioManager
 import android.util.Log
@@ -16,10 +17,15 @@ import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
-class GoogleImaPlayer constructor(context: Context) :
+@SuppressLint("ViewConstructor")
+class GoogleImaPlayer constructor(
+    context: Context,
+    callback: InsideAdStoppedCallback
+) :
     FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
@@ -33,6 +39,7 @@ class GoogleImaPlayer constructor(context: Context) :
     private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdListener: InsideAdCallback? = null
+    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
 
     init {
         init()
@@ -145,6 +152,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
             override fun onEnded(p0: AdMediaInfo) {
                 insideAdListener?.insideAdStop()
+                insideAdStoppedCallback?.insideAdStopped()
             }
 
             override fun onError(p0: AdMediaInfo) {

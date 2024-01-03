@@ -11,6 +11,7 @@ import java.net.URL
 import java.security.MessageDigest
 import java.security.NoSuchAlgorithmException
 import java.util.*
+import java.util.concurrent.TimeUnit
 
 object Helper {
 
@@ -104,6 +105,14 @@ object Helper {
         }
 
         return Bitmap.createScaledBitmap(bitmap, desiredWidth, desiredHeight, true)
+    }
+
+    fun getMillisFromSeconds(seconds: Long): Long {
+        return TimeUnit.SECONDS.toMillis(seconds)
+    }
+
+    fun getMillisFromMinutes(seconds: Long): Long {
+        return TimeUnit.MINUTES.toMillis(seconds)
     }
 
 }
