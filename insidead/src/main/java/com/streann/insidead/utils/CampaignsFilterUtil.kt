@@ -1,6 +1,7 @@
 package com.streann.insidead.utils
 
 import android.util.Log
+import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Placement
@@ -31,6 +32,13 @@ object CampaignsFilterUtil {
             activeCampaign = filterCampaignsByTimePeriod(filteredCampaigns)
 
         Log.i(LOGTAG, "activeCampaign $activeCampaign")
+
+        val intervalInMinutes =
+            activeCampaign?.properties?.get("intervalInMinutes")
+        val intervalInMillis = intervalInMinutes?.toLong()?.let {
+            Helper.getMillisFromMinutes(it)
+        }
+        InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
 
         return activeCampaign
     }
@@ -97,6 +105,29 @@ object CampaignsFilterUtil {
 
         Log.i(LOGTAG, "filteredPlacements $filteredPlacements")
         return filteredPlacements
+    }
+
+    fun setCurrentPlacement(
+        placements: List<Placement>?,
+        insideAd: InsideAd?
+    ) {
+        val placement = placements?.find { placement ->
+            placement.ads!!.contains(
+                insideAd
+            )
+        }
+
+        val startAfterSeconds =
+            placement?.properties?.get("startAfterSeconds")
+        InsideAdSdk.startAfterSeconds = startAfterSeconds?.toLong()?.let {
+            Helper.getMillisFromSeconds(it)
+        }
+
+        val showCloseButtonAfterSeconds =
+            placement?.properties?.get("showCloseButtonAfterSeconds")
+        InsideAdSdk.showCloseButtonAfterSeconds = showCloseButtonAfterSeconds?.toLong()?.let {
+            Helper.getMillisFromSeconds(it)
+        }
     }
 
     fun getInsideAdByPlacement(
