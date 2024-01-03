@@ -14,7 +14,24 @@ object CampaignsFilterUtil {
 
     private val LOGTAG = "InsideAdSdk"
 
-    fun getCampaign(campaigns: ArrayList<Campaign>?): Campaign? {
+    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
+        val campaign = getCampaign(campaigns)
+
+        val placements = getPlacements(
+            campaign?.placements,
+            screen
+        )
+
+        val insideAd = getInsideAdByPlacement(
+            placements
+        )
+
+        setCurrentPlacement(placements, insideAd)
+
+        return insideAd
+    }
+
+    private fun getCampaign(campaigns: ArrayList<Campaign>?): Campaign? {
         var activeCampaign: Campaign? = null
         val filteredCampaigns = ArrayList<Campaign>()
 
@@ -25,8 +42,6 @@ object CampaignsFilterUtil {
                 if (isActiveCampaign) filteredCampaigns.add(campaign)
             }
         }
-
-        Log.i(LOGTAG, "filteredCampaignsByDate $filteredCampaigns")
 
         if (filteredCampaigns.isNotEmpty())
             activeCampaign = filterCampaignsByTimePeriod(filteredCampaigns)
@@ -76,8 +91,6 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(LOGTAG, "filteredTimePeriodCampaigns $filteredCampaigns")
-
         if (filteredCampaigns.isNotEmpty()) {
             activeCampaign = if (filteredCampaigns.size > 1) {
                 filterItemsByWeight(filteredCampaigns) { it.weight!! }
@@ -87,7 +100,7 @@ object CampaignsFilterUtil {
         return activeCampaign
     }
 
-    fun getPlacements(
+    private fun getPlacements(
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
@@ -103,11 +116,10 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(LOGTAG, "filteredPlacements $filteredPlacements")
         return filteredPlacements
     }
 
-    fun setCurrentPlacement(
+    private fun setCurrentPlacement(
         placements: List<Placement>?,
         insideAd: InsideAd?
     ) {
@@ -116,6 +128,8 @@ object CampaignsFilterUtil {
                 insideAd
             )
         }
+
+        Log.i(LOGTAG, "activePlacement $placement")
 
         val startAfterSeconds =
             placement?.properties?.get("startAfterSeconds")
@@ -130,7 +144,7 @@ object CampaignsFilterUtil {
         }
     }
 
-    fun getInsideAdByPlacement(
+    private fun getInsideAdByPlacement(
         placements: List<Placement>?,
     ): InsideAd? {
         var activeInsideAd: InsideAd? = null
@@ -141,7 +155,6 @@ object CampaignsFilterUtil {
             } else getInsideAdFilteredByWeight(placements[0].ads)
         }
 
-        Log.i(LOGTAG, "activeInsideAd $activeInsideAd")
         return activeInsideAd
     }
 
@@ -160,17 +173,12 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(LOGTAG, "adsList $adsList")
-
         activeInsideAd = getInsideAdFilteredByWeight(adsList)
-
         return activeInsideAd
     }
 
     private fun getInsideAdFilteredByWeight(ads: ArrayList<InsideAd>?): InsideAd? {
         var activeInsideAd: InsideAd? = null
-
-        Log.i(LOGTAG, "ads $ads")
 
         if (ads?.isNotEmpty() == true) {
             activeInsideAd = if (ads.size > 1) {

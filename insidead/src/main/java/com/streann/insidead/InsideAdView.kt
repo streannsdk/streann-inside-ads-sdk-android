@@ -1,13 +1,17 @@
 package com.streann.insidead
 
 import android.app.Application
+import android.content.BroadcastReceiver
 import android.content.Context
+import android.content.Intent
+import android.content.IntentFilter
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
+import androidx.localbroadcastmanager.content.LocalBroadcastManager
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
@@ -21,6 +25,8 @@ import com.streann.insidead.utils.constants.Constants
 import com.streann.insidead.utils.constants.SharedPrefKeys
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
+import java.util.concurrent.ScheduledExecutorService
+import java.util.concurrent.TimeUnit
 
 class InsideAdView @JvmOverloads constructor(
     context: Context,
@@ -34,11 +40,15 @@ class InsideAdView @JvmOverloads constructor(
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
 
     private var insideAd: InsideAd? = null
+    private var insideAdCallback: InsideAdCallback? = null
 
+    private var requestAdExecutor: ScheduledExecutorService? = null
     private var populateSdkExecutor: ExecutorService? = null
-    private var requestAdExecutor: ExecutorService? = null
-    private var showAdHandler: Handler? = null
 
+    private var showAdHandler: Handler? = null
+    private var insideAdStoppedReceiver: BroadcastReceiver? = null
+
+    private var screen: String = ""
     private var apiKey: String = ""
     private var baseUrl: String = ""
     private var scale: Float = 0f
@@ -55,6 +65,7 @@ class InsideAdView @JvmOverloads constructor(
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
+        registerBroadcastReceiver()
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -96,7 +107,10 @@ class InsideAdView @JvmOverloads constructor(
         isAdMuted: Boolean? = false,
         insideAdCallback: InsideAdCallback?
     ) {
+        Log.i(LOGTAG, "requestAd")
         InsideAdSdk.isAdMuted = isAdMuted
+        this.insideAdCallback = insideAdCallback
+        this.screen = screen
 
         if (TextUtils.isEmpty(apiKey)) {
             Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
@@ -110,7 +124,7 @@ class InsideAdView @JvmOverloads constructor(
             return
         }
 
-        requestAdExecutor = Executors.newSingleThreadExecutor()
+        requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
         requestAdExecutor!!.execute {
             val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
             if (!geoIpUrl.isNullOrBlank()) {
@@ -119,52 +133,66 @@ class InsideAdView @JvmOverloads constructor(
                     InsideAdSdk.geoIp = geoIp
                     val geoCountryCode = geoIp.countryCode
                     if (geoCountryCode?.isNotBlank() == true) {
-                        HttpRequestsUtil.getCampaign(
-                            geoCountryCode,
-                            object : CampaignCallback {
-                                override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                                    Log.i(LOGTAG, "onSuccess: $campaigns")
-                                    insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
-                                    insideAdCallback?.let { callback ->
-                                        insideAd?.let { ad ->
-                                            callback.insideAdReceived(ad)
-                                            showAd(ad, callback)
-                                        }
-                                    }
-                                }
-
-                                override fun onError(error: String?) {
-                                    var errorMsg = "Error while getting AD."
-                                    if (!error.isNullOrBlank()) errorMsg = error
-                                    Log.i(LOGTAG, "onError: $errorMsg")
-                                    insideAdCallback?.insideAdError(errorMsg)
-                                }
-                            })
+                        requestCampaign(geoCountryCode, screen, insideAdCallback)
                     }
                 }
             }
         }
-
-        requestAdExecutor!!.shutdown()
     }
 
-    private fun showAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+    private fun requestCampaign(
+        geoCountryCode: String,
+        screen: String,
+        insideAdCallback: InsideAdCallback?
+    ) {
+        Log.i(LOGTAG, "requestCampaign")
+        HttpRequestsUtil.getCampaign(
+            geoCountryCode,
+            object : CampaignCallback {
+                override fun onSuccess(campaigns: ArrayList<Campaign>?) {
+                    Log.i(LOGTAG, "onSuccess: $campaigns")
+
+                    insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
+                    Log.i(LOGTAG, "insideAd: $insideAd")
+
+                    insideAdCallback?.let { callback ->
+                        insideAd?.let { ad ->
+                            callback.insideAdReceived(ad)
+                            showAd(ad, callback)
+                        }
+                    }
+                }
+
+                override fun onError(error: String?) {
+                    var errorMsg = "Error while getting AD."
+                    if (!error.isNullOrBlank()) errorMsg = error
+                    Log.i(LOGTAG, "onError: $errorMsg")
+                    insideAdCallback?.insideAdError(errorMsg)
+                }
+            })
+    }
+
+    private fun showAd(
+        insideAd: InsideAd,
+        insideAdCallback: InsideAdCallback
+    ) {
+        requestAdExecutor?.shutdown()
         showAdHandler = Handler(Looper.getMainLooper())
 
         when (insideAd.adType) {
             Constants.AD_TYPE_VAST -> {
-                showAdHandler?.post {
+                showAdHandler?.postDelayed({
                     mInsideAdPlayer?.visibility = GONE
                     mGoogleImaPlayer?.visibility = VISIBLE
                     mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
-                }
+                }, InsideAdSdk.startAfterSeconds ?: 0)
             }
             Constants.AD_TYPE_LOCAL_VIDEO -> {
-                showAdHandler?.post {
+                showAdHandler?.postDelayed({
                     mGoogleImaPlayer?.visibility = GONE
                     mInsideAdPlayer?.visibility = VISIBLE
                     mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
-                }
+                }, InsideAdSdk.startAfterSeconds ?: 0)
             }
             Constants.AD_TYPE_LOCAL_IMAGE -> {
                 val bitmap = insideAd.url?.let { Helper.getBitmapFromURL(it, resources) }
@@ -180,7 +208,7 @@ class InsideAdView @JvmOverloads constructor(
                     } ?: run {
                         insideAdCallback.insideAdError("Error while getting AD.")
                     }
-                }, 500)
+                }, InsideAdSdk.startAfterSeconds ?: 0)
             }
         }
     }
@@ -207,4 +235,38 @@ class InsideAdView @JvmOverloads constructor(
             mInsideAdPlayer?.startPlayingAd()
         }
     }
+
+    private fun registerBroadcastReceiver() {
+        insideAdStoppedReceiver = object : BroadcastReceiver() {
+            override fun onReceive(context: Context, intent: Intent?) {
+                intent?.let { intent ->
+                    if (intent.action == Constants.AD_STOPPED) {
+                        if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
+                            requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
+                            val geoCountryCode = InsideAdSdk.geoIp?.countryCode
+                            if (geoCountryCode?.isNotBlank() == true) {
+                                requestAdExecutor!!.schedule({
+                                    requestCampaign(geoCountryCode, screen, insideAdCallback)
+                                }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        LocalBroadcastManager.getInstance(context)
+            .registerReceiver(
+                insideAdStoppedReceiver as BroadcastReceiver,
+                IntentFilter(Constants.AD_STOPPED)
+            )
+    }
+
+    fun unregisterBroadcastReceiver() {
+        insideAdStoppedReceiver?.let { receiver ->
+            LocalBroadcastManager.getInstance(context).unregisterReceiver(receiver)
+            insideAdStoppedReceiver = null
+        }
+    }
+
 }
