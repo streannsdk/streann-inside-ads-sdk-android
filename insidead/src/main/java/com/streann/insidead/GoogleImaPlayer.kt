@@ -36,7 +36,7 @@ class GoogleImaPlayer constructor(context: Context) :
     private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdListener: InsideAdCallback? = null
-    private var broadcaster: LocalBroadcastManager? = null
+    private var stopAdBroadcaster: LocalBroadcastManager? = null
 
     init {
         init()
@@ -47,7 +47,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-        broadcaster = LocalBroadcastManager.getInstance(context)
+        stopAdBroadcaster = LocalBroadcastManager.getInstance(context)
 
         videoPlayer = findViewById(R.id.videoView)
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
@@ -150,7 +150,7 @@ class GoogleImaPlayer constructor(context: Context) :
 
             override fun onEnded(p0: AdMediaInfo) {
                 insideAdListener?.insideAdStop()
-                broadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
+                stopAdBroadcaster?.sendBroadcast(Intent().setAction(Constants.AD_STOPPED))
             }
 
             override fun onError(p0: AdMediaInfo) {
