@@ -55,8 +55,7 @@ class InsideAdView @JvmOverloads constructor(
     private fun init() {
         mInsideAdPlayer = InsideAdPlayer(context, this)
         addView(mInsideAdPlayer)
-        mGoogleImaPlayer = GoogleImaPlayer(context, this)
-        addView(mGoogleImaPlayer)
+        createGoogleImaView()
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
@@ -176,6 +175,7 @@ class InsideAdView @JvmOverloads constructor(
         when (insideAd.adType) {
             Constants.AD_TYPE_VAST -> {
                 showAdHandler?.postDelayed({
+                    createGoogleImaView()
                     mInsideAdPlayer?.visibility = GONE
                     mGoogleImaPlayer?.visibility = VISIBLE
                     mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
@@ -232,6 +232,7 @@ class InsideAdView @JvmOverloads constructor(
 
     override fun insideAdStopped() {
         Log.i(LOGTAG, "insideAdStopped")
+        removeGoogleImaView()
         if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
             requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
             val geoCountryCode = InsideAdSdk.geoIp?.countryCode
@@ -241,6 +242,18 @@ class InsideAdView @JvmOverloads constructor(
                 }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
             }
         }
+    }
+
+    private fun createGoogleImaView() {
+        if (mGoogleImaPlayer == null) {
+            mGoogleImaPlayer = GoogleImaPlayer(context, this)
+            addView(mGoogleImaPlayer)
+        }
+    }
+
+    private fun removeGoogleImaView() {
+        removeView(mGoogleImaPlayer)
+        mGoogleImaPlayer = null
     }
 
 }
