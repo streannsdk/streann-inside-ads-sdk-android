@@ -72,18 +72,6 @@ class InsideAdPlayer constructor(
         }
     }
 
-    private fun setupLocalVideoAd() {
-        surfaceView = SurfaceView(context)
-        surfaceView?.holder?.addCallback(this)
-
-        addView(surfaceView)
-        setSurfaceViewSize()
-
-        imageAdView.visibility = GONE
-        surfaceView?.visibility = VISIBLE
-        videoProgressBar?.visibility = VISIBLE
-    }
-
     private fun showLocalImageAd(bitmap: Bitmap) {
         imageAdView.visibility = VISIBLE
         surfaceView?.visibility = GONE
@@ -99,6 +87,18 @@ class InsideAdPlayer constructor(
                 stopAd()
             }, it)
         }
+    }
+
+    private fun setupLocalVideoAd() {
+        surfaceView = SurfaceView(context)
+        surfaceView?.holder?.addCallback(this)
+
+        addView(surfaceView)
+        setSurfaceViewSize()
+
+        imageAdView.visibility = GONE
+        surfaceView?.visibility = VISIBLE
+        videoProgressBar?.visibility = VISIBLE
     }
 
     private fun prepareMediaPlayer(videoUrl: Uri) {

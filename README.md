@@ -19,7 +19,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.4
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.5
 }
 ```
 
@@ -85,7 +85,10 @@ To use the InsideAdView in your project, follow these steps:
     insideAdCallback = object : InsideAdCallback {
         override fun insideAdReceived(insideAd: InsideAd) { }
 
-        override fun insideAdLoaded() { }
+        override fun insideAdLoaded() {
+            // Call the InsideAdView playAd method in order to start playing the ad
+            mInsideAdView?.playAd()
+        }
 
         override fun insideAdPlay() { }
 
