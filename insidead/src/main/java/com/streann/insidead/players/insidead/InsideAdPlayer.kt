@@ -1,4 +1,4 @@
-package com.streann.insidead
+package com.streann.insidead.players.insidead
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -13,6 +13,8 @@ import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
 import android.widget.FrameLayout
 import android.widget.ImageView
 import android.widget.ProgressBar
+import com.streann.insidead.InsideAdSdk
+import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.InsideAd
@@ -132,7 +134,7 @@ class InsideAdPlayer constructor(
             removeHandlers()
         }
 
-        mediaPlayer?.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
+        mediaPlayer?.setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
             notifySdkAboutAdError(errorType)
             true
         }

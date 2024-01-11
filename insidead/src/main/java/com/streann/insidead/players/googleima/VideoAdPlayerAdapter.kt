@@ -1,4 +1,4 @@
-package com.streann.insidead
+package com.streann.insidead.players.googleima
 
 import android.media.AudioManager
 import android.media.MediaPlayer
@@ -11,6 +11,8 @@ import com.google.ads.interactivemedia.v3.api.AdPodInfo
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
+import com.streann.insidead.InsideAdSdk
+import com.streann.insidead.R
 import java.util.*
 
 class VideoAdPlayerAdapter(
@@ -175,13 +177,13 @@ class VideoAdPlayerAdapter(
             notifyImaSdkAboutAdStarted()
         }
 
-        videoPlayer.setOnErrorListener { mediaPlayer: MediaPlayer?, errorType: Int, extra: Int ->
+        videoPlayer.setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
             notifyImaSdkAboutAdError(
                 errorType
             )
         }
 
-        videoPlayer.setOnCompletionListener { mediaPlayer: MediaPlayer? ->
+        videoPlayer.setOnCompletionListener {
             savedAdPosition = 0
             notifyImaSdkAboutAdEnded()
         }
