@@ -1,8 +1,10 @@
 package com.streann.insidead.demo
 
+import android.content.Intent
 import android.os.Bundle
 import android.util.Log
 import android.view.View
+import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
 import com.streann.insidead.InsideAdView
@@ -25,10 +27,11 @@ class MainActivity : AppCompatActivity() {
 
         val adProgressText = findViewById<TextView>(R.id.adProgressText)
         val adStopText = findViewById<TextView>(R.id.adStopText)
+        val splitActivityButton = findViewById<Button>(R.id.splitActivityButton)
 
         adProgressText.setOnClickListener {
             mInsideAdView?.requestAd(
-                screen = "",
+                screen = "Splash",
                 insideAdCallback = object : InsideAdCallback {
                     override fun insideAdReceived(insideAd: InsideAd) {
                         Log.i(TAG, "insideAdReceived: $insideAd")
@@ -77,6 +80,10 @@ class MainActivity : AppCompatActivity() {
             mInsideAdView?.stopAd()
         }
 
+        splitActivityButton?.setOnClickListener {
+            val intent = Intent(this, SplitActivity::class.java)
+            this.startActivity(intent)
+        }
     }
 
 }
