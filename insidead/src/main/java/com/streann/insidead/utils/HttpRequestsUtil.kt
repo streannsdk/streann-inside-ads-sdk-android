@@ -577,7 +577,7 @@ object HttpRequestsUtil {
             if (adsObject.has("properties") && !adsObject.isNull("properties")) {
                 try {
                     insideAd.properties = adsObject.getJSONObject("properties")
-                    if (insideAd.properties?.has("durationInSeconds") == true) {
+                    if (insideAd.properties?.isNull("durationInSeconds") == false) {
                         val durationInSeconds = insideAd.properties!!.getInt("durationInSeconds")
                         if (durationInSeconds.toString().isNotBlank()) {
                             InsideAdSdk.durationInSeconds = durationInSeconds.toLong().let {
