@@ -11,8 +11,8 @@ import com.streann.insidead.models.MacrosBundle
 
 object InsideAdHelper {
 
-    private fun replaceMacros(url: String, keyword: String, replacement: Double?): String {
-        var url: String = url
+    private fun replaceMacros(adUrl: String, keyword: String, replacement: Double?): String {
+        var url: String = adUrl
         url =
             if (replacement != 0.0) url.replace(
                 keyword,
@@ -21,8 +21,8 @@ object InsideAdHelper {
         return url
     }
 
-    private fun replaceMacros(url: String, keyword: String, replacement: Int): String {
-        var url: String = url
+    private fun replaceMacros(adUrl: String, keyword: String, replacement: Int): String {
+        var url: String = adUrl
         url =
             if (replacement != 0) url.replace(
                 keyword,
@@ -31,8 +31,8 @@ object InsideAdHelper {
         return url
     }
 
-    private fun replaceMacros(url: String, keyword: String, replacement: String?): String {
-        var url: String = url
+    private fun replaceMacros(adUrl: String, keyword: String, replacement: String?): String {
+        var url: String = adUrl
         url = if (!TextUtils.isEmpty(replacement)) replacement?.let {
             url.replace(
                 keyword,

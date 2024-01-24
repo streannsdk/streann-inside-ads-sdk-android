@@ -6,9 +6,9 @@ import com.streann.insidead.models.MacrosBundle
 
 object MacrosUtil {
 
-    var bundleId: String? = InsideAdSdk.bundleId
-    var appName: String? = InsideAdSdk.appName
-    var appVersion: String? = InsideAdSdk.appVersion
+    private var bundleId: String? = InsideAdSdk.bundleId
+    private var appName: String? = InsideAdSdk.appName
+    private var appVersion: String? = InsideAdSdk.appVersion
 
     fun createDefaultMacroBuilder(): MacrosBundle.Builder {
         val builder = MacrosBundle.Builder()

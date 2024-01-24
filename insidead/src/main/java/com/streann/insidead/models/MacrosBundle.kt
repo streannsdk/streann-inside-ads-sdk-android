@@ -284,11 +284,11 @@ class MacrosBundle {
         }
 
         private fun encode(s: String?): String? {
-            var s = s
-            return if (!TextUtils.isEmpty(s)) {
+            var value = s
+            return if (!TextUtils.isEmpty(value)) {
                 try {
-                    s = URLEncoder.encode(s, "UTF-8")
-                    s
+                    value = URLEncoder.encode(value, "UTF-8")
+                    value
                 } catch (e: UnsupportedEncodingException) {
                     ""
                 }

@@ -1,4 +1,4 @@
-package com.streann.insidead
+package com.streann.insidead.players.googleima
 
 import android.annotation.SuppressLint
 import android.content.Context
@@ -17,6 +17,7 @@ import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
+import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.InsideAd

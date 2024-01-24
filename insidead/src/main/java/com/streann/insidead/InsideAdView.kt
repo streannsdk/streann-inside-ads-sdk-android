@@ -14,6 +14,8 @@ import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.players.googleima.GoogleImaPlayer
+import com.streann.insidead.players.insidead.InsideAdPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
