@@ -224,7 +224,7 @@ object HttpRequestsUtil {
         }
 
         if (campaignResponseArray == null) {
-            if (campaignCallback != null) campaignCallback.onError("No campaigns at the moment.")
+            campaignCallback.onError("No campaigns at the moment.")
             return
         }
 
@@ -236,13 +236,11 @@ object HttpRequestsUtil {
         }
 
         if (campaigns == null) {
-            if (campaignCallback != null) campaignCallback.onError("No campaigns at the moment.")
+            campaignCallback.onError("No campaigns at the moment.")
             return
         }
 
-        if (campaignCallback != null) {
-            campaignCallback.onSuccess(campaigns)
-        }
+        campaignCallback.onSuccess(campaigns)
     }
 
     private fun parseCampaignJSONResponse(campaignArray: JSONArray): ArrayList<Campaign> {
@@ -328,11 +326,18 @@ object HttpRequestsUtil {
 
             if (campaignObject.has("properties") && !campaignObject.isNull("properties")) {
                 try {
-                    val properties = campaignObject.getJSONObject("properties").toString()
+                    val properties = campaignObject.getJSONObject("properties")
 
-                    val gson = Gson()
-                    val type = object : TypeToken<Map<String, Int>>() {}.type
-                    val map: Map<String, Int> = gson.fromJson(properties, type)
+                    val map = HashMap<String, Int>()
+                    properties.keys().forEach { key ->
+                        val value = properties.optString(key)
+                        val intValue = if (value.isNullOrBlank()) 0 else try {
+                            value.toInt()
+                        } catch (e: NumberFormatException) {
+                            0
+                        }
+                        map[key] = intValue
+                    }
 
                     campaign.properties = map
                 } catch (e: JSONException) {
@@ -466,11 +471,17 @@ object HttpRequestsUtil {
 
             if (placementObject.has("properties") && !placementObject.isNull("properties")) {
                 try {
-                    val properties = placementObject.getJSONObject("properties").toString()
-
-                    val gson = Gson()
-                    val type = object : TypeToken<Map<String, Int>>() {}.type
-                    val map: Map<String, Int> = gson.fromJson(properties, type)
+                    val properties = placementObject.getJSONObject("properties")
+                    val map = HashMap<String, Int>()
+                    properties.keys().forEach { key ->
+                        val value = properties.optString(key)
+                        val intValue = if (value.isNullOrBlank()) 0 else try {
+                            value.toInt()
+                        } catch (e: NumberFormatException) {
+                            0
+                        }
+                        map[key] = intValue
+                    }
 
                     placement.properties = map
                 } catch (e: JSONException) {
@@ -566,9 +577,13 @@ object HttpRequestsUtil {
             if (adsObject.has("properties") && !adsObject.isNull("properties")) {
                 try {
                     insideAd.properties = adsObject.getJSONObject("properties")
-                    val durationInSeconds = insideAd.properties?.getInt("durationInSeconds")
-                    InsideAdSdk.durationInSeconds = durationInSeconds?.toLong()?.let {
-                        Helper.getMillisFromSeconds(it)
+                    if (insideAd.properties?.isNull("durationInSeconds") == false) {
+                        val durationInSeconds = insideAd.properties!!.getInt("durationInSeconds")
+                        if (durationInSeconds.toString().isNotBlank()) {
+                            InsideAdSdk.durationInSeconds = durationInSeconds.toLong().let {
+                                Helper.getMillisFromSeconds(it)
+                            }
+                        }
                     }
                 } catch (e: JSONException) {
                     e.printStackTrace()

@@ -9,8 +9,8 @@ class AppController : Application() {
         super.onCreate()
 
         InsideAdSdk.initializeSdk(
-            "61290efae4b0304f3eb75567",
-            "ced862e686294f3097b8737c3af35e8565d45e2f8bfa4b8ba93a935435d58c7f",
+            "559ff7ade4b0d0aff40888dd",
+            "d04481f94ba54bba9e455cb7b2e2a69247875eb2cb804fd984c3a56a6f16b2a8",
             "https://inside-ads.services.c1.streann.com/"
         )
     }
