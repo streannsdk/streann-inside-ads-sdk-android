@@ -7,6 +7,7 @@ import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
+import android.widget.LinearLayout
 import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
@@ -52,6 +53,8 @@ class GoogleImaPlayer constructor(
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         videoPlayer = findViewById(R.id.videoView)
+        setupVideoViewSize(videoPlayerContainer)
+
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
         videoAdPlayerAdapter =
             VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
@@ -76,6 +79,8 @@ class GoogleImaPlayer constructor(
             FriendlyObstructionPurpose.VIDEO_CONTROLS,
             "This is the video player volume button"
         )
+
+        overlayObstruction.view.translationZ = 100f
 
         adDisplayContainer.registerFriendlyObstruction(overlayObstruction)
         adDisplayContainer.registerFriendlyObstruction(volumeButtonObstruction)
@@ -128,6 +133,7 @@ class GoogleImaPlayer constructor(
             }
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
+            adsRenderingSettings.setLoadVideoTimeout(15000)
             adsManager?.init(adsRenderingSettings)
         }
     }
@@ -177,6 +183,16 @@ class GoogleImaPlayer constructor(
                 insideAdListener?.insideAdVolumeChanged(p1)
             }
         })
+    }
+
+    private fun setupVideoViewSize(videoPlayerContainer: ViewGroup?) {
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val videoHeight = ((screenWidth * 9.0) / 16.0).toInt()
+
+        val layoutParams = videoPlayerContainer?.layoutParams as LinearLayout.LayoutParams
+        layoutParams.height = videoHeight
+        videoPlayerContainer.layoutParams = layoutParams
     }
 
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
