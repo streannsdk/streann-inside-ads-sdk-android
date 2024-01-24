@@ -172,6 +172,7 @@ class VideoAdPlayerAdapter(
             }
 
             setAdVolumeControl(mediaPlayer)
+            videoPlayer.animate().alpha(1f);
             mediaPlayer.start()
             startAdTracking()
             notifyImaSdkAboutAdStarted()
