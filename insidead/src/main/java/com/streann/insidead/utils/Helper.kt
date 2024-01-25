@@ -1,10 +1,13 @@
 package com.streann.insidead.utils
 
+import android.app.Activity
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.view.WindowInsets
+import androidx.core.view.WindowInsetsCompat
 import java.math.BigInteger
 import java.net.HttpURLConnection
 import java.net.URL
@@ -113,6 +116,19 @@ object Helper {
 
     fun getMillisFromMinutes(seconds: Long): Long {
         return TimeUnit.MINUTES.toMillis(seconds)
+    }
+
+    fun getScreenHeight(activity: Activity, resources: Resources): Int {
+        return if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.R) {
+            val metrics = activity.windowManager.currentWindowMetrics
+            val insets = metrics.windowInsets.getInsets(WindowInsets.Type.systemBars())
+            metrics.bounds.height() - insets.bottom - insets.top
+        } else {
+            val view = activity.window.decorView
+            val insets = WindowInsetsCompat.toWindowInsetsCompat(view.rootWindowInsets, view)
+                .getInsets(WindowInsetsCompat.Type.systemBars())
+            resources.displayMetrics.heightPixels - insets.bottom - insets.top
+        }
     }
 
 }
