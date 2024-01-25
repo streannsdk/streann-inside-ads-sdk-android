@@ -2,6 +2,7 @@ package com.streann.insidead.players.googleima
 
 import android.annotation.SuppressLint
 import android.content.Context
+import android.content.res.Configuration
 import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
@@ -54,7 +55,10 @@ class GoogleImaPlayer constructor(
         val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
 
         videoPlayer = findViewById(R.id.videoView)
-        setupVideoViewSize(videoPlayerContainer)
+
+        val isLandscape =
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        setupVideoViewSize(videoPlayerContainer, isLandscape)
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
         videoAdPlayerAdapter =
@@ -186,16 +190,6 @@ class GoogleImaPlayer constructor(
         })
     }
 
-    private fun setupVideoViewSize(videoPlayerContainer: ViewGroup?) {
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val videoHeight = ((screenWidth * 9.0) / 16.0).toInt()
-
-        val layoutParams = videoPlayerContainer?.layoutParams as LinearLayout.LayoutParams
-        layoutParams.height = videoHeight
-        videoPlayerContainer.layoutParams = layoutParams
-    }
-
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdListener = listener
         val url = InsideAdHelper.populateVASTURL(context, insideAd)
@@ -204,6 +198,29 @@ class GoogleImaPlayer constructor(
 
     fun stopAd() {
         videoAdPlayerAdapter?.stopAdPlaying()
+    }
+
+    private fun setupVideoViewSize(videoPlayerContainer: ViewGroup?, isLandscape: Boolean) {
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val aspectRatio = 9.0 / 16.0
+
+        val layoutParams = videoPlayerContainer?.layoutParams as LinearLayout.LayoutParams
+
+        if (isLandscape) {
+            val videoWidth = screenWidth / 2
+            val videoHeight = (videoWidth * aspectRatio).toInt()
+
+            layoutParams.width = videoWidth
+            layoutParams.height = videoHeight
+        } else {
+            val videoHeight = (screenWidth * aspectRatio).toInt()
+
+            layoutParams.width = screenWidth
+            layoutParams.height = videoHeight
+        }
+
+        videoPlayerContainer.layoutParams = layoutParams
     }
 
 }
