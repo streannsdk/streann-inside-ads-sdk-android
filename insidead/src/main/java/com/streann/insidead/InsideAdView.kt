@@ -8,12 +8,14 @@ import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
+import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
@@ -37,6 +39,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
+    private var mBannerAdsPlayer: BannerAdsPlayer? = null
 
     private var insideAd: InsideAd? = null
     private var insideAdCallback: InsideAdCallback? = null
@@ -57,10 +60,14 @@ class InsideAdView @JvmOverloads constructor(
     private fun init() {
         mInsideAdPlayer = InsideAdPlayer(context, this)
         addView(mInsideAdPlayer)
+        mBannerAdsPlayer = BannerAdsPlayer(context, this)
+        addView(mBannerAdsPlayer)
         createGoogleImaView()
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
+
+        MobileAds.initialize(context) { }
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -179,6 +186,7 @@ class InsideAdView @JvmOverloads constructor(
                 showAdHandler?.postDelayed({
                     createGoogleImaView()
                     mInsideAdPlayer?.visibility = GONE
+                    mBannerAdsPlayer?.visibility = GONE
                     mGoogleImaPlayer?.visibility = VISIBLE
                     mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
                 }, InsideAdSdk.startAfterSeconds ?: 0)
@@ -186,6 +194,7 @@ class InsideAdView @JvmOverloads constructor(
             Constants.AD_TYPE_LOCAL_VIDEO -> {
                 showAdHandler?.postDelayed({
                     mGoogleImaPlayer?.visibility = GONE
+                    mBannerAdsPlayer?.visibility = GONE
                     mInsideAdPlayer?.visibility = VISIBLE
                     mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
                 }, InsideAdSdk.startAfterSeconds ?: 0)
@@ -198,12 +207,21 @@ class InsideAdView @JvmOverloads constructor(
                         insideAdCallback.insideAdLoaded()
 
                         mGoogleImaPlayer?.visibility = GONE
+                        mBannerAdsPlayer?.visibility = GONE
                         mInsideAdPlayer?.visibility = VISIBLE
 
                         mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
                     } ?: run {
                         insideAdCallback.insideAdError("Error while getting AD.")
                     }
+                }, InsideAdSdk.startAfterSeconds ?: 0)
+            }
+            Constants.AD_TYPE_BANNER -> {
+                showAdHandler?.postDelayed({
+                    mGoogleImaPlayer?.visibility = GONE
+                    mInsideAdPlayer?.visibility = GONE
+                    mBannerAdsPlayer?.visibility = VISIBLE
+                    mBannerAdsPlayer?.playAd(insideAd, insideAdCallback)
                 }, InsideAdSdk.startAfterSeconds ?: 0)
             }
         }
@@ -217,6 +235,9 @@ class InsideAdView @JvmOverloads constructor(
                 }
                 Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> {
                     mInsideAdPlayer?.stopAd()
+                }
+                Constants.AD_TYPE_BANNER -> {
+                    mBannerAdsPlayer?.stopAd()
                 }
                 else -> {}
             }
