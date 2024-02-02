@@ -20,6 +20,7 @@ import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
 class BannerAdsPlayer constructor(
@@ -60,6 +61,8 @@ class BannerAdsPlayer constructor(
                 adView?.setAdSizes(*adSizes.toTypedArray())
             }
         }
+
+        adView?.adSize?.let { Helper.setBannerAdHeight(adSize = it) }
 
         val adRequest = AdManagerAdRequest.Builder().build()
         adView?.loadAd(adRequest)
@@ -103,6 +106,7 @@ class BannerAdsPlayer constructor(
     fun stopAd() {
         Log.i(LOGTAG, "stopAd")
         removeView(adView)
+        Helper.setBannerAdHeight(null)
         insideAdCallback?.insideAdStop()
         insideAdStoppedCallback?.insideAdStopped()
         removeHandlers()
