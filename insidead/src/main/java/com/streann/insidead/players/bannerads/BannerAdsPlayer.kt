@@ -50,7 +50,7 @@ class BannerAdsPlayer constructor(
         closeBannerAdHandler = Handler(Looper.getMainLooper())
 
         adView = AdManagerAdView(context)
-        adView?.adUnitId = "/6499/example/banner"
+        adView?.adUnitId = insideAd.url ?: ""
         addView(adView)
 
         if (insideAd.properties?.isNull("sizes") == false) {
