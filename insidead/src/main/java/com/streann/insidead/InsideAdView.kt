@@ -220,7 +220,6 @@ class InsideAdView @JvmOverloads constructor(
         mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
     }
 
-
     private fun createGoogleImaView() {
         if (mGoogleImaPlayer == null) {
             mGoogleImaPlayer = GoogleImaPlayer(context, this)
