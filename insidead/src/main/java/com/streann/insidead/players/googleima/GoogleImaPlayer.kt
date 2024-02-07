@@ -138,7 +138,6 @@ class GoogleImaPlayer constructor(
             }
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
-            adsRenderingSettings.setLoadVideoTimeout(15000)
             adsManager?.init(adsRenderingSettings)
         }
     }
