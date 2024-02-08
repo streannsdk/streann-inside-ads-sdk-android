@@ -18,24 +18,23 @@ import com.google.gson.reflect.TypeToken
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.callbacks.InsideAdStoppedCallback
+import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
 class BannerAdsPlayer constructor(
     context: Context,
-    callback: InsideAdStoppedCallback
+    callback: InsideAdProgressCallback
 ) : FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
 
     private var adView: AdManagerAdView? = null
+    private var closeBannerAdHandler: Handler? = null
 
     private var insideAdCallback: InsideAdCallback? = null
-    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
-
-    private var closeBannerAdHandler: Handler? = null
+    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     init {
         init()
@@ -60,7 +59,7 @@ class BannerAdsPlayer constructor(
                 val adSizes = convertJsonArrayToAdSizes(sizesJsonArray)
                 adView?.setAdSizes(*adSizes.toTypedArray())
             }
-        }
+        } else adView?.setAdSizes(AdSize.BANNER)
 
         adView?.adSize?.let { Helper.setBannerAdHeight(adSize = it) }
 
@@ -80,6 +79,7 @@ class BannerAdsPlayer constructor(
             override fun onAdFailedToLoad(adError: LoadAdError) {
                 Log.e(LOGTAG, "onAdFailedToLoad: ${adError.code}, ${adError.message}")
                 insideAdCallback?.insideAdError(adError.message)
+                insideAdProgressCallback?.insideAdError()
             }
 
             override fun onAdImpression() {
@@ -108,7 +108,7 @@ class BannerAdsPlayer constructor(
         removeView(adView)
         Helper.setBannerAdHeight(null)
         insideAdCallback?.insideAdStop()
-        insideAdStoppedCallback?.insideAdStopped()
+        insideAdProgressCallback?.insideAdStopped()
         removeHandlers()
     }
 

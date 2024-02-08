@@ -20,14 +20,14 @@ import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.callbacks.InsideAdStoppedCallback
+import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
 @SuppressLint("ViewConstructor")
 class GoogleImaPlayer constructor(
     context: Context,
-    callback: InsideAdStoppedCallback
+    callback: InsideAdProgressCallback
 ) :
     FrameLayout(context) {
 
@@ -41,8 +41,8 @@ class GoogleImaPlayer constructor(
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
     private var videoPlayerVolumeButton: FrameLayout? = null
 
-    private var insideAdListener: InsideAdCallback? = null
-    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
+    private var insideAdCallback: InsideAdCallback? = null
+    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     init {
         init()
@@ -96,7 +96,8 @@ class GoogleImaPlayer constructor(
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
             Log.i(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
-            insideAdListener?.insideAdError(adErrorEvent.error.message)
+            insideAdCallback?.insideAdError(adErrorEvent.error.message)
+            insideAdProgressCallback?.insideAdError()
         }
 
         adsLoader!!.addAdsLoadedListener { adsManagerLoadedEvent ->
@@ -104,7 +105,8 @@ class GoogleImaPlayer constructor(
 
             adsManager?.addAdErrorListener { adErrorEvent ->
                 Log.e(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
-                insideAdListener?.insideAdError(adErrorEvent.error.message)
+                insideAdCallback?.insideAdError(adErrorEvent.error.message)
+                insideAdProgressCallback?.insideAdError()
 
                 val universalAdIds: String =
                     adsManager?.currentAd?.universalAdIds.contentToString()
@@ -128,16 +130,17 @@ class GoogleImaPlayer constructor(
                         adsManager = null
                     }
                     AdEventType.SKIPPED -> {
-                        insideAdListener?.insideAdSkipped()
+                        insideAdCallback?.insideAdSkipped()
                     }
                     AdEventType.CLICKED -> {
-                        insideAdListener?.insideAdClicked()
+                        insideAdCallback?.insideAdClicked()
                     }
                     else -> {}
                 }
             }
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
+            adsRenderingSettings.setLoadVideoTimeout(15000)
             adsManager?.init(adsRenderingSettings)
         }
     }
@@ -161,36 +164,37 @@ class GoogleImaPlayer constructor(
             }
 
             override fun onEnded(p0: AdMediaInfo) {
-                insideAdListener?.insideAdStop()
-                insideAdStoppedCallback?.insideAdStopped()
+                insideAdCallback?.insideAdStop()
+                insideAdProgressCallback?.insideAdStopped()
             }
 
             override fun onError(p0: AdMediaInfo) {
-                insideAdListener?.insideAdError("Error while playing AD.")
+                insideAdCallback?.insideAdError("Error while playing AD.")
+                insideAdProgressCallback?.insideAdError()
             }
 
             override fun onLoaded(p0: AdMediaInfo) {
-                insideAdListener?.insideAdLoaded()
+                insideAdCallback?.insideAdLoaded()
             }
 
             override fun onPause(p0: AdMediaInfo) {
             }
 
             override fun onPlay(p0: AdMediaInfo) {
-                insideAdListener?.insideAdPlay()
+                insideAdCallback?.insideAdPlay()
             }
 
             override fun onResume(p0: AdMediaInfo) {
             }
 
             override fun onVolumeChanged(p0: AdMediaInfo, p1: Int) {
-                insideAdListener?.insideAdVolumeChanged(p1)
+                insideAdCallback?.insideAdVolumeChanged(p1)
             }
         })
     }
 
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
-        insideAdListener = listener
+        insideAdCallback = listener
         val url = InsideAdHelper.populateVASTURL(context, insideAd)
         url?.let { requestAds(it) }
     }

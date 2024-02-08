@@ -16,13 +16,13 @@ import android.widget.ProgressBar
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.callbacks.InsideAdStoppedCallback
+import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
 
 @SuppressLint("ViewConstructor")
 class InsideAdPlayer constructor(
     context: Context,
-    callback: InsideAdStoppedCallback
+    callback: InsideAdProgressCallback
 ) : FrameLayout(context), SurfaceHolder.Callback {
 
     private val LOGTAG = "InsideAdSdk"
@@ -35,14 +35,14 @@ class InsideAdPlayer constructor(
     private var adVolumeButton: ImageView? = null
     private var videoProgressBar: ProgressBar? = null
 
-    private var insideAdListener: InsideAdCallback? = null
+    private var insideAdCallback: InsideAdCallback? = null
 
     private var adSoundPlaying = true
     private var savedAdPosition = 0
 
     private var showCloseButtonHandler: Handler? = null
     private var closeImageAdHandler: Handler? = null
-    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
+    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     init {
         init()
@@ -53,8 +53,8 @@ class InsideAdPlayer constructor(
         imageAdView = findViewById(R.id.imageView)
     }
 
-    fun playAd(bitmap: Bitmap?, insideAd: InsideAd, listener: InsideAdCallback) {
-        insideAdListener = listener
+    fun playAd(bitmap: Bitmap?, insideAd: InsideAd, callback: InsideAdCallback) {
+        insideAdCallback = callback
         showCloseButtonHandler = Handler(Looper.getMainLooper())
         closeImageAdHandler = Handler(Looper.getMainLooper())
 
@@ -82,7 +82,7 @@ class InsideAdPlayer constructor(
         imageAdView.setImageBitmap(bitmap)
 
         Log.i(LOGTAG, "playAd")
-        insideAdListener?.insideAdPlay()
+        insideAdCallback?.insideAdPlay()
 
         InsideAdSdk.durationInSeconds?.let {
             closeImageAdHandler?.postDelayed({
@@ -110,7 +110,7 @@ class InsideAdPlayer constructor(
 
             setOnPreparedListener { mediaPlayer ->
                 Log.i(LOGTAG, "loadAd")
-                insideAdListener?.insideAdLoaded()
+                insideAdCallback?.insideAdLoaded()
 
                 if (savedAdPosition > 0) {
                     mediaPlayer.seekTo(savedAdPosition)
@@ -126,7 +126,7 @@ class InsideAdPlayer constructor(
         mediaPlayer?.start()
 
         Log.i(LOGTAG, "playAd")
-        insideAdListener?.insideAdPlay()
+        insideAdCallback?.insideAdPlay()
         videoProgressBar?.visibility = GONE
 
         mediaPlayer?.setOnCompletionListener {
@@ -148,8 +148,8 @@ class InsideAdPlayer constructor(
             stopLocalVideoAd()
         } else if (imageAdView.visibility == VISIBLE) {
             imageAdView.setImageBitmap(null)
-            insideAdListener?.insideAdStop()
-            insideAdStoppedCallback?.insideAdStopped()
+            insideAdCallback?.insideAdStop()
+            insideAdProgressCallback?.insideAdStopped()
         }
 
         removeHandlers()
@@ -159,8 +159,8 @@ class InsideAdPlayer constructor(
 
     private fun stopLocalVideoAd() {
         savedAdPosition = 0
-        insideAdListener?.insideAdStop()
-        insideAdStoppedCallback?.insideAdStopped()
+        insideAdCallback?.insideAdStop()
+        insideAdProgressCallback?.insideAdStopped()
         adVolumeButton?.visibility = GONE
         removeView(surfaceView)
         removeView(adCloseButton)
@@ -170,6 +170,7 @@ class InsideAdPlayer constructor(
 
     private fun notifySdkAboutAdError(errorType: Int): Boolean {
         Log.i(LOGTAG, "notifySdkAboutAdError")
+        insideAdProgressCallback?.insideAdError()
 
         when (errorType) {
             MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> {
@@ -177,17 +178,17 @@ class InsideAdPlayer constructor(
                     LOGTAG,
                     "notifySdkAboutAdError: MEDIA_ERROR_UNSUPPORTED"
                 )
-                insideAdListener?.insideAdError("Ad Error: MEDIA_ERROR_UNSUPPORTED")
+                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_UNSUPPORTED")
             }
             MediaPlayer.MEDIA_ERROR_TIMED_OUT -> {
                 Log.e(
                     LOGTAG,
                     "notifySdkAboutAdError: MEDIA_ERROR_TIMED_OUT"
                 )
-                insideAdListener?.insideAdError("Ad Error: MEDIA_ERROR_TIMED_OUT")
+                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_TIMED_OUT")
             }
             else -> {
-                insideAdListener?.insideAdError("Error while playing AD.")
+                insideAdCallback?.insideAdError("Error while playing AD.")
             }
         }
 
@@ -262,7 +263,7 @@ class InsideAdPlayer constructor(
         mediaPlayer.setVolume(sound.toFloat(), sound.toFloat())
         adVolumeButton?.visibility = VISIBLE
         adVolumeButton?.setImageResource(soundIcon)
-        insideAdListener?.insideAdVolumeChanged(sound)
+        insideAdCallback?.insideAdVolumeChanged(sound)
     }
 
     private fun setSurfaceViewSize() {
