@@ -79,6 +79,7 @@ class BannerAdsPlayer constructor(
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
                 Log.e(LOGTAG, "onAdFailedToLoad: ${adError.code}, ${adError.message}")
+                Helper.setBannerAdHeight(null)
                 insideAdCallback?.insideAdError(adError.message)
             }
 
