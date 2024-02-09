@@ -10,7 +10,6 @@ import android.widget.FrameLayout
 import com.google.android.gms.ads.AdListener
 import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.LoadAdError
-import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerAdView
 import com.streann.insidead.InsideAdSdk
@@ -35,12 +34,7 @@ class BannerAdsPlayer constructor(
     private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     init {
-        init()
-    }
-
-    private fun init() {
         LayoutInflater.from(context).inflate(R.layout.banner_ad_player, this)
-        MobileAds.initialize(context) { }
     }
 
     fun playAd(insideAd: InsideAd, callback: InsideAdCallback) {
