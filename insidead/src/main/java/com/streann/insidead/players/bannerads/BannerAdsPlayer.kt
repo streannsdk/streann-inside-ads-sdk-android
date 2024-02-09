@@ -60,7 +60,7 @@ class BannerAdsPlayer constructor(
                 val adSizes = convertJsonArrayToAdSizes(sizesJsonArray)
                 adView?.setAdSizes(*adSizes.toTypedArray())
             }
-        }
+        } else adView?.setAdSizes(AdSize.BANNER)
 
         adView?.adSize?.let { Helper.setBannerAdHeight(adSize = it) }
 
