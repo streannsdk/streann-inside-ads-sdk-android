@@ -74,6 +74,20 @@ To use the Streann Inside Ad library in your project, follow these steps:
         )
    ```
 
+- If you want to use banner ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
+    - To do so, add a <meta-data> tag with android:name="com.google.android.gms.ads.APPLICATION_ID".
+    - For android:value, insert your own Ad Manager app ID.
+
+  ```xml
+  
+  <manifest>
+      <application>
+          <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+              android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy" tools:replace="android:value" />
+      </application>
+  </manifest>
+     ```
+
 **Split Screen View**
 
 To use the SplitInsideAdView in your project, follow these steps:
@@ -171,7 +185,7 @@ To use InsideAdView in your project, follow these steps:
 
 - If you want to manually stop the ad while it's playing:
   ```js
-  mInsideAdView?.stopAd()
+  insideAdView?.stopAd()
   ```
 
 ## Sample App
