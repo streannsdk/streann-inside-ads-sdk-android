@@ -4,14 +4,16 @@ Streann Inside Ad library is designed to incorporate playback functionality
 seamlessly of diverse ad formats into your Android applications. One standout feature of this
 library is its split-screen option, enabling you to effortlessly display ads side by side with your
 content which allows developers to create immersive and engaging user experiences. This library
-supports the playback of VAST ads using the Interactive Media Ads (IMA) SDK by Google, along with
-various video ad formats and the presentation of image-based ads.
+supports the playback of VAST ads using the Interactive Media Ads (IMA) SDK by Google, playback of
+banner ads within your app's content, along with various video ad formats and the presentation of
+image-based ads.
 
 ## Features
 
 - Effortless integration of ad playback within your Android app.
 - Split Screen Option: Easily integrate a split-screen layout to display ads alongside your content.
 - Seamless support for VAST video ads through the Google IMA SDK.
+- Integrate banner ads seamlessly within your app's interface.
 - Full compatibility with different video types, including MP4, m3u8, etc.
 - Capability to seamlessly display image-based advertisements.
 
@@ -22,7 +24,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.7
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.8
 }
 ```
 
