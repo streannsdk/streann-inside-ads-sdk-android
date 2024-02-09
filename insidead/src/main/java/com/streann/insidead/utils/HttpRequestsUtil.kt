@@ -2,7 +2,7 @@ package com.streann.insidead.utils
 
 import android.util.Log
 import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
+import com.google.gson.JsonSyntaxException
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.models.*
@@ -362,19 +362,21 @@ object HttpRequestsUtil {
 
             if (timePeriodObject.has("daysOfWeek")) {
                 try {
-                    val daysOfWeekObject = timePeriodObject.getJSONArray("daysOfWeek").toString()
+                    val daysOfWeekArray = timePeriodObject.getJSONArray("daysOfWeek")
 
-                    val gson = Gson()
-                    val daysOfWeekList: List<DayOfWeek> =
-                        gson.fromJson(daysOfWeekObject, Array<String>::class.java)
-                            .map { dayString -> DayOfWeek.valueOf(dayString) }
+                    val daysOfWeekList = mutableListOf<DayOfWeek>()
+                    for (i in 0 until daysOfWeekArray.length()) {
+                        val dayString = daysOfWeekArray.getString(i)
+                        val dayOfWeek = DayOfWeek.valueOf(dayString)
+                        daysOfWeekList.add(dayOfWeek)
+                    }
 
                     timePeriod.daysOfWeek = daysOfWeekList
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                timePeriod.daysOfWeek = arrayListOf()
+                timePeriod.daysOfWeek = emptyList()
             }
 
             if (timePeriodObject.has("startTime")) {
@@ -442,13 +444,12 @@ object HttpRequestsUtil {
 
             if (placementObject.has("tags") && !placementObject.isNull("tags")) {
                 try {
-                    val tagsObject = placementObject.getJSONArray("tags").toString()
+                    val tagsArray = placementObject.getJSONArray("tags")
 
-                    val gson = Gson()
-                    val tagsList: ArrayList<String> = gson.fromJson(
-                        tagsObject,
-                        object : TypeToken<ArrayList<String>>() {}.type
-                    )
+                    val tagsList = ArrayList<String>()
+                    for (i in 0 until tagsArray.length()) {
+                        tagsList.add(tagsArray.getString(i))
+                    }
 
                     placement.tags = tagsList
                 } catch (e: JSONException) {
@@ -576,20 +577,32 @@ object HttpRequestsUtil {
 
             if (adsObject.has("properties") && !adsObject.isNull("properties")) {
                 try {
-                    insideAd.properties = adsObject.getJSONObject("properties")
-                    if (insideAd.properties?.isNull("durationInSeconds") == false) {
-                        val durationInSeconds = insideAd.properties!!.getInt("durationInSeconds")
-                        if (durationInSeconds.toString().isNotBlank()) {
-                            InsideAdSdk.durationInSeconds = durationInSeconds.toLong().let {
-                                Helper.getMillisFromSeconds(it)
-                            }
-                        }
+                    val propertiesJson = adsObject.getJSONObject("properties").toString()
+                    insideAd.properties = Gson().fromJson(propertiesJson, AdProperties::class.java)
+
+                    insideAd.properties?.durationInSeconds?.let {
+                        InsideAdSdk.durationInSeconds = Helper.getMillisFromSeconds(it.toLong())
                     }
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                insideAd.properties = JSONObject()
+                insideAd.properties = AdProperties()
+            }
+
+            if (adsObject.has("fallback") && !adsObject.isNull("fallback")) {
+                try {
+                    val fallbackJsonObject = adsObject.getJSONObject("fallback").toString()
+                    insideAd.fallback = try {
+                        Gson().fromJson(fallbackJsonObject, InsideAd::class.java)
+                    } catch (e: JsonSyntaxException) {
+                        null
+                    }
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                insideAd.fallback = InsideAd()
             }
 
             ads.add(insideAd)

@@ -13,7 +13,7 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.callbacks.InsideAdStoppedCallback
+import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.players.bannerads.BannerAdsPlayer
@@ -34,7 +34,7 @@ class InsideAdView @JvmOverloads constructor(
     context: Context,
     attrs: AttributeSet? = null,
     defStyle: Int = 0
-) : FrameLayout(context, attrs, defStyle), InsideAdStoppedCallback {
+) : FrameLayout(context, attrs, defStyle), InsideAdProgressCallback {
 
     private val LOGTAG = "InsideAdSdk"
 
@@ -43,6 +43,7 @@ class InsideAdView @JvmOverloads constructor(
     private var mBannerAdsPlayer: BannerAdsPlayer? = null
 
     private var insideAd: InsideAd? = null
+    private var fallbackAd: InsideAd? = null
     private var insideAdCallback: InsideAdCallback? = null
 
     private var requestAdExecutor: ScheduledExecutorService? = null
@@ -157,6 +158,7 @@ class InsideAdView @JvmOverloads constructor(
                     insideAdCallback?.let { callback ->
                         insideAd?.let { ad ->
                             callback.insideAdReceived(ad)
+                            fallbackAd = insideAd?.fallback
                             showAd(ad, callback)
                         }
                     }
@@ -175,6 +177,7 @@ class InsideAdView @JvmOverloads constructor(
         insideAd: InsideAd,
         insideAdCallback: InsideAdCallback
     ) {
+        Log.i(LOGTAG, "showAd")
         requestAdExecutor?.shutdown()
         showAdHandler = Handler(Looper.getMainLooper())
 
@@ -192,10 +195,13 @@ class InsideAdView @JvmOverloads constructor(
                     showLocalVideoAd(insideAd, insideAdCallback)
                 }, delayMillis)
             Constants.AD_TYPE_LOCAL_IMAGE -> {
-                val bitmap = insideAd.url?.let { Helper.getBitmapFromURL(it, resources) }
-                showAdHandler?.postDelayed({
-                    showLocalImageAd(bitmap, insideAd, insideAdCallback)
-                }, delayMillis)
+                insideAd.url?.let { url ->
+                    Helper.getBitmapFromURL(url, resources) { bitmap ->
+                        showAdHandler?.postDelayed({
+                            showLocalImageAd(bitmap, insideAd, insideAdCallback)
+                        }, delayMillis)
+                    }
+                }
             }
             Constants.AD_TYPE_BANNER ->
                 showAdHandler?.postDelayed({
@@ -249,6 +255,7 @@ class InsideAdView @JvmOverloads constructor(
             mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
         } ?: run {
             insideAdCallback.insideAdError("Error while getting AD.")
+            insideAdError()
         }
     }
 
@@ -287,6 +294,15 @@ class InsideAdView @JvmOverloads constructor(
                 requestAdExecutor!!.schedule({
                     requestCampaign(geoCountryCode, screen, insideAdCallback)
                 }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
+            }
+        }
+    }
+
+    override fun insideAdError() {
+        Log.i(LOGTAG, "insideAdError, show fallbackAd")
+        insideAdCallback?.let { callback ->
+            fallbackAd?.let { fallbackAd ->
+                showAd(fallbackAd, callback)
             }
         }
     }

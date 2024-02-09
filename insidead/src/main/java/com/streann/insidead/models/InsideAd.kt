@@ -1,7 +1,5 @@
 package com.streann.insidead.models
 
-import org.json.JSONObject
-
 data class InsideAd(
     var id: String? = null,
     var name: String? = null,
@@ -10,5 +8,6 @@ data class InsideAd(
     var resellerId: String? = null,
     var fallbackId: String? = null,
     var url: String? = null,
-    var properties: JSONObject? = null
+    var properties: AdProperties? = null,
+    var fallback: InsideAd? = null
 )
