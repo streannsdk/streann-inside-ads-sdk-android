@@ -602,7 +602,7 @@ object HttpRequestsUtil {
                     e.printStackTrace()
                 }
             } else {
-                insideAd.fallback = InsideAd()
+                insideAd.fallback = null
             }
 
             ads.add(insideAd)

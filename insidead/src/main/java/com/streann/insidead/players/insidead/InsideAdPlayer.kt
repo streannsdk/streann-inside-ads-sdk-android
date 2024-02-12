@@ -119,6 +119,11 @@ class InsideAdPlayer constructor(
                 setCloseButtonVisibility()
                 setAdVolumeControl(mediaPlayer)
             }
+
+            setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
+                notifySdkAboutAdError(errorType)
+                true
+            }
         }
     }
 
@@ -132,11 +137,6 @@ class InsideAdPlayer constructor(
         mediaPlayer?.setOnCompletionListener {
             stopLocalVideoAd()
             removeHandlers()
-        }
-
-        mediaPlayer?.setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
-            notifySdkAboutAdError(errorType)
-            true
         }
     }
 

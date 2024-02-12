@@ -302,8 +302,13 @@ class InsideAdView @JvmOverloads constructor(
 
     override fun insideAdError() {
         Log.i(LOGTAG, "insideAdError, show fallbackAd")
+        insideAd = null
         insideAdCallback?.let { callback ->
             fallbackAd?.let { fallbackAd ->
+                Log.i(LOGTAG, "fallbackAd: $fallbackAd")
+                fallbackAd.properties?.durationInSeconds?.let {
+                    InsideAdSdk.durationInSeconds = Helper.getMillisFromSeconds(it.toLong())
+                }
                 showAd(fallbackAd, callback)
             }
         }
