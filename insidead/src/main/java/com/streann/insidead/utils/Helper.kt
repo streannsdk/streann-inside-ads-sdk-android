@@ -1,6 +1,7 @@
 package com.streann.insidead.utils
 
 import android.app.Activity
+import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Resources
 import android.graphics.Bitmap
@@ -8,6 +9,7 @@ import android.graphics.BitmapFactory
 import android.os.Build
 import android.view.WindowInsets
 import androidx.core.view.WindowInsetsCompat
+import com.google.android.gms.ads.AdSize
 import java.math.BigInteger
 import java.net.HttpURLConnection
 import java.net.URL
@@ -17,6 +19,8 @@ import java.util.*
 import java.util.concurrent.TimeUnit
 
 object Helper {
+
+    private var bannerAdSize: AdSize? = null
 
     @Suppress("DEPRECATION")
     fun getPackageVersionCode(
@@ -129,6 +133,14 @@ object Helper {
                 .getInsets(WindowInsetsCompat.Type.systemBars())
             resources.displayMetrics.heightPixels - insets.bottom - insets.top
         }
+    }
+
+    fun setBannerAdHeight(adSize: AdSize?) {
+        this.bannerAdSize = adSize
+    }
+
+    fun getBannerAdHeight(context: Context): Int? {
+        return bannerAdSize?.getHeightInPixels(context)
     }
 
 }

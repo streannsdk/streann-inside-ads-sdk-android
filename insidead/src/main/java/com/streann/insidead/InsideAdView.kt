@@ -2,18 +2,21 @@ package com.streann.insidead
 
 import android.app.Application
 import android.content.Context
+import android.graphics.Bitmap
 import android.os.Handler
 import android.os.Looper
 import android.text.TextUtils
 import android.util.AttributeSet
 import android.util.Log
 import android.widget.FrameLayout
+import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdStoppedCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
@@ -37,6 +40,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
+    private var mBannerAdsPlayer: BannerAdsPlayer? = null
 
     private var insideAd: InsideAd? = null
     private var insideAdCallback: InsideAdCallback? = null
@@ -57,10 +61,14 @@ class InsideAdView @JvmOverloads constructor(
     private fun init() {
         mInsideAdPlayer = InsideAdPlayer(context, this)
         addView(mInsideAdPlayer)
+        mBannerAdsPlayer = BannerAdsPlayer(context, this)
+        addView(mBannerAdsPlayer)
         createGoogleImaView()
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
+
+        MobileAds.initialize(context) { }
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -107,15 +115,11 @@ class InsideAdView @JvmOverloads constructor(
         this.insideAdCallback = insideAdCallback
         this.screen = screen
 
-        if (TextUtils.isEmpty(apiKey)) {
-            Log.e(LOGTAG, "Api Key is required. Please implement the initializeSdk method.")
-            insideAdCallback?.insideAdError("Api Key is required. Please implement the initializeSdk method.")
-            return
-        }
-
-        if (TextUtils.isEmpty(baseUrl)) {
-            Log.e(LOGTAG, "Base Url is required. Please implement the initializeSdk method.")
-            insideAdCallback?.insideAdError("Base Url is required. Please implement the initializeSdk method.")
+        if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
+            val errorMsg =
+                "Api Key and Base Url are required. Please implement the initializeSdk method."
+            Log.e(LOGTAG, errorMsg)
+            insideAdCallback?.insideAdError(errorMsg)
             return
         }
 
@@ -174,50 +178,91 @@ class InsideAdView @JvmOverloads constructor(
         requestAdExecutor?.shutdown()
         showAdHandler = Handler(Looper.getMainLooper())
 
+        val delayMillis = InsideAdSdk.startAfterSeconds ?: 0
         when (insideAd.adType) {
-            Constants.AD_TYPE_VAST -> {
+            Constants.AD_TYPE_VAST ->
                 showAdHandler?.postDelayed({
-                    createGoogleImaView()
-                    mInsideAdPlayer?.visibility = GONE
-                    mGoogleImaPlayer?.visibility = VISIBLE
-                    mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
-                }, InsideAdSdk.startAfterSeconds ?: 0)
-            }
-            Constants.AD_TYPE_LOCAL_VIDEO -> {
+                    showGoogleImaAd(
+                        insideAd,
+                        insideAdCallback
+                    )
+                }, delayMillis)
+            Constants.AD_TYPE_LOCAL_VIDEO ->
                 showAdHandler?.postDelayed({
-                    mGoogleImaPlayer?.visibility = GONE
-                    mInsideAdPlayer?.visibility = VISIBLE
-                    mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
-                }, InsideAdSdk.startAfterSeconds ?: 0)
-            }
+                    showLocalVideoAd(insideAd, insideAdCallback)
+                }, delayMillis)
             Constants.AD_TYPE_LOCAL_IMAGE -> {
                 val bitmap = insideAd.url?.let { Helper.getBitmapFromURL(it, resources) }
                 showAdHandler?.postDelayed({
-                    bitmap?.let {
-                        Log.i(LOGTAG, "loadAd")
-                        insideAdCallback.insideAdLoaded()
-
-                        mGoogleImaPlayer?.visibility = GONE
-                        mInsideAdPlayer?.visibility = VISIBLE
-
-                        mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
-                    } ?: run {
-                        insideAdCallback.insideAdError("Error while getting AD.")
-                    }
-                }, InsideAdSdk.startAfterSeconds ?: 0)
+                    showLocalImageAd(bitmap, insideAd, insideAdCallback)
+                }, delayMillis)
             }
+            Constants.AD_TYPE_BANNER ->
+                showAdHandler?.postDelayed({
+                    showBannerAd(insideAd, insideAdCallback)
+                }, delayMillis)
         }
+    }
+
+    private fun setPlayerVisibility(
+        imaPlayerVisibility: Int,
+        insideAdPlayerVisibility: Int,
+        bannerAdPlayerVisibility: Int
+    ) {
+        mGoogleImaPlayer?.visibility = imaPlayerVisibility
+        mInsideAdPlayer?.visibility = insideAdPlayerVisibility
+        mBannerAdsPlayer?.visibility = bannerAdPlayerVisibility
+    }
+
+    private fun showGoogleImaAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        createGoogleImaView()
+        setPlayerVisibility(VISIBLE, GONE, GONE)
+        mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
+    }
+
+    private fun createGoogleImaView() {
+        if (mGoogleImaPlayer == null) {
+            mGoogleImaPlayer = GoogleImaPlayer(context, this)
+            addView(mGoogleImaPlayer)
+        }
+    }
+
+    private fun removeGoogleImaView() {
+        removeView(mGoogleImaPlayer)
+        mGoogleImaPlayer = null
+    }
+
+    private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        setPlayerVisibility(GONE, VISIBLE, GONE)
+        mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
+    }
+
+    private fun showLocalImageAd(
+        bitmap: Bitmap?,
+        insideAd: InsideAd,
+        insideAdCallback: InsideAdCallback
+    ) {
+        bitmap?.let {
+            Log.i(LOGTAG, "loadAd")
+            insideAdCallback.insideAdLoaded()
+            setPlayerVisibility(GONE, VISIBLE, GONE)
+            mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
+        } ?: run {
+            insideAdCallback.insideAdError("Error while getting AD.")
+        }
+    }
+
+    private fun showBannerAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        setPlayerVisibility(GONE, GONE, VISIBLE)
+        mBannerAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
     fun stopAd() {
         insideAd?.let {
-            when (insideAd!!.adType) {
-                Constants.AD_TYPE_VAST -> {
-                    mGoogleImaPlayer?.stopAd()
-                }
-                Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> {
-                    mInsideAdPlayer?.stopAd()
-                }
+            when (it.adType) {
+                Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.stopAd()
+                Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> mInsideAdPlayer?.stopAd()
+                Constants.AD_TYPE_BANNER -> mBannerAdsPlayer?.stopAd()
                 else -> {}
             }
         }
@@ -244,18 +289,6 @@ class InsideAdView @JvmOverloads constructor(
                 }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
             }
         }
-    }
-
-    private fun createGoogleImaView() {
-        if (mGoogleImaPlayer == null) {
-            mGoogleImaPlayer = GoogleImaPlayer(context, this)
-            addView(mGoogleImaPlayer)
-        }
-    }
-
-    private fun removeGoogleImaView() {
-        removeView(mGoogleImaPlayer)
-        mGoogleImaPlayer = null
     }
 
 }

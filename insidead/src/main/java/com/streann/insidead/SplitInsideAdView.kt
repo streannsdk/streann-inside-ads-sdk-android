@@ -44,6 +44,8 @@ class SplitInsideAdView(
     ) {
         removeAllViews()
         userViewContainer = null
+        Helper.setBannerAdHeight(null)
+
         this.insideAdCallback = insideAdCallback
         setupInsideAdView(userView, parentView, screen, isAdMuted, isInsideAdAbove)
     }
@@ -150,7 +152,7 @@ class SplitInsideAdView(
         } else {
             resources.displayMetrics.heightPixels
         }
-        val adHeight = (screenWidth * 9) / 16
+        val adHeight = Helper.getBannerAdHeight(context) ?: ((screenWidth * 9) / 16)
 
         val insideAdParams = RelativeLayout.LayoutParams(
             RelativeLayout.LayoutParams.MATCH_PARENT,

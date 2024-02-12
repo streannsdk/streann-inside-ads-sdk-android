@@ -39,7 +39,7 @@
     <com.streann.insidead.InsideAdView
         android:id="@+id/insideAdView"
         android:layout_width="match_parent"
-        android:layout_height="300dp"
+        android:layout_height="wrap_content"
         android:layout_marginTop="50dp"
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/adStopText" />
