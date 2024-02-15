@@ -12,29 +12,26 @@ import com.google.android.gms.ads.AdSize
 import com.google.android.gms.ads.LoadAdError
 import com.google.android.gms.ads.admanager.AdManagerAdRequest
 import com.google.android.gms.ads.admanager.AdManagerAdView
-import com.google.gson.Gson
-import com.google.gson.reflect.TypeToken
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.callbacks.InsideAdStoppedCallback
+import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
 class BannerAdsPlayer constructor(
     context: Context,
-    callback: InsideAdStoppedCallback
+    callback: InsideAdProgressCallback
 ) : FrameLayout(context) {
 
     private val LOGTAG = "InsideAdSdk"
 
     private var adView: AdManagerAdView? = null
+    private var closeBannerAdHandler: Handler? = null
 
     private var insideAdCallback: InsideAdCallback? = null
-    private var insideAdStoppedCallback: InsideAdStoppedCallback? = callback
-
-    private var closeBannerAdHandler: Handler? = null
+    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     init {
         LayoutInflater.from(context).inflate(R.layout.banner_ad_player, this)
@@ -48,13 +45,17 @@ class BannerAdsPlayer constructor(
         adView?.adUnitId = insideAd.url ?: ""
         addView(adView)
 
-        if (insideAd.properties?.isNull("sizes") == false) {
-            val sizesJsonArray = insideAd.properties!!.getJSONArray("sizes").toString()
-            if (sizesJsonArray.isNotEmpty()) {
-                val adSizes = convertJsonArrayToAdSizes(sizesJsonArray)
-                adView?.setAdSizes(*adSizes.toTypedArray())
+        insideAd.properties?.sizes?.let { sizesArray ->
+            val adSizes = arrayListOf<AdSize>()
+            for (sdkAdSize in sizesArray) {
+                adSizes.add(AdSize(sdkAdSize.width!!, sdkAdSize.height!!))
             }
-        } else adView?.setAdSizes(AdSize.BANNER)
+            if (adSizes.isNotEmpty())
+                adView?.setAdSizes(*adSizes.toTypedArray())
+            else adView?.setAdSizes(AdSize.BANNER)
+        } ?: run {
+            adView?.setAdSizes(AdSize.BANNER)
+        }
 
         adView?.adSize?.let { Helper.setBannerAdHeight(adSize = it) }
 
@@ -75,6 +76,7 @@ class BannerAdsPlayer constructor(
                 Log.e(LOGTAG, "onAdFailedToLoad: ${adError.code}, ${adError.message}")
                 Helper.setBannerAdHeight(null)
                 insideAdCallback?.insideAdError(adError.message)
+                insideAdProgressCallback?.insideAdError()
             }
 
             override fun onAdImpression() {
@@ -103,20 +105,13 @@ class BannerAdsPlayer constructor(
         removeView(adView)
         Helper.setBannerAdHeight(null)
         insideAdCallback?.insideAdStop()
-        insideAdStoppedCallback?.insideAdStopped()
+        insideAdProgressCallback?.insideAdStopped()
         removeHandlers()
     }
 
     private fun removeHandlers() {
         closeBannerAdHandler?.removeCallbacksAndMessages(null)
         closeBannerAdHandler = null
-    }
-
-    private fun convertJsonArrayToAdSizes(jsonArrayString: String): List<AdSize> {
-        val gson = Gson()
-        val type = object : TypeToken<List<Map<String, Int>>>() {}.type
-        val mapList: List<Map<String, Int>> = gson.fromJson(jsonArrayString, type)
-        return mapList.map { map -> AdSize(map["width"] ?: 0, map["height"] ?: 0) }
     }
 
 }

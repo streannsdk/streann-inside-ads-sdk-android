@@ -1,7 +1,9 @@
 package com.streann.insidead.callbacks
 
-interface InsideAdStoppedCallback {
+interface InsideAdProgressCallback {
 
     fun insideAdStopped()
+
+    fun insideAdError()
 
 }

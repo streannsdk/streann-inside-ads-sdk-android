@@ -46,7 +46,7 @@ object CampaignsFilterUtil {
         if (filteredCampaigns.isNotEmpty())
             activeCampaign = filterCampaignsByTimePeriod(filteredCampaigns)
 
-        Log.i(LOGTAG, "activeCampaign $activeCampaign")
+        Log.i(LOGTAG, "activeCampaign: $activeCampaign")
 
         val intervalInMinutes =
             activeCampaign?.properties?.get("intervalInMinutes")
@@ -129,7 +129,7 @@ object CampaignsFilterUtil {
             )
         }
 
-        Log.i(LOGTAG, "activePlacement $placement")
+        Log.i(LOGTAG, "activePlacement: $placement")
 
         val startAfterSeconds =
             placement?.properties?.get("startAfterSeconds")

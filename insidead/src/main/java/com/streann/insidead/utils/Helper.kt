@@ -70,21 +70,24 @@ object Helper {
     fun getBitmapFromURL(
         imageUrl: String,
         resources: Resources,
-    ): Bitmap? {
-        var bitmap: Bitmap?
-        return try {
-            val url = URL(imageUrl)
-            val connection = url.openConnection() as HttpURLConnection
-            connection.connect()
-            val inputStream = connection.inputStream
-            bitmap = BitmapFactory.decodeStream(inputStream)
-            inputStream.close()
-            connection.disconnect()
-            bitmap?.let { bitmap = getResizedBitmap(it, resources) }
-            bitmap
-        } catch (e: Exception) {
-            null
-        }
+        callback: (Bitmap?) -> Unit
+    ) {
+        Thread {
+            var bitmap: Bitmap? = null
+            try {
+                val url = URL(imageUrl)
+                val connection = url.openConnection() as HttpURLConnection
+                connection.connect()
+                val inputStream = connection.inputStream
+                bitmap = BitmapFactory.decodeStream(inputStream)
+                inputStream.close()
+                connection.disconnect()
+                bitmap?.let { bitmap = getResizedBitmap(it, resources) }
+            } catch (e: Exception) {
+                e.printStackTrace()
+            }
+            callback(bitmap)
+        }.start()
     }
 
     private fun getResizedBitmap(
