@@ -17,11 +17,9 @@ import java.util.*
 
 class VideoAdPlayerAdapter(
     private val videoPlayer: VideoView,
-    videoPlayerVolumeButton: FrameLayout,
-    audioManager: AudioManager
-) :
-    VideoAdPlayer {
-    private val audioManager: AudioManager
+    videoPlayerVolumeButton: FrameLayout
+) : VideoAdPlayer {
+
     private val videoAdPlayerCallbacks: ArrayList<VideoAdPlayer.VideoAdPlayerCallback> = ArrayList()
     private var timer: Timer? = null
     private var adDuration = 0
@@ -32,15 +30,14 @@ class VideoAdPlayerAdapter(
     private var adSoundPlaying = true
     private var videoPlayerVolumeButton: FrameLayout
 
-    init {
-        this.audioManager = audioManager
-        this.videoPlayerVolumeButton = videoPlayerVolumeButton
-    }
-
     companion object {
         private const val LOGTAG = "InsideAdSdk"
         private const val POLLING_TIME_MS: Long = 250
         private const val INITIAL_DELAY_MS: Long = 250
+    }
+
+    init {
+        this.videoPlayerVolumeButton = videoPlayerVolumeButton
     }
 
     private fun notifyImaSdkAboutAdLoaded() {
@@ -139,8 +136,7 @@ class VideoAdPlayerAdapter(
     }
 
     override fun getVolume(): Int {
-        return (audioManager.getStreamVolume(AudioManager.STREAM_MUSIC)
-                / audioManager.getStreamMaxVolume(AudioManager.STREAM_MUSIC))
+        return 0
     }
 
     override fun addCallback(videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback) {
@@ -162,6 +158,8 @@ class VideoAdPlayerAdapter(
 
     override fun playAd(adMediaInfo: AdMediaInfo) {
         Log.i(LOGTAG, "playAd")
+
+        videoPlayer.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
         videoPlayer.setVideoURI(Uri.parse(adMediaInfo.url))
 
         videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
