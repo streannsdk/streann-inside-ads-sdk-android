@@ -3,7 +3,6 @@ package com.streann.insidead.players.googleima
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.Configuration
-import android.media.AudioManager
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -51,18 +50,15 @@ class GoogleImaPlayer constructor(
     private fun init() {
         LayoutInflater.from(context).inflate(R.layout.google_ima_player, this)
 
-        val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
-        val audioManager = context.getSystemService(Context.AUDIO_SERVICE) as AudioManager
-
         videoPlayer = findViewById(R.id.videoView)
+        val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
 
         val isLandscape =
             resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
         setupVideoViewSize(videoPlayerContainer, isLandscape)
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
-        videoAdPlayerAdapter =
-            VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!, audioManager)
+        videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!)
 
         setImaAdsCallback()
 
