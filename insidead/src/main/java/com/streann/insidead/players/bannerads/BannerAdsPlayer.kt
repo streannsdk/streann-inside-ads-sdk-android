@@ -20,7 +20,7 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
-class BannerAdsPlayer constructor(
+class BannerAdsPlayer(
     context: Context,
     callback: InsideAdProgressCallback
 ) : FrameLayout(context) {

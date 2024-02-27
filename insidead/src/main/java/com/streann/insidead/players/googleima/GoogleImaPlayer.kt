@@ -24,7 +24,7 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.InsideAdHelper
 
 @SuppressLint("ViewConstructor")
-class GoogleImaPlayer constructor(
+class GoogleImaPlayer(
     context: Context,
     callback: InsideAdProgressCallback
 ) :
