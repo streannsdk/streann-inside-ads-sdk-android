@@ -234,8 +234,10 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun removeGoogleImaView() {
-        removeView(mGoogleImaPlayer)
-        mGoogleImaPlayer = null
+        if (mGoogleImaPlayer != null) {
+            removeView(mGoogleImaPlayer)
+            mGoogleImaPlayer = null
+        }
     }
 
     private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
