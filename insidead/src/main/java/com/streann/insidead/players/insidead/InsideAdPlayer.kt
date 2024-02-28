@@ -4,6 +4,7 @@ import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
 import android.content.Intent
+import android.content.res.Configuration
 import android.graphics.Bitmap
 import android.graphics.Color
 import android.graphics.drawable.GradientDrawable
@@ -101,7 +102,9 @@ class InsideAdPlayer(
         surfaceView?.holder?.addCallback(this)
 
         addView(surfaceView)
-        setSurfaceViewSize()
+        val isLandscape =
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+        setSurfaceViewSize(isLandscape)
 
         imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
@@ -361,24 +364,25 @@ class InsideAdPlayer(
         return learnMoreButton
     }
 
-    private fun setSurfaceViewSize() {
-        val aspectRatioWidth = 16
-        val aspectRatioHeight = 9
-
-        val screenWidth = resources.displayMetrics.widthPixels
-        val screenHeight = resources.displayMetrics.heightPixels
-
-        val aspectRatio = aspectRatioWidth.toDouble() / aspectRatioHeight.toDouble()
+    private fun setSurfaceViewSize(isLandscape: Boolean) {
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val aspectRatio = 9.0 / 16.0
 
         val calculatedWidth: Int
         val calculatedHeight: Int
 
-        if (screenWidth < (screenHeight * aspectRatio).toInt()) {
-            calculatedWidth = screenWidth
-            calculatedHeight = (screenWidth / aspectRatio).toInt()
+        if (isLandscape) {
+            val videoWidth = screenWidth / 2
+            val videoHeight = (videoWidth * aspectRatio).toInt()
+
+            calculatedWidth = videoWidth
+            calculatedHeight = videoHeight
         } else {
-            calculatedWidth = (screenHeight * aspectRatio).toInt()
-            calculatedHeight = screenHeight
+            val videoHeight = (screenWidth * aspectRatio).toInt()
+
+            calculatedWidth = screenWidth
+            calculatedHeight = videoHeight
         }
 
         surfaceView?.layoutParams?.width = calculatedWidth
