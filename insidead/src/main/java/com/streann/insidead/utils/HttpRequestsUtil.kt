@@ -21,7 +21,6 @@ import java.time.Instant
 import javax.net.ssl.HttpsURLConnection
 
 object HttpRequestsUtil {
-    private const val TAG = "InsideAdSdk"
 
     fun getGeoIpUrl(): String? {
         var jsonObject: JSONObject? = null
@@ -212,15 +211,15 @@ object HttpRequestsUtil {
                 }
             }
         } catch (e: ProtocolException) {
-            Log.e(TAG, "ProtocolException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "ProtocolException: ", e)
         } catch (e: MalformedURLException) {
-            Log.e(TAG, "MalformedURLException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "MalformedURLException: ", e)
         } catch (e: IOException) {
-            Log.e(TAG, "IOException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "IOException: ", e)
         } catch (e: JSONException) {
-            Log.e(TAG, "JSONException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "JSONException: ", e)
         } catch (e: Exception) {
-            Log.e(TAG, "Exception: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "Exception: ", e)
         }
 
         if (campaignResponseArray == null) {
