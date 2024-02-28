@@ -17,6 +17,7 @@ import com.google.ads.interactivemedia.v3.api.ImaSdkFactory
 import com.google.ads.interactivemedia.v3.api.player.AdMediaInfo
 import com.google.ads.interactivemedia.v3.api.player.VideoAdPlayer
 import com.google.ads.interactivemedia.v3.api.player.VideoProgressUpdate
+import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
@@ -29,8 +30,6 @@ class GoogleImaPlayer(
     callback: InsideAdProgressCallback
 ) :
     FrameLayout(context) {
-
-    private val LOGTAG = "InsideAdSdk"
 
     private var sdkFactory: ImaSdkFactory? = null
     private var adsLoader: AdsLoader? = null
@@ -91,7 +90,7 @@ class GoogleImaPlayer(
         adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
-            Log.i(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+            Log.i(InsideAdSdk.LOG_TAG, "Ad Error: " + adErrorEvent.error.message)
             insideAdCallback?.insideAdError(adErrorEvent.error.message)
             insideAdProgressCallback?.insideAdError()
         }
@@ -100,14 +99,14 @@ class GoogleImaPlayer(
             adsManager = adsManagerLoadedEvent.adsManager
 
             adsManager?.addAdErrorListener { adErrorEvent ->
-                Log.e(LOGTAG, "Ad Error: " + adErrorEvent.error.message)
+                Log.e(InsideAdSdk.LOG_TAG, "Ad Error: " + adErrorEvent.error.message)
                 insideAdCallback?.insideAdError(adErrorEvent.error.message)
                 insideAdProgressCallback?.insideAdError()
 
                 val universalAdIds: String =
                     adsManager?.currentAd?.universalAdIds.contentToString()
                 Log.i(
-                    LOGTAG,
+                    InsideAdSdk.LOG_TAG,
                     "Discarding the current ad break with universal ad Ids: $universalAdIds"
                 )
                 adsManager?.discardAdBreak()
@@ -115,22 +114,26 @@ class GoogleImaPlayer(
 
             adsManager?.addAdEventListener { adEvent ->
                 if (adEvent.type != AdEventType.AD_PROGRESS) {
-                    Log.i(LOGTAG, "Event: " + adEvent.type)
+                    Log.i(InsideAdSdk.LOG_TAG, "Event: " + adEvent.type)
                 }
 
                 when (adEvent.type) {
                     AdEventType.LOADED ->
                         adsManager?.start()
+
                     AdEventType.ALL_ADS_COMPLETED -> {
                         adsManager?.destroy()
                         adsManager = null
                     }
+
                     AdEventType.SKIPPED -> {
                         insideAdCallback?.insideAdSkipped()
                     }
+
                     AdEventType.CLICKED -> {
                         insideAdCallback?.insideAdClicked()
                     }
+
                     else -> {}
                 }
             }
@@ -142,7 +145,7 @@ class GoogleImaPlayer(
     }
 
     private fun requestAds(adTagUrl: String) {
-        Log.i(LOGTAG, "adUrl: $adTagUrl")
+        Log.i(InsideAdSdk.LOG_TAG, "adUrl: $adTagUrl")
         val request = sdkFactory!!.createAdsRequest()
         request.adTagUrl = adTagUrl
         adsLoader!!.requestAds(request)

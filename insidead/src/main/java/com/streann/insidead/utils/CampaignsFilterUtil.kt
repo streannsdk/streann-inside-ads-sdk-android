@@ -12,8 +12,6 @@ import java.time.LocalTime
 
 object CampaignsFilterUtil {
 
-    private val LOGTAG = "InsideAdSdk"
-
     fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
         val campaign = getCampaign(campaigns)
 
@@ -46,7 +44,7 @@ object CampaignsFilterUtil {
         if (filteredCampaigns.isNotEmpty())
             activeCampaign = filterCampaignsByTimePeriod(filteredCampaigns)
 
-        Log.i(LOGTAG, "activeCampaign: $activeCampaign")
+        Log.i(InsideAdSdk.LOG_TAG, "activeCampaign: $activeCampaign")
 
         val intervalInMinutes =
             activeCampaign?.properties?.get("intervalInMinutes")
@@ -129,7 +127,7 @@ object CampaignsFilterUtil {
             )
         }
 
-        Log.i(LOGTAG, "activePlacement: $placement")
+        Log.i(InsideAdSdk.LOG_TAG, "activePlacement: $placement")
 
         val startAfterSeconds =
             placement?.properties?.get("startAfterSeconds")
