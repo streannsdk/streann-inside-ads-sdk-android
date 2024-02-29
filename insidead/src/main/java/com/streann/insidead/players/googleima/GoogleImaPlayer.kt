@@ -2,12 +2,10 @@ package com.streann.insidead.players.googleima
 
 import android.annotation.SuppressLint
 import android.content.Context
-import android.content.res.Configuration
 import android.util.Log
 import android.view.LayoutInflater
 import android.view.ViewGroup
 import android.widget.FrameLayout
-import android.widget.LinearLayout
 import android.widget.VideoView
 import com.google.ads.interactivemedia.v3.api.AdEvent.AdEventType
 import com.google.ads.interactivemedia.v3.api.AdsLoader
@@ -22,7 +20,8 @@ import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
-import com.streann.insidead.utils.InsideAdHelper
+import com.streann.insidead.utils.Helper
+import com.streann.insidead.utils.MacrosHelper
 
 @SuppressLint("ViewConstructor")
 class GoogleImaPlayer(
@@ -51,10 +50,7 @@ class GoogleImaPlayer(
 
         videoPlayer = findViewById(R.id.videoView)
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
-
-        val isLandscape =
-            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        setupVideoViewSize(videoPlayerContainer, isLandscape)
+        Helper.setViewSize(videoPlayerContainer, resources)
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
         videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!)
@@ -194,35 +190,12 @@ class GoogleImaPlayer(
 
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdCallback = listener
-        val url = InsideAdHelper.populateVASTURL(context, insideAd)
+        val url = MacrosHelper.populateVASTURL(context, insideAd)
         url?.let { requestAds(it) }
     }
 
     fun stopAd() {
         videoAdPlayerAdapter?.stopAdPlaying()
-    }
-
-    private fun setupVideoViewSize(videoPlayerContainer: ViewGroup?, isLandscape: Boolean) {
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val aspectRatio = 9.0 / 16.0
-
-        val layoutParams = videoPlayerContainer?.layoutParams as LinearLayout.LayoutParams
-
-        if (isLandscape) {
-            val videoWidth = screenWidth / 2
-            val videoHeight = (videoWidth * aspectRatio).toInt()
-
-            layoutParams.width = videoWidth
-            layoutParams.height = videoHeight
-        } else {
-            val videoHeight = (screenWidth * aspectRatio).toInt()
-
-            layoutParams.width = screenWidth
-            layoutParams.height = videoHeight
-        }
-
-        videoPlayerContainer.layoutParams = layoutParams
     }
 
 }

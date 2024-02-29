@@ -22,6 +22,7 @@ import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
 class InsideAdPlayer(
@@ -86,6 +87,7 @@ class InsideAdPlayer(
         setCloseButtonVisibility()
 
         imageAdView?.setImageBitmap(bitmap)
+        Helper.setViewSize(imageAdView, resources)
 
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
@@ -102,9 +104,7 @@ class InsideAdPlayer(
         surfaceView?.holder?.addCallback(this)
 
         addView(surfaceView)
-        val isLandscape =
-            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-        setSurfaceViewSize(isLandscape)
+        Helper.setViewSize(surfaceView, resources)
 
         imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
@@ -364,30 +364,6 @@ class InsideAdPlayer(
         return learnMoreButton
     }
 
-    private fun setSurfaceViewSize(isLandscape: Boolean) {
-        val displayMetrics = resources.displayMetrics
-        val screenWidth = displayMetrics.widthPixels
-        val aspectRatio = 9.0 / 16.0
-
-        val calculatedWidth: Int
-        val calculatedHeight: Int
-
-        if (isLandscape) {
-            val videoWidth = screenWidth / 2
-            val videoHeight = (videoWidth * aspectRatio).toInt()
-
-            calculatedWidth = videoWidth
-            calculatedHeight = videoHeight
-        } else {
-            val videoHeight = (screenWidth * aspectRatio).toInt()
-
-            calculatedWidth = screenWidth
-            calculatedHeight = videoHeight
-        }
-
-        surfaceView?.layoutParams?.width = calculatedWidth
-        surfaceView?.layoutParams?.height = calculatedHeight
-    }
 
     private fun removeCommonViews() {
         removeView(adCloseButton)
