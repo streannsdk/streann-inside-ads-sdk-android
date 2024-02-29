@@ -48,7 +48,7 @@ object CampaignsFilterUtil {
 
         val intervalInMinutes =
             activeCampaign?.properties?.get("intervalInMinutes")
-        val intervalInMillis = intervalInMinutes?.toLong()?.let {
+        val intervalInMillis = intervalInMinutes?.toFloat()?.let {
             Helper.getMillisFromMinutes(it)
         }
         InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0

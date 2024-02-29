@@ -123,8 +123,8 @@ object Helper {
         return TimeUnit.SECONDS.toMillis(seconds)
     }
 
-    fun getMillisFromMinutes(seconds: Long): Long {
-        return TimeUnit.MINUTES.toMillis(seconds)
+    fun getMillisFromMinutes(minutes: Float): Long {
+        return (minutes * 60000).toLong()
     }
 
     fun getScreenHeight(activity: Activity, resources: Resources): Int {

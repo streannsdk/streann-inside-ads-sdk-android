@@ -326,16 +326,24 @@ object HttpRequestsUtil {
             if (campaignObject.has("properties") && !campaignObject.isNull("properties")) {
                 try {
                     val properties = campaignObject.getJSONObject("properties")
+                    val map = HashMap<String, Number>()
 
-                    val map = HashMap<String, Int>()
                     properties.keys().forEach { key ->
                         val value = properties.optString(key)
-                        val intValue = if (value.isNullOrBlank()) 0 else try {
-                            value.toInt()
-                        } catch (e: NumberFormatException) {
-                            0
+
+                        val numberValue = when {
+                            value.isNullOrBlank() -> 0.0
+                            else -> {
+                                val intValue = value.toIntOrNull()
+                                intValue ?: try {
+                                    value.toDouble()
+                                } catch (e: NumberFormatException) {
+                                    0.0
+                                }
+                            }
                         }
-                        map[key] = intValue
+
+                        map[key] = numberValue
                     }
 
                     campaign.properties = map
@@ -343,7 +351,7 @@ object HttpRequestsUtil {
                     e.printStackTrace()
                 }
             } else {
-                campaign.properties = mapOf()
+                campaign.properties = emptyMap()
             }
 
             campaigns.add(campaign)

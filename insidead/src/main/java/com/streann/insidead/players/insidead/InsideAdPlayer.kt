@@ -301,11 +301,11 @@ class InsideAdPlayer(
     private fun setupGradientBackground() {
         gradientBgView = View(context)
 
-        val params = LayoutParams(MATCH_PARENT, 90)
+        val params = LayoutParams(MATCH_PARENT, 95)
         params.gravity = Gravity.TOP or Gravity.START
 
         val gradientDrawable = GradientDrawable()
-        gradientDrawable.colors = intArrayOf(Color.parseColor("#80000000"), Color.TRANSPARENT)
+        gradientDrawable.colors = intArrayOf(Color.parseColor("#70000000"), Color.TRANSPARENT)
         gradientDrawable.gradientType = GradientDrawable.LINEAR_GRADIENT
         gradientDrawable.orientation = GradientDrawable.Orientation.TOP_BOTTOM
 
