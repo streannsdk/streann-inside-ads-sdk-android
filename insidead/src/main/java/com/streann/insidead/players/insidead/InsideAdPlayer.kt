@@ -69,6 +69,7 @@ class InsideAdPlayer(
             setupCloseButton()
         } else {
             setupLocalVideoAd()
+            setupProgressBar()
             setupGradientBackground()
             setupCloseButton()
             setupVolumeButton()
@@ -107,8 +108,6 @@ class InsideAdPlayer(
 
         imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
-
-        setupProgressBar()
     }
 
     private fun prepareMediaPlayer(videoUrl: Uri) {
