@@ -7,13 +7,16 @@ import android.view.View
 import android.widget.Button
 import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
+import androidx.constraintlayout.widget.ConstraintLayout
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.constants.Constants
 
 class MainActivity : AppCompatActivity() {
 
     private val TAG = this.javaClass.simpleName
+    private var insideAd: InsideAd? = null
     private var mInsideAdView: InsideAdView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -31,17 +34,20 @@ class MainActivity : AppCompatActivity() {
 
         adProgressText.setOnClickListener {
             mInsideAdView?.requestAd(
-                screen = "Splash",
+                screen = "Reels",
                 insideAdCallback = object : InsideAdCallback {
                     override fun insideAdReceived(insideAd: InsideAd) {
                         Log.i(TAG, "insideAdReceived: $insideAd")
+                        this@MainActivity.insideAd = insideAd
                     }
 
                     override fun insideAdLoaded() {
                         Log.i(TAG, "insideAdLoaded")
                         adProgressText.text = ""
-                        adStopText?.visibility = View.VISIBLE
-                        mInsideAdView?.visibility = View.VISIBLE
+                        adStopText.visibility = View.VISIBLE
+                        splitActivityButton.visibility = View.GONE
+
+                        setAdViewLayoutParams()
                         mInsideAdView?.playAd()
                     }
 
@@ -52,8 +58,9 @@ class MainActivity : AppCompatActivity() {
                     override fun insideAdStop() {
                         Log.i(TAG, "insideAdStop")
                         adProgressText.text = "Show Ad"
-                        adStopText?.visibility = View.GONE
+                        adStopText.visibility = View.GONE
                         mInsideAdView?.visibility = View.GONE
+                        splitActivityButton.visibility = View.VISIBLE
                     }
 
                     override fun insideAdSkipped() {
@@ -76,7 +83,7 @@ class MainActivity : AppCompatActivity() {
                 })
         }
 
-        adStopText?.setOnClickListener {
+        adStopText.setOnClickListener {
             mInsideAdView?.stopAd()
         }
 
@@ -84,6 +91,27 @@ class MainActivity : AppCompatActivity() {
             val intent = Intent(this, SplitActivity::class.java)
             this.startActivity(intent)
         }
+    }
+
+    private fun setAdViewLayoutParams() {
+        val layoutParams =
+            if (insideAd?.adType == Constants.AD_TYPE_FULLSCREEN_NATIVE) {
+                ConstraintLayout.LayoutParams(
+                    ConstraintLayout.LayoutParams.MATCH_PARENT,
+                    ConstraintLayout.LayoutParams.MATCH_PARENT
+                )
+            } else {
+                ConstraintLayout.LayoutParams(
+                    ConstraintLayout.LayoutParams.MATCH_PARENT,
+                    ConstraintLayout.LayoutParams.WRAP_CONTENT
+                ).apply {
+                    topToBottom = R.id.adStopText
+                    topMargin = 100
+                }
+            }
+
+        mInsideAdView?.layoutParams = layoutParams
+        mInsideAdView?.visibility = View.VISIBLE
     }
 
 }

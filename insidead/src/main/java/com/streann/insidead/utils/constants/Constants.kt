@@ -5,4 +5,5 @@ object Constants {
     const val AD_TYPE_BANNER = "BANNER"
     const val AD_TYPE_LOCAL_VIDEO = "LOCAL_VIDEO"
     const val AD_TYPE_LOCAL_IMAGE = "LOCAL_IMAGE"
+    const val AD_TYPE_FULLSCREEN_NATIVE = "FULLSCREEN_NATIVE"
 }
