@@ -30,6 +30,7 @@ object InsideAdSdk {
     internal var startAfterSeconds: Long? = null
     internal var showCloseButtonAfterSeconds: Long? = null
     internal var durationInSeconds: Long? = null
+    var intervalForReels: Int? = null
 
     fun initializeSdk(
         apiKey: String, apiToken: String, baseUrl: String, appDomain: String? = "",

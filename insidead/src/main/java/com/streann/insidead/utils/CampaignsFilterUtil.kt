@@ -140,6 +140,8 @@ object CampaignsFilterUtil {
         InsideAdSdk.showCloseButtonAfterSeconds = showCloseButtonAfterSeconds?.toLong()?.let {
             Helper.getMillisFromSeconds(it)
         }
+
+        InsideAdSdk.intervalForReels = placement?.properties?.get("intervalForReels")
     }
 
     private fun getInsideAdByPlacement(
