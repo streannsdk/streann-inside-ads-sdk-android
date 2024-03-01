@@ -19,6 +19,7 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
+import com.streann.insidead.players.nativeads.NativeAdsPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.HttpRequestsUtil
@@ -39,6 +40,7 @@ class InsideAdView @JvmOverloads constructor(
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private var mBannerAdsPlayer: BannerAdsPlayer? = null
+    private var mNativeAdsPlayer: NativeAdsPlayer? = null
 
     private var insideAd: InsideAd? = null
     private var fallbackAd: InsideAd? = null
@@ -58,16 +60,22 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun init() {
-        mInsideAdPlayer = InsideAdPlayer(context, this)
-        addView(mInsideAdPlayer)
-        mBannerAdsPlayer = BannerAdsPlayer(context, this)
-        addView(mBannerAdsPlayer)
-        createGoogleImaView()
+        initializePlayers()
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
 
         MobileAds.initialize(context) { }
+    }
+
+    private fun initializePlayers() {
+        createGoogleImaView()
+        mInsideAdPlayer = InsideAdPlayer(context, this)
+        addView(mInsideAdPlayer)
+        mBannerAdsPlayer = BannerAdsPlayer(context, this)
+        addView(mBannerAdsPlayer)
+        mNativeAdsPlayer = NativeAdsPlayer(context, this)
+        addView(mNativeAdsPlayer)
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -208,22 +216,29 @@ class InsideAdView @JvmOverloads constructor(
                 showAdHandler?.postDelayed({
                     showBannerAd(insideAd, insideAdCallback)
                 }, delayMillis)
+
+            Constants.AD_TYPE_FULLSCREEN_NATIVE ->
+                showAdHandler?.postDelayed({
+                    showNativeAd(insideAd, insideAdCallback)
+                }, delayMillis)
         }
     }
 
     private fun setPlayerVisibility(
         imaPlayerVisibility: Int,
         insideAdPlayerVisibility: Int,
-        bannerAdPlayerVisibility: Int
+        bannerAdPlayerVisibility: Int,
+        nativeAdPlayerVisibility: Int,
     ) {
         mGoogleImaPlayer?.visibility = imaPlayerVisibility
         mInsideAdPlayer?.visibility = insideAdPlayerVisibility
         mBannerAdsPlayer?.visibility = bannerAdPlayerVisibility
+        mNativeAdsPlayer?.visibility = nativeAdPlayerVisibility
     }
 
     private fun showGoogleImaAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         createGoogleImaView()
-        setPlayerVisibility(VISIBLE, GONE, GONE)
+        setPlayerVisibility(VISIBLE, GONE, GONE, GONE)
         mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
     }
 
@@ -242,7 +257,7 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        setPlayerVisibility(GONE, VISIBLE, GONE)
+        setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
         mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
     }
 
@@ -254,7 +269,7 @@ class InsideAdView @JvmOverloads constructor(
         bitmap?.let {
             Log.i(InsideAdSdk.LOG_TAG, "loadAd")
             insideAdCallback.insideAdLoaded()
-            setPlayerVisibility(GONE, VISIBLE, GONE)
+            setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
             mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
         } ?: run {
             insideAdCallback.insideAdError("Error while getting AD.")
@@ -263,8 +278,13 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showBannerAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        setPlayerVisibility(GONE, GONE, VISIBLE)
+        setPlayerVisibility(GONE, GONE, VISIBLE, GONE)
         mBannerAdsPlayer?.playAd(insideAd, insideAdCallback)
+    }
+
+    private fun showNativeAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        setPlayerVisibility(GONE, GONE, GONE, VISIBLE)
+        mNativeAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
     fun stopAd() {
@@ -273,6 +293,7 @@ class InsideAdView @JvmOverloads constructor(
                 Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.stopAd()
                 Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> mInsideAdPlayer?.stopAd()
                 Constants.AD_TYPE_BANNER -> mBannerAdsPlayer?.stopAd()
+                Constants.AD_TYPE_FULLSCREEN_NATIVE -> mNativeAdsPlayer?.stopAd()
                 else -> {}
             }
         }
