@@ -21,7 +21,6 @@ import java.time.Instant
 import javax.net.ssl.HttpsURLConnection
 
 object HttpRequestsUtil {
-    private const val TAG = "InsideAdSdk"
 
     fun getGeoIpUrl(): String? {
         var jsonObject: JSONObject? = null
@@ -212,15 +211,15 @@ object HttpRequestsUtil {
                 }
             }
         } catch (e: ProtocolException) {
-            Log.e(TAG, "ProtocolException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "ProtocolException: ", e)
         } catch (e: MalformedURLException) {
-            Log.e(TAG, "MalformedURLException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "MalformedURLException: ", e)
         } catch (e: IOException) {
-            Log.e(TAG, "IOException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "IOException: ", e)
         } catch (e: JSONException) {
-            Log.e(TAG, "JSONException: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "JSONException: ", e)
         } catch (e: Exception) {
-            Log.e(TAG, "Exception: ", e)
+            Log.e(InsideAdSdk.LOG_TAG, "Exception: ", e)
         }
 
         if (campaignResponseArray == null) {
@@ -327,16 +326,24 @@ object HttpRequestsUtil {
             if (campaignObject.has("properties") && !campaignObject.isNull("properties")) {
                 try {
                     val properties = campaignObject.getJSONObject("properties")
+                    val map = HashMap<String, Number>()
 
-                    val map = HashMap<String, Int>()
                     properties.keys().forEach { key ->
                         val value = properties.optString(key)
-                        val intValue = if (value.isNullOrBlank()) 0 else try {
-                            value.toInt()
-                        } catch (e: NumberFormatException) {
-                            0
+
+                        val numberValue = when {
+                            value.isNullOrBlank() -> 0.0
+                            else -> {
+                                val intValue = value.toIntOrNull()
+                                intValue ?: try {
+                                    value.toDouble()
+                                } catch (e: NumberFormatException) {
+                                    0.0
+                                }
+                            }
                         }
-                        map[key] = intValue
+
+                        map[key] = numberValue
                     }
 
                     campaign.properties = map
@@ -344,7 +351,7 @@ object HttpRequestsUtil {
                     e.printStackTrace()
                 }
             } else {
-                campaign.properties = mapOf()
+                campaign.properties = emptyMap()
             }
 
             campaigns.add(campaign)

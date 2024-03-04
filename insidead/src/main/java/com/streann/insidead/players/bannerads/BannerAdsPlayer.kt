@@ -20,12 +20,10 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
-class BannerAdsPlayer constructor(
+class BannerAdsPlayer(
     context: Context,
     callback: InsideAdProgressCallback
 ) : FrameLayout(context) {
-
-    private val LOGTAG = "InsideAdSdk"
 
     private var adView: AdManagerAdView? = null
     private var closeBannerAdHandler: Handler? = null
@@ -64,27 +62,27 @@ class BannerAdsPlayer constructor(
 
         adView?.adListener = object : AdListener() {
             override fun onAdClicked() {
-                Log.i(LOGTAG, "onAdClicked")
+                Log.i(InsideAdSdk.LOG_TAG, "onAdClicked")
                 insideAdCallback?.insideAdClicked()
             }
 
             override fun onAdClosed() {
-                Log.i(LOGTAG, "onAdClosed")
+                Log.i(InsideAdSdk.LOG_TAG, "onAdClosed")
             }
 
             override fun onAdFailedToLoad(adError: LoadAdError) {
-                Log.e(LOGTAG, "onAdFailedToLoad: ${adError.code}, ${adError.message}")
+                Log.e(InsideAdSdk.LOG_TAG, "onAdFailedToLoad: ${adError.code}, ${adError.message}")
                 Helper.setBannerAdHeight(null)
                 insideAdCallback?.insideAdError(adError.message)
                 insideAdProgressCallback?.insideAdError()
             }
 
             override fun onAdImpression() {
-                Log.i(LOGTAG, "onAdImpression")
+                Log.i(InsideAdSdk.LOG_TAG, "onAdImpression")
             }
 
             override fun onAdLoaded() {
-                Log.i(LOGTAG, "onAdLoaded")
+                Log.i(InsideAdSdk.LOG_TAG, "onAdLoaded")
                 insideAdCallback?.insideAdLoaded()
 
                 InsideAdSdk.durationInSeconds?.let {
@@ -95,13 +93,13 @@ class BannerAdsPlayer constructor(
             }
 
             override fun onAdOpened() {
-                Log.i(LOGTAG, "onAdOpened")
+                Log.i(InsideAdSdk.LOG_TAG, "onAdOpened")
             }
         }
     }
 
     fun stopAd() {
-        Log.i(LOGTAG, "stopAd")
+        Log.i(InsideAdSdk.LOG_TAG, "stopAd")
         removeView(adView)
         Helper.setBannerAdHeight(null)
         insideAdCallback?.insideAdStop()

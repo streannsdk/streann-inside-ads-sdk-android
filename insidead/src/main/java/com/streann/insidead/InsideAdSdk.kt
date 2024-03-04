@@ -5,6 +5,8 @@ import com.streann.insidead.models.GeoIp
 
 object InsideAdSdk {
 
+    internal const val LOG_TAG = "InsideAdSdk"
+
     internal var apiKey: String = ""
     internal var apiToken: String = ""
     internal var baseUrl: String = ""

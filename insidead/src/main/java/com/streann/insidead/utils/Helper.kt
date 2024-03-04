@@ -3,10 +3,12 @@ package com.streann.insidead.utils
 import android.app.Activity
 import android.content.Context
 import android.content.pm.PackageManager
+import android.content.res.Configuration
 import android.content.res.Resources
 import android.graphics.Bitmap
 import android.graphics.BitmapFactory
 import android.os.Build
+import android.view.View
 import android.view.WindowInsets
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.ads.AdSize
@@ -121,8 +123,8 @@ object Helper {
         return TimeUnit.SECONDS.toMillis(seconds)
     }
 
-    fun getMillisFromMinutes(seconds: Long): Long {
-        return TimeUnit.MINUTES.toMillis(seconds)
+    fun getMillisFromMinutes(minutes: Float): Long {
+        return (minutes * 60000).toLong()
     }
 
     fun getScreenHeight(activity: Activity, resources: Resources): Int {
@@ -144,6 +146,34 @@ object Helper {
 
     fun getBannerAdHeight(context: Context): Int? {
         return bannerAdSize?.getHeightInPixels(context)
+    }
+
+    fun setViewSize(view: View?, resources: Resources) {
+        val isLandscape =
+            resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+
+        val displayMetrics = resources.displayMetrics
+        val screenWidth = displayMetrics.widthPixels
+        val aspectRatio = 9.0 / 16.0
+
+        val calculatedWidth: Int
+        val calculatedHeight: Int
+
+        if (isLandscape) {
+            val videoWidth = screenWidth / 2
+            val videoHeight = (videoWidth * aspectRatio).toInt()
+
+            calculatedWidth = videoWidth
+            calculatedHeight = videoHeight
+        } else {
+            val videoHeight = (screenWidth * aspectRatio).toInt()
+
+            calculatedWidth = screenWidth
+            calculatedHeight = videoHeight
+        }
+
+        view?.layoutParams?.width = calculatedWidth
+        view?.layoutParams?.height = calculatedHeight
     }
 
 }

@@ -1,87 +1,95 @@
 package com.streann.insidead.players.insidead
 
 import android.annotation.SuppressLint
+import android.content.ActivityNotFoundException
 import android.content.Context
+import android.content.Intent
 import android.graphics.Bitmap
+import android.graphics.Color
+import android.graphics.drawable.GradientDrawable
 import android.media.MediaPlayer
 import android.net.Uri
 import android.os.Handler
 import android.os.Looper
 import android.util.Log
 import android.view.*
+import android.view.ViewGroup.LayoutParams.MATCH_PARENT
 import android.view.ViewGroup.LayoutParams.WRAP_CONTENT
-import android.widget.FrameLayout
-import android.widget.ImageView
-import android.widget.ProgressBar
+import android.widget.*
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.Helper
 
 @SuppressLint("ViewConstructor")
-class InsideAdPlayer constructor(
+class InsideAdPlayer(
     context: Context,
     callback: InsideAdProgressCallback
 ) : FrameLayout(context), SurfaceHolder.Callback {
 
-    private val LOGTAG = "InsideAdSdk"
+    private var insideAd: InsideAd? = null
 
-    private lateinit var imageAdView: ImageView
+    private var gradientBgView: View? = null
+    private var imageAdView: ImageView? = null
     private var surfaceView: SurfaceView? = null
-
     private var mediaPlayer: MediaPlayer? = null
+
     private var adCloseButton: ImageView? = null
     private var adVolumeButton: ImageView? = null
     private var videoProgressBar: ProgressBar? = null
+    private var learnMoreLayout: LinearLayout? = null
 
     private var insideAdCallback: InsideAdCallback? = null
-
-    private var adSoundPlaying = true
-    private var savedAdPosition = 0
+    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
     private var showCloseButtonHandler: Handler? = null
     private var closeImageAdHandler: Handler? = null
-    private var insideAdProgressCallback: InsideAdProgressCallback? = callback
+
+    private var savedAdPosition = 0
+    private var adSoundPlaying = true
+    private var isSurfaceDestroyed: Boolean = false
 
     init {
-        init()
-    }
-
-    private fun init() {
         LayoutInflater.from(context).inflate(R.layout.inside_ad_player, this)
         imageAdView = findViewById(R.id.imageView)
     }
 
-    fun playAd(bitmap: Bitmap?, insideAd: InsideAd, callback: InsideAdCallback) {
+    fun playAd(bitmap: Bitmap?, ad: InsideAd, callback: InsideAdCallback) {
+        insideAd = ad
         insideAdCallback = callback
         showCloseButtonHandler = Handler(Looper.getMainLooper())
         closeImageAdHandler = Handler(Looper.getMainLooper())
 
         if (bitmap != null) {
             showLocalImageAd(bitmap)
+            setupGradientBackground()
+            setupLearnMoreLayout(null, null)
             setupCloseButton()
         } else {
             setupLocalVideoAd()
             setupProgressBar()
+            setupGradientBackground()
             setupCloseButton()
             setupVolumeButton()
 
-            val insideAdUrl = insideAd.url
-            Log.i(LOGTAG, "adUrl: $insideAdUrl")
+            val insideAdUrl = ad.url
+            Log.i(InsideAdSdk.LOG_TAG, "adUrl: $insideAdUrl")
 
             prepareMediaPlayer(Uri.parse(insideAdUrl))
         }
     }
 
     private fun showLocalImageAd(bitmap: Bitmap) {
-        imageAdView.visibility = VISIBLE
+        imageAdView?.visibility = VISIBLE
         surfaceView?.visibility = GONE
         setCloseButtonVisibility()
 
-        imageAdView.setImageBitmap(bitmap)
+        imageAdView?.setImageBitmap(bitmap)
+        Helper.setViewSize(imageAdView, resources)
 
-        Log.i(LOGTAG, "playAd")
+        Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
 
         InsideAdSdk.durationInSeconds?.let {
@@ -96,41 +104,82 @@ class InsideAdPlayer constructor(
         surfaceView?.holder?.addCallback(this)
 
         addView(surfaceView)
-        setSurfaceViewSize()
+        Helper.setViewSize(surfaceView, resources)
 
-        imageAdView.visibility = GONE
+        imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
-        videoProgressBar?.visibility = VISIBLE
     }
 
     private fun prepareMediaPlayer(videoUrl: Uri) {
         mediaPlayer = MediaPlayer().apply {
-            setDataSource(context, videoUrl)
-            prepareAsync()
+            try {
+                setDataSource(context, videoUrl)
+                prepareAsync()
 
-            setOnPreparedListener { mediaPlayer ->
-                Log.i(LOGTAG, "loadAd")
-                insideAdCallback?.insideAdLoaded()
+                setOnPreparedListener { mediaPlayer ->
+                    Log.i(InsideAdSdk.LOG_TAG, "loadAd")
+                    insideAdCallback?.insideAdLoaded()
 
-                if (savedAdPosition > 0) {
-                    mediaPlayer.seekTo(savedAdPosition)
+                    if (savedAdPosition > 0) {
+                        mediaPlayer.seekTo(savedAdPosition)
+                    }
+
+                    setCloseButtonVisibility()
+                    setAdVolumeControl(mediaPlayer)
                 }
 
-                setCloseButtonVisibility()
-                setAdVolumeControl(mediaPlayer)
-            }
-
-            setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
-                notifySdkAboutAdError(errorType)
-                true
+                setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
+                    notifySdkAboutAdError(errorType)
+                    true
+                }
+            } catch (e: Exception) {
+                e.printStackTrace()
+                notifySdkAboutAdError(MediaPlayer.MEDIA_ERROR_UNKNOWN)
             }
         }
+    }
+
+    private fun notifySdkAboutAdError(errorType: Int): Boolean {
+        Log.i(InsideAdSdk.LOG_TAG, "notifySdkAboutAdError")
+        insideAdProgressCallback?.insideAdError()
+
+        when (errorType) {
+            MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> {
+                Log.e(
+                    InsideAdSdk.LOG_TAG,
+                    "notifySdkAboutAdError: MEDIA_ERROR_UNSUPPORTED"
+                )
+                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_UNSUPPORTED")
+            }
+
+            MediaPlayer.MEDIA_ERROR_TIMED_OUT -> {
+                Log.e(
+                    InsideAdSdk.LOG_TAG,
+                    "notifySdkAboutAdError: MEDIA_ERROR_TIMED_OUT"
+                )
+                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_TIMED_OUT")
+            }
+
+            MediaPlayer.MEDIA_ERROR_UNKNOWN -> {
+                Log.e(
+                    InsideAdSdk.LOG_TAG,
+                    "notifySdkAboutAdError: MEDIA_ERROR_UNKNOWN"
+                )
+                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_UNKNOWN")
+            }
+
+            else -> {
+                insideAdCallback?.insideAdError("Error while playing AD.")
+            }
+        }
+
+        return true
     }
 
     fun startPlayingAd() {
         mediaPlayer?.start()
 
-        Log.i(LOGTAG, "playAd")
+        Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
         videoProgressBar?.visibility = GONE
 
@@ -141,58 +190,36 @@ class InsideAdPlayer constructor(
     }
 
     fun stopAd() {
-        Log.i(LOGTAG, "stopAd")
+        Log.i(InsideAdSdk.LOG_TAG, "stopAd")
 
         if (mediaPlayer?.isPlaying == true) {
-            mediaPlayer?.stop()
             stopLocalVideoAd()
-        } else if (imageAdView.visibility == VISIBLE) {
-            imageAdView.setImageBitmap(null)
-            insideAdCallback?.insideAdStop()
-            insideAdProgressCallback?.insideAdStopped()
+        } else if (imageAdView?.visibility == VISIBLE) {
+            imageAdView?.setImageBitmap(null)
+            removeCommonViews()
         }
 
         removeHandlers()
-        mediaPlayer?.release()
-        mediaPlayer = null
+        insideAdCallback?.insideAdStop()
+        insideAdProgressCallback?.insideAdStopped()
     }
 
     private fun stopLocalVideoAd() {
+        stopMediaPlayer()
         savedAdPosition = 0
-        insideAdCallback?.insideAdStop()
-        insideAdProgressCallback?.insideAdStopped()
-        adVolumeButton?.visibility = GONE
-        removeView(surfaceView)
-        removeView(adCloseButton)
+        removeCommonViews()
         removeView(adVolumeButton)
         removeView(videoProgressBar)
+        removeView(surfaceView)
     }
 
-    private fun notifySdkAboutAdError(errorType: Int): Boolean {
-        Log.i(LOGTAG, "notifySdkAboutAdError")
-        insideAdProgressCallback?.insideAdError()
-
-        when (errorType) {
-            MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> {
-                Log.e(
-                    LOGTAG,
-                    "notifySdkAboutAdError: MEDIA_ERROR_UNSUPPORTED"
-                )
-                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_UNSUPPORTED")
-            }
-            MediaPlayer.MEDIA_ERROR_TIMED_OUT -> {
-                Log.e(
-                    LOGTAG,
-                    "notifySdkAboutAdError: MEDIA_ERROR_TIMED_OUT"
-                )
-                insideAdCallback?.insideAdError("Ad Error: MEDIA_ERROR_TIMED_OUT")
-            }
-            else -> {
-                insideAdCallback?.insideAdError("Error while playing AD.")
-            }
+    private fun stopMediaPlayer() {
+        mediaPlayer?.let { mp ->
+            if (mp.isPlaying)
+                mp.stop()
+            mp.release()
         }
-
-        return true
+        mediaPlayer = null
     }
 
     private fun setupProgressBar() {
@@ -202,17 +229,19 @@ class InsideAdPlayer constructor(
         params.gravity = Gravity.CENTER
 
         addView(videoProgressBar, params)
+        videoProgressBar?.visibility = VISIBLE
     }
 
     private fun setupCloseButton() {
         adCloseButton = ImageView(context)
         adCloseButton?.setImageResource(R.drawable.ic_close)
+        adCloseButton?.setColorFilter(Color.WHITE)
         adCloseButton?.visibility = GONE
 
         val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         params.gravity = Gravity.TOP or Gravity.START
-        params.marginStart = 20
-        params.topMargin = 20
+        params.marginStart = 10
+        params.topMargin = 10
 
         addView(adCloseButton, params)
 
@@ -234,10 +263,10 @@ class InsideAdPlayer constructor(
 
         val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         params.gravity = Gravity.TOP or Gravity.END
-        params.marginEnd = 20
-        params.topMargin = 20
+        params.marginEnd = 10
+        params.topMargin = 10
 
-        addView(adVolumeButton, params)
+        setupLearnMoreLayout(adVolumeButton, params)
     }
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
@@ -263,31 +292,81 @@ class InsideAdPlayer constructor(
         mediaPlayer.setVolume(sound.toFloat(), sound.toFloat())
         adVolumeButton?.visibility = VISIBLE
         adVolumeButton?.setImageResource(soundIcon)
+        adVolumeButton?.setColorFilter(Color.WHITE)
         insideAdCallback?.insideAdVolumeChanged(sound)
     }
 
-    private fun setSurfaceViewSize() {
-        val aspectRatioWidth = 16
-        val aspectRatioHeight = 9
+    private fun setupGradientBackground() {
+        gradientBgView = View(context)
 
-        val screenWidth = resources.displayMetrics.widthPixels
-        val screenHeight = resources.displayMetrics.heightPixels
+        val params = LayoutParams(MATCH_PARENT, 95)
+        params.gravity = Gravity.TOP or Gravity.START
 
-        val aspectRatio = aspectRatioWidth.toDouble() / aspectRatioHeight.toDouble()
+        val gradientDrawable = GradientDrawable()
+        gradientDrawable.colors = intArrayOf(Color.parseColor("#70000000"), Color.TRANSPARENT)
+        gradientDrawable.gradientType = GradientDrawable.LINEAR_GRADIENT
+        gradientDrawable.orientation = GradientDrawable.Orientation.TOP_BOTTOM
 
-        val calculatedWidth: Int
-        val calculatedHeight: Int
+        gradientBgView?.background = gradientDrawable
+        addView(gradientBgView, params)
+    }
 
-        if (screenWidth < (screenHeight * aspectRatio).toInt()) {
-            calculatedWidth = screenWidth
-            calculatedHeight = (screenWidth / aspectRatio).toInt()
-        } else {
-            calculatedWidth = (screenHeight * aspectRatio).toInt()
-            calculatedHeight = screenHeight
+    private fun setupLearnMoreLayout(
+        adVolumeButton: View?,
+        volumeButtonParams: LayoutParams?
+    ) {
+        val learnMoreButton = createLearnMoreButton()
+
+        val learnMoreParams = RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
+        learnMoreParams.topMargin = 10
+        learnMoreParams.marginEnd = 20
+
+        learnMoreLayout = LinearLayout(context)
+        learnMoreLayout?.gravity = Gravity.END
+        learnMoreLayout?.orientation = LinearLayout.HORIZONTAL
+        learnMoreLayout?.addView(learnMoreButton, learnMoreParams)
+
+        adVolumeButton?.let { volumeButton ->
+            volumeButtonParams?.let { params ->
+                learnMoreLayout?.addView(volumeButton, params)
+            }
         }
 
-        surfaceView?.layoutParams?.width = calculatedWidth
-        surfaceView?.layoutParams?.height = calculatedHeight
+        addView(learnMoreLayout)
+    }
+
+    private fun createLearnMoreButton(): TextView {
+        val learnMoreButton = TextView(context)
+
+        learnMoreButton.text = context.getString(R.string.learn_more)
+        learnMoreButton.textSize = 16f
+        learnMoreButton.setTextColor(Color.WHITE)
+        learnMoreButton.gravity = Gravity.END or Gravity.CENTER_VERTICAL
+
+        val clickThroughUrl = insideAd?.properties?.clickThroughUrl
+        if (clickThroughUrl?.isBlank() == true)
+            learnMoreButton.visibility = GONE
+        else {
+            learnMoreButton.visibility = VISIBLE
+            learnMoreButton.setOnClickListener {
+                try {
+                    val intent =
+                        Intent(Intent.ACTION_VIEW, Uri.parse(clickThroughUrl))
+                    context.startActivity(intent)
+                } catch (e: ActivityNotFoundException) {
+                    e.printStackTrace()
+                }
+            }
+        }
+
+        return learnMoreButton
+    }
+
+
+    private fun removeCommonViews() {
+        removeView(adCloseButton)
+        removeView(learnMoreLayout)
+        removeView(gradientBgView)
     }
 
     private fun removeHandlers() {
@@ -299,6 +378,10 @@ class InsideAdPlayer constructor(
 
     override fun surfaceCreated(holder: SurfaceHolder) {
         mediaPlayer?.setDisplay(holder)
+        if (isSurfaceDestroyed) {
+            if (mediaPlayer?.isPlaying == false) mediaPlayer?.start()
+            isSurfaceDestroyed = false
+        }
     }
 
     override fun surfaceChanged(
@@ -310,8 +393,10 @@ class InsideAdPlayer constructor(
     }
 
     override fun surfaceDestroyed(holder: SurfaceHolder) {
-        mediaPlayer?.release()
-        mediaPlayer = null
+        if (mediaPlayer?.isPlaying == true) {
+            mediaPlayer?.pause()
+            isSurfaceDestroyed = true
+        }
     }
 
 }

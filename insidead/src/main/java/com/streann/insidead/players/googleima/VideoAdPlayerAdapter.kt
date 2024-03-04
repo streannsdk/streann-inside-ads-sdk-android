@@ -31,7 +31,6 @@ class VideoAdPlayerAdapter(
     private var videoPlayerVolumeButton: FrameLayout
 
     companion object {
-        private const val LOGTAG = "InsideAdSdk"
         private const val POLLING_TIME_MS: Long = 250
         private const val INITIAL_DELAY_MS: Long = 250
     }
@@ -41,28 +40,28 @@ class VideoAdPlayerAdapter(
     }
 
     private fun notifyImaSdkAboutAdLoaded() {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdLoaded")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdLoaded")
         for (callback in videoAdPlayerCallbacks) {
             callback.onLoaded(loadedAdMediaInfo!!)
         }
     }
 
     private fun notifyImaSdkAboutAdStarted() {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdStarted")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdStarted")
         for (callback in videoAdPlayerCallbacks) {
             callback.onPlay(loadedAdMediaInfo!!)
         }
     }
 
     private fun notifyImaSdkAboutAdPaused() {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdPaused")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdPaused")
         for (callback in videoAdPlayerCallbacks) {
             callback.onPause(loadedAdMediaInfo!!)
         }
     }
 
     private fun notifyImaSdkAboutAdEnded() {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdEnded")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdEnded")
         savedAdPosition = 0
         for (callback in videoAdPlayerCallbacks) {
             callback.onEnded(loadedAdMediaInfo!!)
@@ -76,17 +75,19 @@ class VideoAdPlayerAdapter(
     }
 
     private fun notifyImaSdkAboutAdError(errorType: Int): Boolean {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdError")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdError")
 
         when (errorType) {
             MediaPlayer.MEDIA_ERROR_UNSUPPORTED -> Log.e(
-                LOGTAG,
+                InsideAdSdk.LOG_TAG,
                 "notifyImaSdkAboutAdError: MEDIA_ERROR_UNSUPPORTED"
             )
+
             MediaPlayer.MEDIA_ERROR_TIMED_OUT -> Log.e(
-                LOGTAG,
+                InsideAdSdk.LOG_TAG,
                 "notifyImaSdkAboutAdError: MEDIA_ERROR_TIMED_OUT"
             )
+
             else -> {}
         }
 
@@ -98,14 +99,14 @@ class VideoAdPlayerAdapter(
     }
 
     private fun notifyImaSdkAboutAdVolumeChanged(level: Int) {
-        Log.i(LOGTAG, "notifyImaSdkAboutAdVolumeChanged")
+        Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdVolumeChanged")
         for (callback in videoAdPlayerCallbacks) {
             callback.onVolumeChanged(loadedAdMediaInfo!!, level)
         }
     }
 
     private fun startAdTracking() {
-        Log.i(LOGTAG, "startAdTracking")
+        Log.i(InsideAdSdk.LOG_TAG, "startAdTracking")
         if (timer != null) {
             return
         }
@@ -123,7 +124,7 @@ class VideoAdPlayerAdapter(
     }
 
     private fun stopAdTracking() {
-        Log.i(LOGTAG, "stopAdTracking")
+        Log.i(InsideAdSdk.LOG_TAG, "stopAdTracking")
         if (timer != null) {
             timer!!.cancel()
             timer = null
@@ -144,20 +145,20 @@ class VideoAdPlayerAdapter(
     }
 
     override fun loadAd(adMediaInfo: AdMediaInfo, adPodInfo: AdPodInfo) {
-        Log.i(LOGTAG, "loadAd")
+        Log.i(InsideAdSdk.LOG_TAG, "loadAd")
         loadedAdMediaInfo = adMediaInfo
         notifyImaSdkAboutAdLoaded()
     }
 
     override fun pauseAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "pauseAd")
+        Log.i(InsideAdSdk.LOG_TAG, "pauseAd")
         savedAdPosition = videoPlayer.currentPosition
         stopAdTracking()
         notifyImaSdkAboutAdPaused()
     }
 
     override fun playAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "playAd")
+        Log.i(InsideAdSdk.LOG_TAG, "playAd")
 
         videoPlayer.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
         videoPlayer.setVideoURI(Uri.parse(adMediaInfo.url))
@@ -170,7 +171,7 @@ class VideoAdPlayerAdapter(
             }
 
             setAdVolumeControl(mediaPlayer)
-            videoPlayer.animate().alpha(1f);
+            videoPlayer.animate().alpha(1f)
             mediaPlayer.start()
             startAdTracking()
             notifyImaSdkAboutAdStarted()
@@ -189,7 +190,7 @@ class VideoAdPlayerAdapter(
     }
 
     fun stopAdPlaying() {
-        Log.i(LOGTAG, "stopAdPlaying")
+        Log.i(InsideAdSdk.LOG_TAG, "stopAdPlaying")
         if (videoPlayer.isPlaying) {
             stopAdTracking()
             videoPlayer.stopPlayback()
@@ -205,7 +206,7 @@ class VideoAdPlayerAdapter(
     }
 
     override fun stopAd(adMediaInfo: AdMediaInfo) {
-        Log.i(LOGTAG, "stopAd")
+        Log.i(InsideAdSdk.LOG_TAG, "stopAd")
         stopAdTracking()
     }
 

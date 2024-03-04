@@ -36,8 +36,6 @@ class InsideAdView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : FrameLayout(context, attrs, defStyle), InsideAdProgressCallback {
 
-    private val LOGTAG = "InsideAdSdk"
-
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private var mBannerAdsPlayer: BannerAdsPlayer? = null
@@ -111,7 +109,7 @@ class InsideAdView @JvmOverloads constructor(
         isAdMuted: Boolean? = false,
         insideAdCallback: InsideAdCallback?
     ) {
-        Log.i(LOGTAG, "requestAd")
+        Log.i(InsideAdSdk.LOG_TAG, "requestAd")
         InsideAdSdk.isAdMuted = isAdMuted
         this.insideAdCallback = insideAdCallback
         this.screen = screen
@@ -119,7 +117,7 @@ class InsideAdView @JvmOverloads constructor(
         if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
             val errorMsg =
                 "Api Key and Base Url are required. Please implement the initializeSdk method."
-            Log.e(LOGTAG, errorMsg)
+            Log.e(InsideAdSdk.LOG_TAG, errorMsg)
             insideAdCallback?.insideAdError(errorMsg)
             return
         }
@@ -145,15 +143,15 @@ class InsideAdView @JvmOverloads constructor(
         screen: String,
         insideAdCallback: InsideAdCallback?
     ) {
-        Log.i(LOGTAG, "requestCampaign")
+        Log.i(InsideAdSdk.LOG_TAG, "requestCampaign")
         HttpRequestsUtil.getCampaign(
             geoCountryCode,
             object : CampaignCallback {
                 override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                    Log.i(LOGTAG, "onSuccess: $campaigns")
+                    Log.i(InsideAdSdk.LOG_TAG, "onSuccess: $campaigns")
 
                     insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
-                    Log.i(LOGTAG, "insideAd: $insideAd")
+                    Log.i(InsideAdSdk.LOG_TAG, "insideAd: $insideAd")
 
                     insideAdCallback?.let { callback ->
                         insideAd?.let { ad ->
@@ -167,7 +165,7 @@ class InsideAdView @JvmOverloads constructor(
                 override fun onError(error: String?) {
                     var errorMsg = "Error while getting AD."
                     if (!error.isNullOrBlank()) errorMsg = error
-                    Log.i(LOGTAG, "onError: $errorMsg")
+                    Log.i(InsideAdSdk.LOG_TAG, "onError: $errorMsg")
                     insideAdCallback?.insideAdError(errorMsg)
                 }
             })
@@ -177,7 +175,7 @@ class InsideAdView @JvmOverloads constructor(
         insideAd: InsideAd,
         insideAdCallback: InsideAdCallback
     ) {
-        Log.i(LOGTAG, "showAd")
+        Log.i(InsideAdSdk.LOG_TAG, "showAd")
         requestAdExecutor?.shutdown()
         showAdHandler = Handler(Looper.getMainLooper())
 
@@ -190,10 +188,12 @@ class InsideAdView @JvmOverloads constructor(
                         insideAdCallback
                     )
                 }, delayMillis)
+
             Constants.AD_TYPE_LOCAL_VIDEO ->
                 showAdHandler?.postDelayed({
                     showLocalVideoAd(insideAd, insideAdCallback)
                 }, delayMillis)
+
             Constants.AD_TYPE_LOCAL_IMAGE -> {
                 insideAd.url?.let { url ->
                     Helper.getBitmapFromURL(url, resources) { bitmap ->
@@ -203,6 +203,7 @@ class InsideAdView @JvmOverloads constructor(
                     }
                 }
             }
+
             Constants.AD_TYPE_BANNER ->
                 showAdHandler?.postDelayed({
                     showBannerAd(insideAd, insideAdCallback)
@@ -234,8 +235,10 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun removeGoogleImaView() {
-        removeView(mGoogleImaPlayer)
-        mGoogleImaPlayer = null
+        if (mGoogleImaPlayer != null) {
+            removeView(mGoogleImaPlayer)
+            mGoogleImaPlayer = null
+        }
     }
 
     private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
@@ -249,7 +252,7 @@ class InsideAdView @JvmOverloads constructor(
         insideAdCallback: InsideAdCallback
     ) {
         bitmap?.let {
-            Log.i(LOGTAG, "loadAd")
+            Log.i(InsideAdSdk.LOG_TAG, "loadAd")
             insideAdCallback.insideAdLoaded()
             setPlayerVisibility(GONE, VISIBLE, GONE)
             mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
@@ -287,7 +290,7 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     override fun insideAdStopped() {
-        Log.i(LOGTAG, "insideAdStopped")
+        Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
         if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
             requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
@@ -301,11 +304,11 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     override fun insideAdError() {
-        Log.i(LOGTAG, "insideAdError, show fallbackAd")
+        Log.i(InsideAdSdk.LOG_TAG, "insideAdError, show fallbackAd")
         insideAd = null
         insideAdCallback?.let { callback ->
             fallbackAd?.let { fallbackAd ->
-                Log.i(LOGTAG, "fallbackAd: $fallbackAd")
+                Log.i(InsideAdSdk.LOG_TAG, "fallbackAd: $fallbackAd")
                 fallbackAd.properties?.durationInSeconds?.let {
                     InsideAdSdk.durationInSeconds = Helper.getMillisFromSeconds(it.toLong())
                 }
