@@ -280,6 +280,7 @@ class NativeAdsPlayer(
     fun stopAd() {
         Log.i(InsideAdSdk.LOG_TAG, "stopAd")
         this.nativeAd.destroy()
+        adCloseButton?.visibility = GONE
         removeView(adView)
         removeHandlers()
         insideAdCallback?.insideAdStop()
