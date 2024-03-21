@@ -213,27 +213,27 @@ class NativeAdsPlayer(
                 object : VideoController.VideoLifecycleCallbacks() {
                     override fun onVideoStart() {
                         super.onVideoStart()
-                        Log.d(InsideAdSdk.LOG_TAG, "onVideoStart")
+                        Log.i(InsideAdSdk.LOG_TAG, "onVideoStart")
                     }
 
                     override fun onVideoPlay() {
                         super.onVideoPlay()
-                        Log.d(InsideAdSdk.LOG_TAG, "onVideoPlay")
+                        Log.i(InsideAdSdk.LOG_TAG, "onVideoPlay")
                     }
 
                     override fun onVideoPause() {
                         super.onVideoPause()
-                        Log.d(InsideAdSdk.LOG_TAG, "onVideoPause")
+                        Log.i(InsideAdSdk.LOG_TAG, "onVideoPause")
                     }
 
                     override fun onVideoMute(p0: Boolean) {
                         super.onVideoMute(p0)
-                        Log.d(InsideAdSdk.LOG_TAG, "onVideoMute")
+                        Log.i(InsideAdSdk.LOG_TAG, "onVideoMute")
                     }
 
                     override fun onVideoEnd() {
                         super.onVideoEnd()
-                        Log.d(InsideAdSdk.LOG_TAG, "onVideoEnd")
+                        Log.i(InsideAdSdk.LOG_TAG, "onVideoEnd")
                     }
                 }
         }
