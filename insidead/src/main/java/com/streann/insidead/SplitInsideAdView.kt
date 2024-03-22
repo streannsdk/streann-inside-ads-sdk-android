@@ -69,68 +69,69 @@ class SplitInsideAdView(
     ) {
         mInsideAdView?.requestAd(
             screen = screen,
-            isAdMuted = isAdMuted,
-            insideAdCallback = object : InsideAdCallback {
-                override fun insideAdReceived(insideAd: InsideAd) {
-                    Log.i(TAG, "insideAdReceived: $insideAd")
-                    insideAdCallback?.insideAdReceived(insideAd)
+            isAdMuted = isAdMuted
+        )
+        InsideAdSdk.setInsideAdCallback(object : InsideAdCallback {
+            override fun insideAdReceived(insideAd: InsideAd) {
+                Log.i(TAG, "insideAdReceived: $insideAd")
+                insideAdCallback?.insideAdReceived(insideAd)
+            }
+
+            override fun insideAdLoaded() {
+                Log.i(TAG, "insideAdLoaded")
+                insideAdCallback?.insideAdLoaded()
+                mInsideAdView?.visibility = View.VISIBLE
+                mInsideAdView?.playAd()
+
+                val isLandscape =
+                    resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
+                if (isLandscape) {
+                    showSplitScreenLandscape(userView, parentView, isInsideAdAbove ?: false)
+                } else {
+                    showSplitScreenPortrait(userView, parentView, isInsideAdAbove ?: false)
                 }
+            }
 
-                override fun insideAdLoaded() {
-                    Log.i(TAG, "insideAdLoaded")
-                    insideAdCallback?.insideAdLoaded()
-                    mInsideAdView?.visibility = View.VISIBLE
-                    mInsideAdView?.playAd()
+            override fun insideAdPlay() {
+                Log.i(TAG, "insideAdPlay")
+                insideAdCallback?.insideAdPlay()
+            }
 
-                    val isLandscape =
-                        resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
-                    if (isLandscape) {
-                        showSplitScreenLandscape(userView, parentView, isInsideAdAbove ?: false)
-                    } else {
-                        showSplitScreenPortrait(userView, parentView, isInsideAdAbove ?: false)
-                    }
-                }
+            override fun insideAdStop() {
+                Log.i(TAG, "insideAdStop")
+                insideAdCallback?.insideAdStop()
 
-                override fun insideAdPlay() {
-                    Log.i(TAG, "insideAdPlay")
-                    insideAdCallback?.insideAdPlay()
-                }
+                mInsideAdView?.visibility = View.GONE
 
-                override fun insideAdStop() {
-                    Log.i(TAG, "insideAdStop")
-                    insideAdCallback?.insideAdStop()
+                val userViewParams = RelativeLayout.LayoutParams(
+                    RelativeLayout.LayoutParams.MATCH_PARENT,
+                    RelativeLayout.LayoutParams.MATCH_PARENT
+                )
 
-                    mInsideAdView?.visibility = View.GONE
+                userView.layoutParams = userViewParams
+            }
 
-                    val userViewParams = RelativeLayout.LayoutParams(
-                        RelativeLayout.LayoutParams.MATCH_PARENT,
-                        RelativeLayout.LayoutParams.MATCH_PARENT
-                    )
+            override fun insideAdSkipped() {
+                Log.i(TAG, "insideAdSkipped")
+                insideAdCallback?.insideAdSkipped()
+                mInsideAdView?.stopAd()
+            }
 
-                    userView.layoutParams = userViewParams
-                }
+            override fun insideAdClicked() {
+                Log.i(TAG, "insideAdClicked")
+                insideAdCallback?.insideAdClicked()
+            }
 
-                override fun insideAdSkipped() {
-                    Log.i(TAG, "insideAdSkipped")
-                    insideAdCallback?.insideAdSkipped()
-                    mInsideAdView?.stopAd()
-                }
+            override fun insideAdError(error: String) {
+                Log.i(TAG, "insideAdError: $error")
+                insideAdCallback?.insideAdError(error)
+            }
 
-                override fun insideAdClicked() {
-                    Log.i(TAG, "insideAdClicked")
-                    insideAdCallback?.insideAdClicked()
-                }
-
-                override fun insideAdError(error: String) {
-                    Log.i(TAG, "insideAdError: $error")
-                    insideAdCallback?.insideAdError(error)
-                }
-
-                override fun insideAdVolumeChanged(level: Int) {
-                    Log.i(TAG, "insideAdVolumeChanged: $level")
-                    insideAdCallback?.insideAdVolumeChanged(level)
-                }
-            })
+            override fun insideAdVolumeChanged(level: Int) {
+                Log.i(TAG, "insideAdVolumeChanged: $level")
+                insideAdCallback?.insideAdVolumeChanged(level)
+            }
+        })
     }
 
     private fun showSplitScreenPortrait(

@@ -11,25 +11,20 @@ import android.util.Log
 import android.widget.FrameLayout
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
-import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
 import com.streann.insidead.players.nativeads.NativeAdsPlayer
-import com.streann.insidead.utils.CampaignsFilterUtil
+import com.streann.insidead.utils.CampaignsFilterUtil.getActiveCampaigns
 import com.streann.insidead.utils.Helper
-import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
 import com.streann.insidead.utils.constants.Constants
 import com.streann.insidead.utils.constants.SharedPrefKeys
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 class InsideAdView @JvmOverloads constructor(
     context: Context,
@@ -46,14 +41,19 @@ class InsideAdView @JvmOverloads constructor(
     private var fallbackAd: InsideAd? = null
     private var insideAdCallback: InsideAdCallback? = null
 
-    private var requestAdExecutor: ScheduledExecutorService? = null
     private var populateSdkExecutor: ExecutorService? = null
+    private var adIntervalHandler: Handler? = null
     private var showAdHandler: Handler? = null
 
     private var screen: String = ""
     private var apiKey: String = ""
     private var baseUrl: String = ""
     private var scale: Float = 0f
+
+    private var retryCount = 0
+    private val maxRetries = 3
+    private val retryDelayMillis = 3000L
+    private var retryRequestHandler: Handler? = null
 
     init {
         init()
@@ -115,11 +115,13 @@ class InsideAdView @JvmOverloads constructor(
     fun requestAd(
         screen: String,
         isAdMuted: Boolean? = false,
-        insideAdCallback: InsideAdCallback?
     ) {
-        Log.i(InsideAdSdk.LOG_TAG, "requestAd")
+        Log.i("mano", "requestAd")
+
+        retryRequestHandler = Handler(Looper.getMainLooper())
+
         InsideAdSdk.isAdMuted = isAdMuted
-        this.insideAdCallback = insideAdCallback
+        this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
 
         if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
@@ -130,61 +132,56 @@ class InsideAdView @JvmOverloads constructor(
             return
         }
 
-        requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-        requestAdExecutor!!.execute {
-            val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
-            if (!geoIpUrl.isNullOrBlank()) {
-                val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
-                if (geoIp != null) {
-                    InsideAdSdk.geoIp = geoIp
-                    val geoCountryCode = geoIp.countryCode
-                    if (geoCountryCode?.isNotBlank() == true) {
-                        requestCampaign(geoCountryCode, screen, insideAdCallback)
-                    }
-                }
+        getInsideAdRetry()
+    }
+
+    private fun getInsideAdRetry() {
+        Log.i("mano", "getInsideAdRetry")
+        if (retryCount < maxRetries) {
+            if (InsideAdSdk.campaignsList != null) {
+                Log.i("mano", "has campaigns, now filter and show inside ad")
+                getInsideAd(screen, insideAdCallback)
+            } else {
+                Log.i("mano", "no campaigns, try showing ad again")
+                retryCount++
+                retryRequestHandler?.postDelayed({
+                    getInsideAdRetry()
+                }, retryDelayMillis)
             }
         }
     }
 
-    private fun requestCampaign(
-        geoCountryCode: String,
+    private fun getInsideAd(
         screen: String,
         insideAdCallback: InsideAdCallback?
     ) {
-        Log.i(InsideAdSdk.LOG_TAG, "requestCampaign")
-        HttpRequestsUtil.getCampaign(
-            geoCountryCode,
-            object : CampaignCallback {
-                override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                    Log.i(InsideAdSdk.LOG_TAG, "onSuccess: $campaigns")
+        Log.i("mano", "getInsideAd")
 
-                    insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
-                    Log.i(InsideAdSdk.LOG_TAG, "insideAd: $insideAd")
+        // get local list of campaigns and filter them
+        val campaigns = getActiveCampaigns(InsideAdSdk.campaignsList)
+        Log.i("mano", "campaigns: $campaigns")
+        // if campaigns are null or empty close handlers
+        // if campaigns are not null get an ad from them
 
-                    insideAdCallback?.let { callback ->
-                        insideAd?.let { ad ->
-                            callback.insideAdReceived(ad)
-                            fallbackAd = insideAd?.fallback
-                            showAd(ad, callback)
-                        }
-                    }
-                }
+//        insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
+//        Log.i(InsideAdSdk.LOG_TAG, "insideAd: $insideAd")
 
-                override fun onError(error: String?) {
-                    var errorMsg = "Error while getting AD."
-                    if (!error.isNullOrBlank()) errorMsg = error
-                    Log.i(InsideAdSdk.LOG_TAG, "onError: $errorMsg")
-                    insideAdCallback?.insideAdError(errorMsg)
-                }
-            })
+        insideAdCallback?.let { callback ->
+            insideAd?.let { ad ->
+                callback.insideAdReceived(ad)
+                fallbackAd = insideAd?.fallback
+                showAd(ad, callback)
+            }
+        }
     }
 
     private fun showAd(
         insideAd: InsideAd,
         insideAdCallback: InsideAdCallback
     ) {
-        Log.i(InsideAdSdk.LOG_TAG, "showAd")
-        requestAdExecutor?.shutdown()
+        Log.i("mano", "showAd")
+        retryRequestHandler?.removeCallbacksAndMessages(null)
+        retryRequestHandler = null
         showAdHandler = Handler(Looper.getMainLooper())
 
         val delayMillis = InsideAdSdk.startAfterSeconds ?: 0
@@ -218,9 +215,8 @@ class InsideAdView @JvmOverloads constructor(
                 }, delayMillis)
 
             Constants.AD_TYPE_FULLSCREEN_NATIVE ->
-                showAdHandler?.postDelayed({
-                    showNativeAd(insideAd, insideAdCallback)
-                }, delayMillis)
+                // remove showAdHandler for Native Ads
+                showNativeAd(insideAd, insideAdCallback)
         }
     }
 
@@ -313,13 +309,13 @@ class InsideAdView @JvmOverloads constructor(
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
-        if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
-            requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-            val geoCountryCode = InsideAdSdk.geoIp?.countryCode
-            if (geoCountryCode?.isNotBlank() == true) {
-                requestAdExecutor!!.schedule({
-                    requestCampaign(geoCountryCode, screen, insideAdCallback)
-                }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
+        // call this part of logic for all ads that are not native ads
+        if (insideAd?.adType != Constants.AD_TYPE_FULLSCREEN_NATIVE) {
+            if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
+                adIntervalHandler = Handler(Looper.getMainLooper())
+                adIntervalHandler?.postDelayed({
+                    getInsideAd(screen, insideAdCallback)
+                }, InsideAdSdk.intervalInMinutes!!)
             }
         }
     }
