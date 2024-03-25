@@ -56,7 +56,6 @@ class MainActivity : AppCompatActivity() {
 
             override fun insideAdStop() {
                 Log.i(TAG, "insideAdStop")
-                adProgressText.text = "Show Ad"
                 adStopText.visibility = View.GONE
                 mInsideAdView?.visibility = View.GONE
                 splitActivityButton.visibility = View.VISIBLE
@@ -73,7 +72,7 @@ class MainActivity : AppCompatActivity() {
 
             override fun insideAdError(error: String) {
                 Log.i(TAG, "insideAdError: $error")
-                adProgressText.text = "Error: $error \nShow Ad"
+                adProgressText.text = "Error: $error"
             }
 
             override fun insideAdVolumeChanged(level: Int) {

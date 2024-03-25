@@ -104,6 +104,7 @@ object InsideAdSdk {
                 override fun onSuccess(campaigns: ArrayList<Campaign>?) {
                     Log.i(LOG_TAG, "onSuccess: $campaigns")
                     campaignsList = campaigns
+                    requestAdExecutor?.shutdown()
                 }
 
                 override fun onError(error: String?) {
@@ -111,6 +112,7 @@ object InsideAdSdk {
                     if (!error.isNullOrBlank()) errorMsg = error
                     Log.i(LOG_TAG, "onError: $errorMsg")
                     campaignsErrorOrNull = true
+                    requestAdExecutor?.shutdown()
                 }
             })
     }
