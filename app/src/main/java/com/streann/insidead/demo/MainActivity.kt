@@ -27,7 +27,6 @@ class MainActivity : AppCompatActivity() {
     }
 
     private fun setupInsideAdView() {
-        Log.d(TAG, "setupInsideAdView")
         mInsideAdView = findViewById(R.id.insideAdView)
 
         val adProgressText = findViewById<TextView>(R.id.adProgressText)
