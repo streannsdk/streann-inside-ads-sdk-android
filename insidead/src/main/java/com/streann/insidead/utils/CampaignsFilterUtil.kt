@@ -12,8 +12,26 @@ import java.time.LocalTime
 
 object CampaignsFilterUtil {
 
-    fun getActiveCampaigns(campaigns: ArrayList<Campaign>?): ArrayList<Campaign>? {
-        // get all active campaigns from the campaigns request
+    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
+        val activeCampaigns = getActiveCampaigns(campaigns)
+        Log.d(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
+
+        val placements = getPlacementsByCampaigns(
+            activeCampaigns,
+            screen
+        )
+
+        val insideAd = getInsideAdByPlacement(
+            placements
+        )
+        Log.d(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
+
+        setCurrentPlacementAndCampaign(placements, campaigns, insideAd)
+
+        return insideAd
+    }
+
+    private fun getActiveCampaigns(campaigns: ArrayList<Campaign>?): ArrayList<Campaign>? {
         var activeCampaigns = ArrayList<Campaign>()
 
         if (campaigns != null) {
@@ -29,50 +47,6 @@ object CampaignsFilterUtil {
 
         return activeCampaigns
     }
-
-//    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
-//        val campaign = getCampaign(campaigns)
-
-//        val placements = getPlacements(
-//            campaign?.placements,
-//            screen
-//        )
-//
-//        val insideAd = getInsideAdByPlacement(
-//            placements
-//        )
-//
-//        setCurrentPlacement(placements, insideAd)
-
-//        return insideAd
-//    }
-
-//    private fun getCampaign(campaigns: ArrayList<Campaign>?): Campaign? {
-//        var activeCampaign: Campaign? = null
-//        val filteredCampaigns = ArrayList<Campaign>()
-//
-//        if (campaigns != null) {
-//            for (campaign in campaigns) {
-//                val isActiveCampaign =
-//                    filterCampaignsByDate(campaign.startDate, campaign.endDate)
-//                if (isActiveCampaign) filteredCampaigns.add(campaign)
-//            }
-//        }
-//
-//        if (filteredCampaigns.isNotEmpty())
-//            activeCampaign = filterCampaignsByTimePeriod(filteredCampaigns)
-//
-//        Log.i(InsideAdSdk.LOG_TAG, "activeCampaign: $activeCampaign")
-//
-//        val intervalInMinutes =
-//            activeCampaign?.properties?.get("intervalInMinutes")
-//        val intervalInMillis = intervalInMinutes?.toFloat()?.let {
-//            Helper.getMillisFromMinutes(it)
-//        }
-//        InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
-//
-//        return activeCampaign
-//    }
 
     private fun filterCampaignsByDate(startDate: Instant?, endDate: Instant?): Boolean {
         val currentDate = Instant.now()
@@ -109,7 +83,44 @@ object CampaignsFilterUtil {
         return filteredCampaigns
     }
 
-    private fun getPlacements(
+    private fun getPlacementsByCampaigns(
+        campaigns: ArrayList<Campaign>?,
+        screen: String
+    ): List<Placement>? {
+        var placements: List<Placement>? = null
+
+        if (campaigns?.isNotEmpty() == true) {
+            placements = if (campaigns.size > 1) {
+                getPlacementsByMultipleCampaigns(campaigns, screen)
+            } else getFilteredPlacements(campaigns[0].placements, screen)
+        }
+
+        return placements
+    }
+
+    // if we have multiple campaigns combine a list of placements of all campaigns
+    private fun getPlacementsByMultipleCampaigns(
+        campaigns: ArrayList<Campaign>,
+        screen: String
+    ): List<Placement>? {
+        val placementsList = ArrayList<Placement>()
+
+        for (campaign in campaigns) {
+            if (campaign.placements?.isNotEmpty() == true) {
+                val placements = campaign.placements
+                if (placements != null) {
+                    for (placement in placements) {
+                        placementsList.add(placement)
+                    }
+                }
+            }
+        }
+
+        return getFilteredPlacements(placementsList, screen)
+    }
+
+    // filter the list of placements according to screen
+    private fun getFilteredPlacements(
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
@@ -128,8 +139,9 @@ object CampaignsFilterUtil {
         return filteredPlacements
     }
 
-    private fun setCurrentPlacement(
+    private fun setCurrentPlacementAndCampaign(
         placements: List<Placement>?,
+        campaigns: ArrayList<Campaign>?,
         insideAd: InsideAd?
     ) {
         val placement = placements?.find { placement ->
@@ -153,6 +165,28 @@ object CampaignsFilterUtil {
         }
 
         InsideAdSdk.intervalForReels = placement?.properties?.get("intervalForReels")
+
+        setCurrentCampaign(campaigns, placement)
+    }
+
+    private fun setCurrentCampaign(
+        campaigns: ArrayList<Campaign>?,
+        placement: Placement?
+    ) {
+        val activeCampaign = campaigns?.find { campaign ->
+            campaign.placements!!.contains(
+                placement
+            )
+        }
+
+        Log.i(InsideAdSdk.LOG_TAG, "activeCampaign: $activeCampaign")
+
+        val intervalInMinutes =
+            activeCampaign?.properties?.get("intervalInMinutes")
+        val intervalInMillis = intervalInMinutes?.toFloat()?.let {
+            Helper.getMillisFromMinutes(it)
+        }
+        InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
     }
 
     private fun getInsideAdByPlacement(

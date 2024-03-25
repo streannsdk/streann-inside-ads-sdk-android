@@ -18,7 +18,7 @@ import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
 import com.streann.insidead.players.nativeads.NativeAdsPlayer
-import com.streann.insidead.utils.CampaignsFilterUtil.getActiveCampaigns
+import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.SharedPreferencesHelper
 import com.streann.insidead.utils.constants.Constants
@@ -116,8 +116,7 @@ class InsideAdView @JvmOverloads constructor(
         screen: String,
         isAdMuted: Boolean? = false,
     ) {
-        Log.i("mano", "requestAd")
-
+        Log.i(InsideAdSdk.LOG_TAG, "requestAd")
         retryRequestHandler = Handler(Looper.getMainLooper())
 
         InsideAdSdk.isAdMuted = isAdMuted
@@ -136,16 +135,14 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun getInsideAdRetry() {
-        Log.i("mano", "getInsideAdRetry")
+        Log.i(InsideAdSdk.LOG_TAG, "getInsideAdRetry")
         if (retryCount < maxRetries) {
             if (InsideAdSdk.campaignsList == null && InsideAdSdk.campaignsErrorOrNull == false) {
-                Log.i("mano", "No campaigns right now, try showing ad again.")
                 retryCount++
                 retryRequestHandler?.postDelayed({
                     getInsideAdRetry()
                 }, retryDelayMillis)
             } else if (InsideAdSdk.campaignsList != null) {
-                Log.i("mano", "Has campaigns, now filter and show insideAd.")
                 getInsideAd(screen, insideAdCallback)
             }
         }
@@ -155,24 +152,11 @@ class InsideAdView @JvmOverloads constructor(
         screen: String,
         insideAdCallback: InsideAdCallback?
     ) {
-        Log.i("mano", "getInsideAd")
-
-        // get local list of campaigns and filter them
-        val campaigns = getActiveCampaigns(InsideAdSdk.campaignsList)
-        Log.i("mano", "campaigns: $campaigns")
-
-        // close interval in minutes handler after showing ad?
-        adIntervalHandler?.removeCallbacksAndMessages(null)
-        adIntervalHandler = null
-
-        // if filtered campaigns are null or empty close handlers
-        // close handler before showing ad and it was success
+        Log.i(InsideAdSdk.LOG_TAG, "getInsideAd")
         retryRequestHandler?.removeCallbacksAndMessages(null)
         retryRequestHandler = null
 
-        // if campaigns are not null get an ad from them
-        //        insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
-        //        Log.i(InsideAdSdk.LOG_TAG, "insideAd: $insideAd")
+        insideAd = CampaignsFilterUtil.getInsideAd(InsideAdSdk.campaignsList, screen)
 
         insideAdCallback?.let { callback ->
             insideAd?.let { ad ->
@@ -187,7 +171,10 @@ class InsideAdView @JvmOverloads constructor(
         insideAd: InsideAd,
         insideAdCallback: InsideAdCallback
     ) {
-        Log.i("mano", "showAd")
+        Log.i(InsideAdSdk.LOG_TAG, "showAd")
+        adIntervalHandler?.removeCallbacksAndMessages(null)
+        adIntervalHandler = null
+
         showAdHandler = Handler(Looper.getMainLooper())
 
         val delayMillis = InsideAdSdk.startAfterSeconds ?: 0
