@@ -234,7 +234,7 @@ object HttpRequestsUtil {
             e.printStackTrace()
         }
 
-        if (campaigns == null) {
+        if (campaigns.isNullOrEmpty()) {
             campaignCallback.onError("No campaigns at the moment.")
             return
         }
@@ -243,7 +243,7 @@ object HttpRequestsUtil {
     }
 
     private fun parseCampaignJSONResponse(campaignArray: JSONArray): ArrayList<Campaign> {
-        val campaigns = ArrayList<Campaign>()
+        val campaigns: ArrayList<Campaign> = arrayListOf()
 
         for (i in 0 until campaignArray.length()) {
             val campaignObject: JSONObject = campaignArray.getJSONObject(i)

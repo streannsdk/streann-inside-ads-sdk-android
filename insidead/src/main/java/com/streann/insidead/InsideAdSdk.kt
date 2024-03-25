@@ -32,15 +32,19 @@ object InsideAdSdk {
     internal var playerWidth: Int = 0
     internal var playerHeight: Int = 0
     internal var isAdMuted: Boolean? = false
+
     internal var geoIp: GeoIp? = null
     internal var appPreferences: SharedPreferences? = null
+
     internal var intervalInMinutes: Long? = null
     internal var startAfterSeconds: Long? = null
     internal var showCloseButtonAfterSeconds: Long? = null
     internal var durationInSeconds: Long? = null
-    var intervalForReels: Int? = null
 
+    var intervalForReels: Int? = null
+    internal var campaignsErrorOrNull: Boolean? = false
     internal var campaignsList: ArrayList<Campaign>? = null
+
     private var insideAdCallback: InsideAdCallback? = null
     private var requestAdExecutor: ScheduledExecutorService? = null
 
@@ -49,7 +53,6 @@ object InsideAdSdk {
         siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
         userBirthYear: Int? = 0, userGender: String? = ""
     ) {
-        Log.d("mano", "initializeSdk")
         this.apiKey = apiKey
         this.apiToken = apiToken
         this.baseUrl = baseUrl
@@ -99,7 +102,7 @@ object InsideAdSdk {
             geoCountryCode,
             object : CampaignCallback {
                 override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                    Log.i("mano", "onSuccess: $campaigns")
+                    Log.i(LOG_TAG, "onSuccess: $campaigns")
                     campaignsList = campaigns
                 }
 
@@ -107,6 +110,7 @@ object InsideAdSdk {
                     var errorMsg = "Error while getting AD."
                     if (!error.isNullOrBlank()) errorMsg = error
                     Log.i(LOG_TAG, "onError: $errorMsg")
+                    campaignsErrorOrNull = true
                 }
             })
     }
