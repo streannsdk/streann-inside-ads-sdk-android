@@ -6,7 +6,9 @@ import android.content.Context
 import android.content.res.Configuration
 import android.util.AttributeSet
 import android.util.Log
-import android.view.*
+import android.view.LayoutInflater
+import android.view.View
+import android.view.ViewGroup
 import android.widget.FrameLayout
 import android.widget.RelativeLayout
 import com.streann.insidead.callbacks.InsideAdCallback
@@ -67,10 +69,6 @@ class SplitInsideAdView(
         parentView: ViewGroup,
         screen: String, isAdMuted: Boolean? = false, isInsideAdAbove: Boolean? = false
     ) {
-        mInsideAdView?.requestAd(
-            screen = screen,
-            isAdMuted = isAdMuted
-        )
         InsideAdSdk.setInsideAdCallback(object : InsideAdCallback {
             override fun insideAdReceived(insideAd: InsideAd) {
                 Log.i(TAG, "insideAdReceived: $insideAd")
@@ -132,6 +130,11 @@ class SplitInsideAdView(
                 insideAdCallback?.insideAdVolumeChanged(level)
             }
         })
+
+        mInsideAdView?.requestAd(
+            screen = screen,
+            isAdMuted = isAdMuted
+        )
     }
 
     private fun showSplitScreenPortrait(
