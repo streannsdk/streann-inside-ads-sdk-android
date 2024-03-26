@@ -267,13 +267,15 @@ class NativeAdsPlayer(
     }
 
     private fun setCloseButtonVisibility() {
-        InsideAdSdk.showCloseButtonAfterSeconds?.let {
-            showCloseButtonHandler?.postDelayed({
-                adCloseButton?.visibility = VISIBLE
-                adCloseButton?.setOnClickListener {
-                    stopAd()
-                }
-            }, it)
+        if (!InsideAdSdk.showAdForReels) {
+            InsideAdSdk.showCloseButtonAfterSeconds?.let {
+                showCloseButtonHandler?.postDelayed({
+                    adCloseButton?.visibility = VISIBLE
+                    adCloseButton?.setOnClickListener {
+                        stopAd()
+                    }
+                }, it)
+            }
         }
     }
 

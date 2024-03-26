@@ -123,6 +123,8 @@ class InsideAdView @JvmOverloads constructor(
         this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
 
+        InsideAdSdk.showAdForReels = screen == "Reels"
+
         if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
             val errorMsg =
                 "Api Key and Base Url are required. Please implement the initializeSdk method."
@@ -176,8 +178,8 @@ class InsideAdView @JvmOverloads constructor(
         adIntervalHandler = null
 
         showAdHandler = Handler(Looper.getMainLooper())
+        val delayMillis = if (InsideAdSdk.showAdForReels) 0 else InsideAdSdk.startAfterSeconds ?: 0
 
-        val delayMillis = InsideAdSdk.startAfterSeconds ?: 0
         when (insideAd.adType) {
             Constants.AD_TYPE_VAST ->
                 showAdHandler?.postDelayed({
@@ -208,9 +210,9 @@ class InsideAdView @JvmOverloads constructor(
                 }, delayMillis)
 
             Constants.AD_TYPE_FULLSCREEN_NATIVE ->
-                // remove showAdHandler for Native Ads
-                // (might need to change to not apply for reels instead of native ads)
-                showNativeAd(insideAd, insideAdCallback)
+                showAdHandler?.postDelayed({
+                    showNativeAd(insideAd, insideAdCallback)
+                }, delayMillis)
         }
     }
 
@@ -303,9 +305,7 @@ class InsideAdView @JvmOverloads constructor(
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
-        // call this part of logic for all ads that are not native ads
-        // (might need to change for reels)
-        if (insideAd?.adType != Constants.AD_TYPE_FULLSCREEN_NATIVE) {
+        if (!InsideAdSdk.showAdForReels) {
             if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
                 adIntervalHandler = Handler(Looper.getMainLooper())
                 adIntervalHandler?.postDelayed({

@@ -92,10 +92,12 @@ class InsideAdPlayer(
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
 
-        InsideAdSdk.durationInSeconds?.let {
-            closeImageAdHandler?.postDelayed({
-                stopAd()
-            }, it)
+        if (!InsideAdSdk.showAdForReels) {
+            InsideAdSdk.durationInSeconds?.let {
+                closeImageAdHandler?.postDelayed({
+                    stopAd()
+                }, it)
+            }
         }
     }
 
@@ -251,10 +253,12 @@ class InsideAdPlayer(
     }
 
     private fun setCloseButtonVisibility() {
-        InsideAdSdk.showCloseButtonAfterSeconds?.let {
-            showCloseButtonHandler?.postDelayed({
-                adCloseButton?.visibility = VISIBLE
-            }, it)
+        if (!InsideAdSdk.showAdForReels) {
+            InsideAdSdk.showCloseButtonAfterSeconds?.let {
+                showCloseButtonHandler?.postDelayed({
+                    adCloseButton?.visibility = VISIBLE
+                }, it)
+            }
         }
     }
 

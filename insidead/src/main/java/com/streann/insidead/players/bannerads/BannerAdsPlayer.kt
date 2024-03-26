@@ -85,10 +85,12 @@ class BannerAdsPlayer(
                 Log.i(InsideAdSdk.LOG_TAG, "onAdLoaded")
                 insideAdCallback?.insideAdLoaded()
 
-                InsideAdSdk.durationInSeconds?.let {
-                    closeBannerAdHandler?.postDelayed({
-                        stopAd()
-                    }, it)
+                if (!InsideAdSdk.showAdForReels) {
+                    InsideAdSdk.durationInSeconds?.let {
+                        closeBannerAdHandler?.postDelayed({
+                            stopAd()
+                        }, it)
+                    }
                 }
             }
 

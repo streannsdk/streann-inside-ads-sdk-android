@@ -41,12 +41,14 @@ object InsideAdSdk {
     internal var showCloseButtonAfterSeconds: Long? = null
     internal var durationInSeconds: Long? = null
 
-    var intervalForReels: Int? = null
-    internal var campaignsErrorOrNull: Boolean? = false
     internal var campaignsList: ArrayList<Campaign>? = null
+    internal var campaignsErrorOrNull: Boolean? = false
 
     private var insideAdCallback: InsideAdCallback? = null
-    private var requestAdExecutor: ScheduledExecutorService? = null
+    private var requestCampaignExecutor: ScheduledExecutorService? = null
+
+    var intervalForReels: Int? = null
+    internal var showAdForReels: Boolean = false
 
     fun initializeSdk(
         apiKey: String, apiToken: String, baseUrl: String, appDomain: String? = "",
@@ -78,8 +80,8 @@ object InsideAdSdk {
             return
         }
 
-        requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-        requestAdExecutor!!.execute {
+        requestCampaignExecutor = Executors.newSingleThreadScheduledExecutor()
+        requestCampaignExecutor!!.execute {
             val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
             if (!geoIpUrl.isNullOrBlank()) {
                 val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
@@ -104,7 +106,7 @@ object InsideAdSdk {
                 override fun onSuccess(campaigns: ArrayList<Campaign>?) {
                     Log.i(LOG_TAG, "onSuccess: $campaigns")
                     campaignsList = campaigns
-                    requestAdExecutor?.shutdown()
+                    requestCampaignExecutor?.shutdown()
                 }
 
                 override fun onError(error: String?) {
@@ -112,7 +114,7 @@ object InsideAdSdk {
                     if (!error.isNullOrBlank()) errorMsg = error
                     Log.i(LOG_TAG, "onError: $errorMsg")
                     campaignsErrorOrNull = true
-                    requestAdExecutor?.shutdown()
+                    requestCampaignExecutor?.shutdown()
                 }
             })
     }
