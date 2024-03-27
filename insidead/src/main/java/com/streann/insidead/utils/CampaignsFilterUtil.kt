@@ -12,6 +12,7 @@ import java.time.LocalTime
 
 object CampaignsFilterUtil {
 
+    // method to return an ad from the campaigns list
     fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
         val activeCampaigns = getActiveCampaigns(campaigns)
         Log.d(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
@@ -31,6 +32,7 @@ object CampaignsFilterUtil {
         return insideAd
     }
 
+    // method to get the active campaigns from the campaigns list
     private fun getActiveCampaigns(campaigns: ArrayList<Campaign>?): ArrayList<Campaign>? {
         var activeCampaigns = ArrayList<Campaign>()
 
@@ -48,11 +50,13 @@ object CampaignsFilterUtil {
         return activeCampaigns
     }
 
+    // method to filter active campaigns by its start and end date
     private fun filterCampaignsByDate(startDate: Instant?, endDate: Instant?): Boolean {
         val currentDate = Instant.now()
         return currentDate.isAfter(startDate) && currentDate.isBefore(endDate)
     }
 
+    // method to filter active campaigns by comparing the current time and day with the time period set in the campaign
     private fun filterCampaignsByTimePeriod(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
         val filteredCampaigns = ArrayList<Campaign>()
 
@@ -83,6 +87,7 @@ object CampaignsFilterUtil {
         return filteredCampaigns
     }
 
+    // method to get a filtered list of placements of the active campaigns
     private fun getPlacementsByCampaigns(
         campaigns: ArrayList<Campaign>?,
         screen: String
@@ -139,6 +144,7 @@ object CampaignsFilterUtil {
         return filteredPlacements
     }
 
+    // method to set the active placement and placement's properties according to the returned active ad
     private fun setCurrentPlacementAndCampaign(
         placements: List<Placement>?,
         campaigns: ArrayList<Campaign>?,
@@ -169,6 +175,7 @@ object CampaignsFilterUtil {
         setCurrentCampaign(campaigns, placement)
     }
 
+    // method to set the active campaign and campaign's properties according to the active placement
     private fun setCurrentCampaign(
         campaigns: ArrayList<Campaign>?,
         placement: Placement?
@@ -189,6 +196,7 @@ object CampaignsFilterUtil {
         InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
     }
 
+    // method to get an inside ad of the list of filtered placements
     private fun getInsideAdByPlacement(
         placements: List<Placement>?,
     ): InsideAd? {
@@ -203,6 +211,7 @@ object CampaignsFilterUtil {
         return activeInsideAd
     }
 
+    // if we have multiple placements combine a list of ads of all placements
     private fun getInsideAdByMultiplePlacements(placements: List<Placement>): InsideAd? {
         val activeInsideAd: InsideAd?
         val adsList = ArrayList<InsideAd>()
@@ -222,6 +231,9 @@ object CampaignsFilterUtil {
         return activeInsideAd
     }
 
+    // method to get an inside ad
+    // if we have multiple ads then filter them and return an ad by its weight
+    // if we have only one ad just return it
     private fun getInsideAdFilteredByWeight(ads: ArrayList<InsideAd>?): InsideAd? {
         var activeInsideAd: InsideAd? = null
 
@@ -234,6 +246,9 @@ object CampaignsFilterUtil {
         return activeInsideAd
     }
 
+    // method to filter any object by weight
+    // create a list of items and return the item with the biggest weight
+    // if the list contains only one item then return a random item from the list
     private fun <T : Any> filterItemsByWeight(items: List<T>, getWeight: (T) -> Int): T? {
         if (items.isEmpty()) return null
 
