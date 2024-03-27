@@ -11,24 +11,20 @@ import android.util.Log
 import android.widget.FrameLayout
 import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
-import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
-import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
 import com.streann.insidead.players.insidead.InsideAdPlayer
+import com.streann.insidead.players.nativeads.NativeAdsPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
-import com.streann.insidead.utils.HttpRequestsUtil
 import com.streann.insidead.utils.SharedPreferencesHelper
 import com.streann.insidead.utils.constants.Constants
 import com.streann.insidead.utils.constants.SharedPrefKeys
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
-import java.util.concurrent.ScheduledExecutorService
-import java.util.concurrent.TimeUnit
 
 class InsideAdView @JvmOverloads constructor(
     context: Context,
@@ -39,13 +35,14 @@ class InsideAdView @JvmOverloads constructor(
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private var mBannerAdsPlayer: BannerAdsPlayer? = null
+    private var mNativeAdsPlayer: NativeAdsPlayer? = null
 
     private var insideAd: InsideAd? = null
     private var fallbackAd: InsideAd? = null
     private var insideAdCallback: InsideAdCallback? = null
 
-    private var requestAdExecutor: ScheduledExecutorService? = null
     private var populateSdkExecutor: ExecutorService? = null
+    private var adIntervalHandler: Handler? = null
     private var showAdHandler: Handler? = null
 
     private var screen: String = ""
@@ -53,21 +50,32 @@ class InsideAdView @JvmOverloads constructor(
     private var baseUrl: String = ""
     private var scale: Float = 0f
 
+    private var retryCount = 0
+    private val maxRetries = 3
+    private val retryDelayMillis = 3000L
+    private var retryRequestHandler: Handler? = null
+
     init {
         init()
     }
 
     private fun init() {
-        mInsideAdPlayer = InsideAdPlayer(context, this)
-        addView(mInsideAdPlayer)
-        mBannerAdsPlayer = BannerAdsPlayer(context, this)
-        addView(mBannerAdsPlayer)
-        createGoogleImaView()
+        initializePlayers()
 
         scale = resources.displayMetrics.density
         populateSdkInfo(context)
 
         MobileAds.initialize(context) { }
+    }
+
+    private fun initializePlayers() {
+        createGoogleImaView()
+        mInsideAdPlayer = InsideAdPlayer(context, this)
+        addView(mInsideAdPlayer)
+        mBannerAdsPlayer = BannerAdsPlayer(context, this)
+        addView(mBannerAdsPlayer)
+        mNativeAdsPlayer = NativeAdsPlayer(context, this)
+        addView(mNativeAdsPlayer)
     }
 
     private fun populateSdkInfo(context: Context?) {
@@ -107,12 +115,15 @@ class InsideAdView @JvmOverloads constructor(
     fun requestAd(
         screen: String,
         isAdMuted: Boolean? = false,
-        insideAdCallback: InsideAdCallback?
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "requestAd")
+        retryRequestHandler = Handler(Looper.getMainLooper())
+
         InsideAdSdk.isAdMuted = isAdMuted
-        this.insideAdCallback = insideAdCallback
+        this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
+
+        InsideAdSdk.showAdForReels = screen == "Reels"
 
         if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
             val errorMsg =
@@ -122,53 +133,40 @@ class InsideAdView @JvmOverloads constructor(
             return
         }
 
-        requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-        requestAdExecutor!!.execute {
-            val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
-            if (!geoIpUrl.isNullOrBlank()) {
-                val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
-                if (geoIp != null) {
-                    InsideAdSdk.geoIp = geoIp
-                    val geoCountryCode = geoIp.countryCode
-                    if (geoCountryCode?.isNotBlank() == true) {
-                        requestCampaign(geoCountryCode, screen, insideAdCallback)
-                    }
-                }
+        getInsideAdRetry()
+    }
+
+    private fun getInsideAdRetry() {
+        Log.i(InsideAdSdk.LOG_TAG, "getInsideAdRetry")
+        if (retryCount < maxRetries) {
+            if (InsideAdSdk.campaignsList == null && InsideAdSdk.campaignsErrorOrNull == false) {
+                retryCount++
+                retryRequestHandler?.postDelayed({
+                    getInsideAdRetry()
+                }, retryDelayMillis)
+            } else if (InsideAdSdk.campaignsList != null) {
+                getInsideAd(screen, insideAdCallback)
             }
         }
     }
 
-    private fun requestCampaign(
-        geoCountryCode: String,
+    private fun getInsideAd(
         screen: String,
         insideAdCallback: InsideAdCallback?
     ) {
-        Log.i(InsideAdSdk.LOG_TAG, "requestCampaign")
-        HttpRequestsUtil.getCampaign(
-            geoCountryCode,
-            object : CampaignCallback {
-                override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                    Log.i(InsideAdSdk.LOG_TAG, "onSuccess: $campaigns")
+        Log.i(InsideAdSdk.LOG_TAG, "getInsideAd")
+        retryRequestHandler?.removeCallbacksAndMessages(null)
+        retryRequestHandler = null
 
-                    insideAd = CampaignsFilterUtil.getInsideAd(campaigns, screen)
-                    Log.i(InsideAdSdk.LOG_TAG, "insideAd: $insideAd")
+        insideAd = CampaignsFilterUtil.getInsideAd(InsideAdSdk.campaignsList, screen)
 
-                    insideAdCallback?.let { callback ->
-                        insideAd?.let { ad ->
-                            callback.insideAdReceived(ad)
-                            fallbackAd = insideAd?.fallback
-                            showAd(ad, callback)
-                        }
-                    }
-                }
-
-                override fun onError(error: String?) {
-                    var errorMsg = "Error while getting AD."
-                    if (!error.isNullOrBlank()) errorMsg = error
-                    Log.i(InsideAdSdk.LOG_TAG, "onError: $errorMsg")
-                    insideAdCallback?.insideAdError(errorMsg)
-                }
-            })
+        insideAdCallback?.let { callback ->
+            insideAd?.let { ad ->
+                callback.insideAdReceived(ad)
+                fallbackAd = insideAd?.fallback
+                showAd(ad, callback)
+            }
+        }
     }
 
     private fun showAd(
@@ -176,10 +174,12 @@ class InsideAdView @JvmOverloads constructor(
         insideAdCallback: InsideAdCallback
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "showAd")
-        requestAdExecutor?.shutdown()
-        showAdHandler = Handler(Looper.getMainLooper())
+        adIntervalHandler?.removeCallbacksAndMessages(null)
+        adIntervalHandler = null
 
-        val delayMillis = InsideAdSdk.startAfterSeconds ?: 0
+        showAdHandler = Handler(Looper.getMainLooper())
+        val delayMillis = if (InsideAdSdk.showAdForReels) 0 else InsideAdSdk.startAfterSeconds ?: 0
+
         when (insideAd.adType) {
             Constants.AD_TYPE_VAST ->
                 showAdHandler?.postDelayed({
@@ -208,22 +208,29 @@ class InsideAdView @JvmOverloads constructor(
                 showAdHandler?.postDelayed({
                     showBannerAd(insideAd, insideAdCallback)
                 }, delayMillis)
+
+            Constants.AD_TYPE_FULLSCREEN_NATIVE ->
+                showAdHandler?.postDelayed({
+                    showNativeAd(insideAd, insideAdCallback)
+                }, delayMillis)
         }
     }
 
     private fun setPlayerVisibility(
         imaPlayerVisibility: Int,
         insideAdPlayerVisibility: Int,
-        bannerAdPlayerVisibility: Int
+        bannerAdPlayerVisibility: Int,
+        nativeAdPlayerVisibility: Int,
     ) {
         mGoogleImaPlayer?.visibility = imaPlayerVisibility
         mInsideAdPlayer?.visibility = insideAdPlayerVisibility
         mBannerAdsPlayer?.visibility = bannerAdPlayerVisibility
+        mNativeAdsPlayer?.visibility = nativeAdPlayerVisibility
     }
 
     private fun showGoogleImaAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         createGoogleImaView()
-        setPlayerVisibility(VISIBLE, GONE, GONE)
+        setPlayerVisibility(VISIBLE, GONE, GONE, GONE)
         mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
     }
 
@@ -242,7 +249,7 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        setPlayerVisibility(GONE, VISIBLE, GONE)
+        setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
         mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
     }
 
@@ -254,7 +261,7 @@ class InsideAdView @JvmOverloads constructor(
         bitmap?.let {
             Log.i(InsideAdSdk.LOG_TAG, "loadAd")
             insideAdCallback.insideAdLoaded()
-            setPlayerVisibility(GONE, VISIBLE, GONE)
+            setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
             mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
         } ?: run {
             insideAdCallback.insideAdError("Error while getting AD.")
@@ -263,8 +270,13 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun showBannerAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
-        setPlayerVisibility(GONE, GONE, VISIBLE)
+        setPlayerVisibility(GONE, GONE, VISIBLE, GONE)
         mBannerAdsPlayer?.playAd(insideAd, insideAdCallback)
+    }
+
+    private fun showNativeAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
+        setPlayerVisibility(GONE, GONE, GONE, VISIBLE)
+        mNativeAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
     fun stopAd() {
@@ -273,6 +285,7 @@ class InsideAdView @JvmOverloads constructor(
                 Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.stopAd()
                 Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> mInsideAdPlayer?.stopAd()
                 Constants.AD_TYPE_BANNER -> mBannerAdsPlayer?.stopAd()
+                Constants.AD_TYPE_FULLSCREEN_NATIVE -> mNativeAdsPlayer?.stopAd()
                 else -> {}
             }
         }
@@ -292,13 +305,12 @@ class InsideAdView @JvmOverloads constructor(
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
-        if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
-            requestAdExecutor = Executors.newSingleThreadScheduledExecutor()
-            val geoCountryCode = InsideAdSdk.geoIp?.countryCode
-            if (geoCountryCode?.isNotBlank() == true) {
-                requestAdExecutor!!.schedule({
-                    requestCampaign(geoCountryCode, screen, insideAdCallback)
-                }, InsideAdSdk.intervalInMinutes!!, TimeUnit.MILLISECONDS)
+        if (!InsideAdSdk.showAdForReels) {
+            if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
+                adIntervalHandler = Handler(Looper.getMainLooper())
+                adIntervalHandler?.postDelayed({
+                    getInsideAd(screen, insideAdCallback)
+                }, InsideAdSdk.intervalInMinutes!!)
             }
         }
     }

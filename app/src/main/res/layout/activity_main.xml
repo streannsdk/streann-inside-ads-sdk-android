@@ -13,7 +13,6 @@
         android:layout_height="wrap_content"
         android:layout_marginTop="40dp"
         android:gravity="center"
-        android:text="Show Ad"
         android:textColor="@color/white"
         android:textSize="28sp"
         android:textStyle="italic"

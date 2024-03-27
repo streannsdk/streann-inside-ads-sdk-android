@@ -1,0 +1,16 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <dimen name="icon_layout_width">64dp</dimen>
+    <dimen name="icon_layout_height">64dp</dimen>
+
+    <dimen name="margin_4">4dp</dimen>
+    <dimen name="margin_8">8dp</dimen>
+    <dimen name="margin_32">32dp</dimen>
+
+    <dimen name="body_width">300dp</dimen>
+    <dimen name="cta_button_width">250dp</dimen>
+
+    <dimen name="text_size_medium">16sp</dimen>
+    <dimen name="text_size_small">12sp</dimen>
+    <dimen name="cta_button_text_size">12sp</dimen>
+</resources>

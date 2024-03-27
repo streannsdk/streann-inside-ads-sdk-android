@@ -3,19 +3,19 @@
 Streann Inside Ad library is designed to incorporate playback functionality
 seamlessly of diverse ad formats into your Android applications. One standout feature of this
 library is its split-screen option, enabling you to effortlessly display ads side by side with your
-content which allows developers to create immersive and engaging user experiences. This library
-supports the playback of VAST ads using the Interactive Media Ads (IMA) SDK by Google, playback of
-banner ads within your app's content, along with various video ad formats and the presentation of
-image-based ads.
+content, allowing developers to create immersive and engaging user experiences. This library
+supports the playback of VAST ads, playback of banner and full-screen native ads, various video
+ad formats, and the presentation of image-based ads within your app's content.tag
 
 ## Features
 
-- Effortless integration of ad playback within your Android app.
+- Effortlessly integrate ad playback within your Android app.
 - Split Screen Option: Easily integrate a split-screen layout to display ads alongside your content.
-- Seamless support for VAST video ads through the Google IMA SDK.
-- Integrate banner ads seamlessly within your app's interface.
-- Full compatibility with different video types, including MP4, m3u8, etc.
-- Capability to seamlessly display image-based advertisements.
+- Elevate user engagement with native full-screen ads for an immersive advertising experience.
+- Support VAST video ads through the Google IMA SDK, ensuring smooth ad delivery.
+- Seamlessly integrate banner ads into your app's interface for enhanced monetization.
+- Enjoy full compatibility with various video types, including MP4, m3u8, and more.
+- Display image-based advertisements seamlessly within your app, enhancing visual appeal.
 
 ## Installation
 
@@ -24,7 +24,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.10
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.12'
 }
 ```
 
@@ -50,11 +50,11 @@ To use the Streann Inside Ad library in your project, follow these steps:
 - The apiKey, apiToken and baseUrl are mandatory parameters to initialize our SDK, and they will be
   provided:
   ```js
-  InsideAdSdk.initializeSdk(
-        apiKey = "api_key",
-        apiToken = "api_token",
-        baseUrl = "base_url"
-  )
+      InsideAdSdk.initializeSdk(
+            apiKey = "api_key",
+            apiToken = "api_token",
+            baseUrl = "base_url"
+      )
 
   ```
 
@@ -71,22 +71,21 @@ To use the Streann Inside Ad library in your project, follow these steps:
             descriptionUrl = "description_url",
             userBirthYear = 0,
             userGender = "user_gender"
-        )
+        )   
    ```
 
 - If you want to use banner ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
     - To do so, add a <meta-data> tag with android:name="com.google.android.gms.ads.APPLICATION_ID".
     - For android:value, insert your own Ad Manager app ID.
 
-  ```xml
-  
-  <manifest>
-      <application>
-          <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
-              android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy" tools:replace="android:value" />
-      </application>
-  </manifest>
-     ```
+      ```xml
+      <manifest>
+        <application>
+            <meta-data android:name="com.google.android.gms.ads.APPLICATION_ID"
+                android:value="ca-app-pub-xxxxxxxxxxxxxxxx~yyyyyyyyyy" tools:replace="android:value" />
+        </application>
+      </manifest>
+      ```
 
 **Split Screen View**
 
@@ -94,43 +93,44 @@ To use the SplitInsideAdView in your project, follow these steps:
 
 - Create a SplitInsideAdView instance:
 
-```js
-  val splitInsideAdView = SplitInsideAdView(context)
-```
+    ```js
+      val splitInsideAdView = SplitInsideAdView(context)
+    ```
 
 - Show split screen with your content and ad view:
 
-```kotlin 
-splitInsideAdView.showSplitScreen(
-    userView = yourContentView,,
-    parentView = findViewById(android.R.id.content),
-    screen = "",
-    isAdMuted = false,
-    isInsideAdAbove = false,
-    insideAdCallback = object : InsideAdCallback {
-            override fun insideAdReceived(insideAd: InsideAd) { }
+    ```kotlin 
+    splitInsideAdView.showSplitScreen(
+        userView = yourContentView, ,
+        parentView = findViewById(android.R.id.content),
+        screen = "",
+        isAdMuted = false,
+        isInsideAdAbove = false,
+        insideAdCallback = object : InsideAdCallback {
+            override fun insideAdReceived(insideAd: InsideAd) {}
     
-            override fun insideAdLoaded() { }
-
-            override fun insideAdPlay() { }
+            override fun insideAdLoaded() {}
     
-            override fun insideAdStop() { }
+            override fun insideAdPlay() {}
     
-            override fun insideAdSkipped() { }
+            override fun insideAdStop() {}
     
-            override fun insideAdClicked() { }
+            override fun insideAdSkipped() {}
     
-            override fun insideAdError(error: String) { }
+            override fun insideAdClicked() {}
     
-            override fun insideAdVolumeChanged(level: Int) { }
-    })
+            override fun insideAdError(error: String) {}
     
-    - userView - this parameter represents the content or view that the user wants to display in the split screen
-    - screen - enter one of the following screens: Splash, Login, Register, Video Player or Main
-    - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: false)
-    - isInsideAdAbove - set to true if you want the ad above the content (optional  parameter, default value: false)
-    - InsideAdCallback - implement our interface to receive events from the ads' progress
-```
+            override fun insideAdVolumeChanged(level: Int) {}
+        })
+    
+    -userView - this parameter represents the content or view that the user wants to display in the split screen
+    -screen - enter one of the following screens: Splash or Video Player
+    -isAdMuted - choose if you want your ad to be muted or not(optional parameter, default value: false)
+    -isInsideAdAbove - set to true if you want the ad above the content(optional parameter, default value: false)
+    
+    -InsideAdCallback - implement our interface to receive events from the ads ' progress
+    ```
 
 **Inside Ad View**
 
@@ -147,43 +147,49 @@ To use InsideAdView in your project, follow these steps:
 
   ```js
   val insideAdView = findViewById(R.id.insideAdView);
+  ```
 
-- In your activity or fragment, request an ad:
+- In your activity or fragment, setup the Inside Ad Sdk callback:
+    - InsideAdCallback - implement our interface to receive events from the ads' progress
+    - By overriding the event listeners, handle ad events such as ads received, loaded, played,
+      stopped, ad volume changed, ad errors, etc.
 
-  ```kotlin
-  insideAdView?.requestAd(
-    screen = "",
-    isAdMuted = true,
-    insideAdCallback = object : InsideAdCallback {
+      ```kotlin
+      InsideAdSdk.setInsideAdCallback(object : InsideAdCallback {
         override fun insideAdReceived(insideAd: InsideAd) { }
-
+      
         override fun insideAdLoaded() {
             // Call the InsideAdView playAd method to start playing the ad
             mInsideAdView?.playAd()
         }
-
+      
         override fun insideAdPlay() { }
-
+      
         override fun insideAdStop() { }
-
+      
         override fun insideAdSkipped() { }
-
+      
         override fun insideAdClicked() { }
-
+      
         override fun insideAdError(error: String) { }
-
+      
         override fun insideAdVolumeChanged(level: Int) { }
       })
+      ```
+
+- Afterwards, request an ad:
+
+  ```js
+    insideAdView?.requestAd(
+      screen = "",
+      isAdMuted = true
+    )
   
-   - screen - enter one of the following screens: Splash, Login, Register, Video Player or Main
-   - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: false)
-   - InsideAdCallback - implement our interface to receive events from the ads' progress
-  ```
+  - screen - enter one of the following screens: Splash or Video Player
+  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: false)
+    ```
 
-- By overriding the event listeners, handle ad events such as ads received, loaded, played, stopped,
-  ad volume changed, ad errors, etc.
-
-- If you want to manually stop the ad while it's playing:
+- To stop the ad while it's playing:
   ```js
   insideAdView?.stopAd()
   ```
