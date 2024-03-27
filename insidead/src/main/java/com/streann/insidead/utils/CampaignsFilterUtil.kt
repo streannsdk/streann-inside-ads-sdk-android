@@ -15,7 +15,7 @@ object CampaignsFilterUtil {
     // method to return an ad from the campaigns list
     fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
         val activeCampaigns = getActiveCampaigns(campaigns)
-        Log.d(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
+        Log.i(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
 
         val placements = getPlacementsByCampaigns(
             activeCampaigns,
@@ -25,7 +25,7 @@ object CampaignsFilterUtil {
         val insideAd = getInsideAdByPlacement(
             placements
         )
-        Log.d(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
+        Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
 
         setCurrentPlacementAndCampaign(placements, campaigns, insideAd)
 
