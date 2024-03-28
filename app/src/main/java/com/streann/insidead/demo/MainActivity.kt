@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         mInsideAdView?.requestAd(
-            screen = "Reels"
+            screen = "Splash"
         )
 
         adStopText.setOnClickListener {
