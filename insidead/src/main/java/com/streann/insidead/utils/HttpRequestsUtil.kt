@@ -363,7 +363,6 @@ object HttpRequestsUtil {
             }
 
             if (campaignObject.has("targeting") && !campaignObject.isNull("targeting")) {
-                Log.d("mano", "has targeting")
                 try {
                     campaign.targeting =
                         parseContentTargetingJSONResponse(campaignObject.getJSONArray("targeting"))
@@ -371,7 +370,6 @@ object HttpRequestsUtil {
                     e.printStackTrace()
                 }
             } else {
-                Log.d("mano", "doesn't have targeting")
                 campaign.targeting = arrayListOf()
             }
 
@@ -640,7 +638,6 @@ object HttpRequestsUtil {
     }
 
     private fun parseContentTargetingJSONResponse(targetingArray: JSONArray): ArrayList<Targeting> {
-        Log.d("mano", "parseContentTargetingJSONResponse")
         val targetingList = ArrayList<Targeting>()
 
         for (i in 0 until targetingArray.length()) {
@@ -721,11 +718,11 @@ object HttpRequestsUtil {
                 targeting.targets = emptyList()
             }
 
-            Log.d("mano", "targeting $targeting")
+            Log.d(InsideAdSdk.LOG_TAG, "targeting $targeting")
             targetingList.add(targeting)
         }
 
-        Log.d("mano", "targetingList $targetingList")
+        Log.d(InsideAdSdk.LOG_TAG, "targetingList $targetingList")
         return targetingList
     }
 
