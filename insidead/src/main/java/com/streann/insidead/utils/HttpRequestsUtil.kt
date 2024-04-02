@@ -5,7 +5,14 @@ import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
-import com.streann.insidead.models.*
+import com.streann.insidead.models.AdProperties
+import com.streann.insidead.models.Campaign
+import com.streann.insidead.models.GeoIp
+import com.streann.insidead.models.InsideAd
+import com.streann.insidead.models.Placement
+import com.streann.insidead.models.Targeting
+import com.streann.insidead.models.Targets
+import com.streann.insidead.models.TimePeriod
 import org.json.JSONArray
 import org.json.JSONException
 import org.json.JSONObject
@@ -354,6 +361,19 @@ object HttpRequestsUtil {
                 campaign.properties = emptyMap()
             }
 
+            if (campaignObject.has("targeting") && !campaignObject.isNull("targeting")) {
+                Log.d("mano", "has targeting")
+                try {
+                    campaign.targeting =
+                        parseContentTargetingJSONResponse(campaignObject.getJSONArray("targeting"))
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                Log.d("mano", "doesn't have targeting")
+                campaign.targeting = arrayListOf()
+            }
+
             campaigns.add(campaign)
         }
 
@@ -616,6 +636,93 @@ object HttpRequestsUtil {
         }
 
         return ads
+    }
+
+    private fun parseContentTargetingJSONResponse(targetingArray: JSONArray): ArrayList<Targeting> {
+        Log.d("mano", "parseContentTargetingJSONResponse")
+        val targetingList = ArrayList<Targeting>()
+
+        for (i in 0 until targetingArray.length()) {
+            val targetingObject: JSONObject = targetingArray.getJSONObject(i)
+            val targeting = Targeting()
+
+            if (targetingObject.has("id")) {
+                try {
+                    targeting.id = targetingObject.getString("id")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.id = ""
+            }
+
+            if (targetingObject.has("version")) {
+                try {
+                    targeting.version = targetingObject.getInt("version")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.version = null
+            }
+
+            if (targetingObject.has("createdOn")) {
+                try {
+                    targeting.createdOn = targetingObject.getString("createdOn")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.createdOn = ""
+            }
+
+            if (targetingObject.has("modifiedOn")) {
+                try {
+                    targeting.modifiedOn = targetingObject.getString("modifiedOn")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.modifiedOn = ""
+            }
+
+            if (targetingObject.has("name")) {
+                try {
+                    targeting.name = targetingObject.getString("name")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.name = ""
+            }
+
+            if (targetingObject.has("resellerId")) {
+                try {
+                    targeting.resellerId = targetingObject.getString("resellerId")
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.resellerId = ""
+            }
+
+            if (targetingObject.has("targets") && !targetingObject.isNull("targets")) {
+                try {
+                    val targetsJson = targetingObject.getJSONObject("targets").toString()
+                    targeting.targets = Gson().fromJson(targetsJson, Targets::class.java)
+                } catch (e: JSONException) {
+                    e.printStackTrace()
+                }
+            } else {
+                targeting.targets = Targets()
+            }
+
+            Log.d("mano", "targeting $targeting")
+            targetingList.add(targeting)
+        }
+
+        Log.d("mano", "targetingList $targetingList")
+        return targetingList
     }
 
 }
