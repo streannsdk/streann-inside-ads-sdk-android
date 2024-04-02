@@ -5,6 +5,7 @@ import android.text.TextUtils
 import android.util.Log
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
+import com.streann.insidead.models.AdTargetFilters
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.utils.HttpRequestsUtil
@@ -32,6 +33,7 @@ object InsideAdSdk {
     internal var playerWidth: Int = 0
     internal var playerHeight: Int = 0
     internal var isAdMuted: Boolean? = false
+    internal var adTargetFilter: AdTargetFilters? = null
 
     internal var geoIp: GeoIp? = null
     internal var appPreferences: SharedPreferences? = null

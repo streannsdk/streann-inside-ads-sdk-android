@@ -3,6 +3,7 @@ package com.streann.insidead.utils
 import android.util.Log
 import com.google.gson.Gson
 import com.google.gson.JsonSyntaxException
+import com.google.gson.reflect.TypeToken
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.models.AdProperties
@@ -708,14 +709,16 @@ object HttpRequestsUtil {
 
             if (targetingObject.has("targets") && !targetingObject.isNull("targets")) {
                 try {
-                    val targetsJson = targetingObject.getJSONObject("targets").toString()
-                    targeting.targets =
-                        arrayListOf(Gson().fromJson(targetsJson, Targets::class.java))
+                    val targetsJsonArray = targetingObject.getJSONArray("targets")
+                    val targetType = object : TypeToken<List<Targets>>() {}.type
+                    val targetsList: List<Targets> =
+                        Gson().fromJson(targetsJsonArray.toString(), targetType)
+                    targeting.targets = targetsList
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                targeting.targets = arrayListOf()
+                targeting.targets = emptyList()
             }
 
             Log.d("mano", "targeting $targeting")

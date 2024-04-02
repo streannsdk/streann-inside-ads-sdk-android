@@ -7,7 +7,7 @@ data class Targeting(
     var modifiedOn: String? = null,
     var name: String? = null,
     var resellerId: String? = null,
-    var targets: ArrayList<Targets>? = null
+    var targets: List<Targets>? = null
 )
 
 data class Targets(
