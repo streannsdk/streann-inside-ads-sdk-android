@@ -709,12 +709,13 @@ object HttpRequestsUtil {
             if (targetingObject.has("targets") && !targetingObject.isNull("targets")) {
                 try {
                     val targetsJson = targetingObject.getJSONObject("targets").toString()
-                    targeting.targets = Gson().fromJson(targetsJson, Targets::class.java)
+                    targeting.targets =
+                        arrayListOf(Gson().fromJson(targetsJson, Targets::class.java))
                 } catch (e: JSONException) {
                     e.printStackTrace()
                 }
             } else {
-                targeting.targets = Targets()
+                targeting.targets = arrayListOf()
             }
 
             Log.d("mano", "targeting $targeting")

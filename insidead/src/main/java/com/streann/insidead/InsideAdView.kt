@@ -21,8 +21,8 @@ import com.streann.insidead.players.nativeads.NativeAdsPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.SharedPreferencesHelper
-import com.streann.insidead.utils.constants.Constants
 import com.streann.insidead.utils.constants.SharedPrefKeys
+import com.streann.insidead.utils.enums.AdType
 import java.util.concurrent.ExecutorService
 import java.util.concurrent.Executors
 
@@ -181,7 +181,7 @@ class InsideAdView @JvmOverloads constructor(
         val delayMillis = if (InsideAdSdk.showAdForReels) 0 else InsideAdSdk.startAfterSeconds ?: 0
 
         when (insideAd.adType) {
-            Constants.AD_TYPE_VAST ->
+            AdType.VAST.value ->
                 showAdHandler?.postDelayed({
                     showGoogleImaAd(
                         insideAd,
@@ -189,12 +189,12 @@ class InsideAdView @JvmOverloads constructor(
                     )
                 }, delayMillis)
 
-            Constants.AD_TYPE_LOCAL_VIDEO ->
+            AdType.LOCAL_VIDEO.value ->
                 showAdHandler?.postDelayed({
                     showLocalVideoAd(insideAd, insideAdCallback)
                 }, delayMillis)
 
-            Constants.AD_TYPE_LOCAL_IMAGE -> {
+            AdType.LOCAL_IMAGE.value -> {
                 insideAd.url?.let { url ->
                     Helper.getBitmapFromURL(url, resources) { bitmap ->
                         showAdHandler?.postDelayed({
@@ -204,12 +204,12 @@ class InsideAdView @JvmOverloads constructor(
                 }
             }
 
-            Constants.AD_TYPE_BANNER ->
+            AdType.BANNER.value ->
                 showAdHandler?.postDelayed({
                     showBannerAd(insideAd, insideAdCallback)
                 }, delayMillis)
 
-            Constants.AD_TYPE_FULLSCREEN_NATIVE ->
+            AdType.FULLSCREEN_NATIVE.value ->
                 showAdHandler?.postDelayed({
                     showNativeAd(insideAd, insideAdCallback)
                 }, delayMillis)
@@ -282,10 +282,10 @@ class InsideAdView @JvmOverloads constructor(
     fun stopAd() {
         insideAd?.let {
             when (it.adType) {
-                Constants.AD_TYPE_VAST -> mGoogleImaPlayer?.stopAd()
-                Constants.AD_TYPE_LOCAL_VIDEO, Constants.AD_TYPE_LOCAL_IMAGE -> mInsideAdPlayer?.stopAd()
-                Constants.AD_TYPE_BANNER -> mBannerAdsPlayer?.stopAd()
-                Constants.AD_TYPE_FULLSCREEN_NATIVE -> mNativeAdsPlayer?.stopAd()
+                AdType.VAST.value -> mGoogleImaPlayer?.stopAd()
+                AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.stopAd()
+                AdType.BANNER.value -> mBannerAdsPlayer?.stopAd()
+                AdType.FULLSCREEN_NATIVE.value -> mNativeAdsPlayer?.stopAd()
                 else -> {}
             }
         }
@@ -295,9 +295,9 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     fun playAd() {
-        if (insideAd?.adType == Constants.AD_TYPE_LOCAL_VIDEO) {
+        if (insideAd?.adType == AdType.LOCAL_VIDEO.value) {
             mInsideAdPlayer?.startPlayingAd()
-        } else if (fallbackAd?.adType == Constants.AD_TYPE_LOCAL_VIDEO) {
+        } else if (fallbackAd?.adType == AdType.LOCAL_VIDEO.value) {
             mInsideAdPlayer?.startPlayingAd()
         }
     }
