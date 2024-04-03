@@ -122,7 +122,7 @@ class InsideAdView @JvmOverloads constructor(
         retryRequestHandler = Handler(Looper.getMainLooper())
 
         InsideAdSdk.isAdMuted = isAdMuted
-        InsideAdSdk.adTargetFilter = adTargetFilters
+        InsideAdSdk.adTargetFilters = adTargetFilters
         this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
 

@@ -33,7 +33,7 @@ object InsideAdSdk {
     internal var playerWidth: Int = 0
     internal var playerHeight: Int = 0
     internal var isAdMuted: Boolean? = false
-    internal var adTargetFilter: AdTargetFilters? = null
+    internal var adTargetFilters: AdTargetFilters? = null
 
     internal var geoIp: GeoIp? = null
     internal var appPreferences: SharedPreferences? = null
