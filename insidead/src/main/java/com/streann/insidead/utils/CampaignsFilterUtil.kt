@@ -14,22 +14,35 @@ object CampaignsFilterUtil {
 
     // method to return an ad from the campaigns list
     fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
-        val activeCampaigns = getActiveCampaigns(campaigns)
-        Log.i(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
+        // check if the user has sent an adTargetFilters object
+        // if yes apply the targeting filter logic, if not continue with the old logic
+        if (InsideAdSdk.adTargetFilters != null) {
+            val activeCampaigns = getActiveCampaigns(campaigns)
+            Log.i("mano", "activeCampaigns $activeCampaigns")
 
-        val placements = getPlacementsByCampaigns(
-            activeCampaigns,
-            screen
-        )
+            val activeCampaign = getActiveCampaignByPlacements(activeCampaigns, screen)
+            Log.i("mano", "activeCampaign $activeCampaign")
+        } else {
+            val activeCampaigns = getActiveCampaigns(campaigns)
+            Log.i(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
 
-        val insideAd = getInsideAdByPlacement(
-            placements
-        )
-        Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
+            val placements = getPlacementsByCampaigns(
+                activeCampaigns,
+                screen
+            )
 
-        setCurrentPlacementAndCampaign(placements, campaigns, insideAd)
+            val insideAd = getInsideAdByPlacement(
+                placements
+            )
+            Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
 
-        return insideAd
+            setCurrentPlacementAndCampaign(placements, campaigns, insideAd)
+
+            return insideAd
+        }
+
+        // todo fix to sent a real insideAd
+        return InsideAd()
     }
 
     // method to get the active campaigns from the campaigns list
@@ -87,6 +100,37 @@ object CampaignsFilterUtil {
         return filteredCampaigns
     }
 
+    // method to get an active campaign according to the filtered/active placements in the list of active campaigns
+    // iterate through campaigns and create a list of placements for each campaign and if it's not null or empty that means that campaign is active
+    // because its placements contain the screen that the user sent
+    // if we have multiple active campaigns return only one by weight
+    private fun getActiveCampaignByPlacements(
+        campaigns: ArrayList<Campaign>?,
+        screen: String
+    ): Campaign? {
+        val activeCampaigns = ArrayList<Campaign>()
+        var activePlacements: List<Placement>?
+
+        if (campaigns != null) {
+            for (campaign in campaigns) {
+                activePlacements = getFilteredPlacements(campaign.placements, screen)
+                val isActiveCampaign = !activePlacements.isNullOrEmpty()
+                if (isActiveCampaign) activeCampaigns.add(campaign)
+            }
+        }
+
+        Log.i("mano", "activeCampaignsByPlacement $activeCampaigns")
+
+        var activeCampaign: Campaign? = null
+        if (activeCampaigns.isNotEmpty()) {
+            activeCampaign = if (activeCampaigns.size > 1) {
+                filterItemsByWeight(activeCampaigns) { it.weight!! }
+            } else activeCampaigns[0]
+        }
+
+        return activeCampaign
+    }
+
     // method to get a filtered list of placements of the active campaigns
     private fun getPlacementsByCampaigns(
         campaigns: ArrayList<Campaign>?,
@@ -129,6 +173,7 @@ object CampaignsFilterUtil {
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
+        Log.d("mano", "screen $screen")
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
@@ -141,6 +186,7 @@ object CampaignsFilterUtil {
             }
         }
 
+        Log.d("mano", "filteredPlacements $filteredPlacements")
         return filteredPlacements
     }
 
