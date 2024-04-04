@@ -19,6 +19,7 @@ object CampaignsFilterUtil {
         val insideAd: InsideAd?
 
         val activeCampaign = getActiveCampaign(campaigns, screen)
+        Log.i(InsideAdSdk.LOG_TAG, "activeCampaign $activeCampaign")
 
         val intervalInMinutes =
             activeCampaign?.properties?.get("intervalInMinutes")
@@ -27,8 +28,10 @@ object CampaignsFilterUtil {
         }
         InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
 
+        val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen)
+
         insideAd = getInsideAdByPlacement(
-            activeCampaign?.placements
+            campaignPlacements
         )
         Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
 
@@ -122,6 +125,25 @@ object CampaignsFilterUtil {
         return activeCampaigns
     }
 
+    // method to get a filtered list of placements of the active campaign
+    private fun getPlacementsByCampaign(
+        activeCampaign: Campaign?,
+        screen: String
+    ): List<Placement>? {
+        Log.i(InsideAdSdk.LOG_TAG, "getPlacementsByCampaign")
+        var filteredPlacements: List<Placement>? = null
+
+        activeCampaign?.let { campaign ->
+            campaign.placements?.let { placements ->
+                if (placements.isNotEmpty()) {
+                    filteredPlacements = getFilteredPlacements(placements, screen)
+                }
+            }
+        }
+
+        return filteredPlacements
+    }
+
     // method to get a filtered list of placements of the active campaigns
     private fun getPlacementsByCampaigns(
         campaigns: ArrayList<Campaign>?,
@@ -164,6 +186,7 @@ object CampaignsFilterUtil {
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
+        Log.i(InsideAdSdk.LOG_TAG, "getFilteredPlacements $placements")
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
