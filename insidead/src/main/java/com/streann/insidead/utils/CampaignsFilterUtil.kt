@@ -5,6 +5,7 @@ import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Placement
+import com.streann.insidead.utils.enums.TargetType
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -22,6 +23,8 @@ object CampaignsFilterUtil {
 
             val activeCampaign = getActiveCampaignByPlacements(activeCampaigns, screen)
             Log.i("mano", "activeCampaign $activeCampaign")
+
+            activeCampaign?.let { filterCampaignByAdTargetFilters(it) }
         } else {
             val activeCampaigns = getActiveCampaigns(campaigns)
             Log.i(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
@@ -131,6 +134,88 @@ object CampaignsFilterUtil {
         return activeCampaign
     }
 
+    // method to filter campaigns by content targeting
+    private fun filterCampaignByAdTargetFilters(campaign: Campaign) {
+        val adTargetFilters = InsideAdSdk.adTargetFilters ?: return
+        val vodId = adTargetFilters.vodId
+        val channelId = adTargetFilters.channelId
+        val radioId = adTargetFilters.radioId
+        val seriesId = adTargetFilters.seriesId
+        val categoryId = adTargetFilters.categoryId
+        val contentProviderId = adTargetFilters.contentProviderId
+
+        val contentTargeting = campaign.targeting ?: return
+        for (contentTarget in contentTargeting) {
+            val targetsList = contentTarget.targets ?: continue
+
+            if (vodId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.VOD.value &&
+                        target.ids?.contains(vodId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+
+            if (channelId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.CHANNEL.value &&
+                        target.ids?.contains(channelId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+
+            if (radioId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.RADIO.value &&
+                        target.ids?.contains(radioId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+
+            if (seriesId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.SERIES.value &&
+                        target.ids?.contains(seriesId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+
+            if (categoryId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.CATEGORY.value &&
+                        target.ids?.contains(categoryId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+
+            if (contentProviderId.isNullOrEmpty()) {
+                targetsList.forEach { target ->
+                    if (target.type == TargetType.CONTENT_PROVIDER.value &&
+                        target.ids?.contains(contentProviderId) == true
+                    ) {
+                        Log.d("mano", "show this campaign/ad for the current ${target.type}")
+                        return
+                    }
+                }
+            }
+        }
+    }
+
     // method to get a filtered list of placements of the active campaigns
     private fun getPlacementsByCampaigns(
         campaigns: ArrayList<Campaign>?,
@@ -212,9 +297,10 @@ object CampaignsFilterUtil {
 
         val showCloseButtonAfterSeconds =
             placement?.properties?.get("showCloseButtonAfterSeconds")
-        InsideAdSdk.showCloseButtonAfterSeconds = showCloseButtonAfterSeconds?.toLong()?.let {
-            Helper.getMillisFromSeconds(it)
-        }
+        InsideAdSdk.showCloseButtonAfterSeconds =
+            showCloseButtonAfterSeconds?.toLong()?.let {
+                Helper.getMillisFromSeconds(it)
+            }
 
         InsideAdSdk.intervalForReels = placement?.properties?.get("intervalForReels")
 

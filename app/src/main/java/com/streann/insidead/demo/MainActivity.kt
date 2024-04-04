@@ -84,12 +84,8 @@ class MainActivity : AppCompatActivity() {
             screen = "Splash",
             isAdMuted = false,
             adTargetFilters = AdTargetFilters(
-                vodId = "vodId",
-                channelId = "channelId",
-                radioId = "radioId",
-                seriesId = "seriesId",
-                categoryId = "categoryId",
-                contentProviderId = "contentProviderId"
+                vodId = "659d4a92e4b04b818b1257db",
+                seriesId = "659ef73de4b065a6e1319f88"
             )
         )
 

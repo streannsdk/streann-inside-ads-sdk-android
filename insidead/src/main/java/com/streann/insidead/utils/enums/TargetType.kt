@@ -4,7 +4,7 @@ enum class TargetType(val value: String) {
     VOD("vod"),
     CHANNEL("channel"),
     RADIO("radio"),
-    SERIES("serie"),
+    SERIES("series"),
     CATEGORY("category"),
     CONTENT_PROVIDER("content_provider")
 }
