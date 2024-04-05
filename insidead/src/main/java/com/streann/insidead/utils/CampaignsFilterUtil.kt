@@ -50,13 +50,18 @@ object CampaignsFilterUtil {
                 ?.let { getCampaignsByContentTargeting(it) }
 
             activeCampaigns?.let { filteredCampaigns ->
-                Log.i(InsideAdSdk.LOG_TAG, "activeCampaigns $activeCampaigns")
-                if (filteredCampaigns.size > 1) {
-                    filterItemsByWeight(filteredCampaigns) { it.weight ?: 0 }
+                if (filteredCampaigns.isNotEmpty()) {
+                    if (filteredCampaigns.size > 1) {
+                        return filterItemsByWeight(filteredCampaigns) { it.weight ?: 0 }
+                    } else {
+                        return filteredCampaigns.first()
+                    }
                 } else {
-                    filteredCampaigns.first()
+                    return null
                 }
             }
+
+            return null
         }
     }
 
