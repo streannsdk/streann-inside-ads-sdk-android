@@ -13,13 +13,14 @@ import java.time.LocalTime
 import kotlin.random.Random
 
 object CampaignsFilterUtil {
+    private const val LOG_TAG = "CampaignsFilterUtil"
 
     // method to return an ad from the campaigns list
     fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
         var insideAd: InsideAd? = null
 
         val activeCampaign = getActiveCampaign(campaigns, screen)
-        Log.i(InsideAdSdk.LOG_TAG, "activeCampaign $activeCampaign")
+        Log.i(LOG_TAG, "activeCampaign $activeCampaign")
 
         activeCampaign?.let {
             val intervalInMinutes =
@@ -32,7 +33,7 @@ object CampaignsFilterUtil {
             val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen)
 
             insideAd = getInsideAdByPlacements(campaignPlacements)
-            Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
+            Log.i(LOG_TAG, "insideAd $insideAd")
 
             setCurrentPlacement(insideAd, activeCampaign.placements)
         }
@@ -51,6 +52,7 @@ object CampaignsFilterUtil {
 
             activeCampaigns?.let { filteredCampaigns ->
                 if (filteredCampaigns.isNotEmpty()) {
+                    Log.i(LOG_TAG, "filteredCampaigns $filteredCampaigns")
                     if (filteredCampaigns.size > 1) {
                         return filterItemsByWeight(filteredCampaigns) { it.weight ?: 0 }
                     } else {
@@ -101,7 +103,7 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(InsideAdSdk.LOG_TAG, "filteredCampaigns $filteredCampaigns")
+        Log.i(LOG_TAG, "filteredCampaigns $filteredCampaigns")
         return filteredCampaigns
     }
 
@@ -121,13 +123,14 @@ object CampaignsFilterUtil {
             if (isActiveCampaign) activeCampaigns.add(campaign)
         }
 
-        Log.i(InsideAdSdk.LOG_TAG, "activeCampaignsByPlacement $activeCampaigns")
+        Log.i(LOG_TAG, "activeCampaignsByPlacement $activeCampaigns")
         return activeCampaigns
     }
 
     // method to check if the user has sent targeting filters
     private fun getCampaignsByContentTargeting(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
         return if (InsideAdSdk.areTargetingFiltersEmpty()) {
+            Log.i(LOG_TAG, "no targeting filters, return not modified campaigns")
             campaigns
         } else {
             filterCampaignsByContentTargeting(campaigns)
@@ -136,7 +139,7 @@ object CampaignsFilterUtil {
 
     // method to filter campaigns by content targeting
     private fun filterCampaignsByContentTargeting(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
-        Log.i(InsideAdSdk.LOG_TAG, "filterCampaignsByContentTargeting")
+        Log.i(LOG_TAG, "filterCampaignsByContentTargeting")
         val targetingFilters = InsideAdSdk.targetingFilters ?: return arrayListOf()
 
         val activeCampaigns = mutableListOf<Campaign>()
@@ -209,7 +212,7 @@ object CampaignsFilterUtil {
 
         // Filter campaigns without targeting if the content id is not contained in the campaigns targets
         if (activeCampaigns.isEmpty()) {
-            Log.i(InsideAdSdk.LOG_TAG, "no matches, find campaigns without targeting")
+            Log.i(LOG_TAG, "no matches, find campaigns without targeting")
             activeCampaigns.addAll(campaigns.filter { it.targeting.isNullOrEmpty() })
         }
 
@@ -221,7 +224,7 @@ object CampaignsFilterUtil {
         activeCampaign: Campaign?,
         screen: String
     ): List<Placement>? {
-        Log.i(InsideAdSdk.LOG_TAG, "getPlacementsByCampaign")
+        Log.i(LOG_TAG, "getPlacementsByCampaign")
         var filteredPlacements: List<Placement>? = null
 
         activeCampaign?.let { campaign ->
@@ -289,7 +292,7 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(InsideAdSdk.LOG_TAG, "getFilteredPlacements $filteredPlacements")
+        Log.i(LOG_TAG, "getFilteredPlacements $filteredPlacements")
         return filteredPlacements
     }
 
@@ -297,7 +300,7 @@ object CampaignsFilterUtil {
     private fun getInsideAdByPlacements(
         placements: List<Placement>?,
     ): InsideAd? {
-        Log.i(InsideAdSdk.LOG_TAG, "getInsideAdByPlacement")
+        Log.i(LOG_TAG, "getInsideAdByPlacement")
         var activeInsideAd: InsideAd? = null
 
         if (placements?.isNotEmpty() == true) {
@@ -333,7 +336,7 @@ object CampaignsFilterUtil {
     // if we have multiple ads then filter them and return an ad by its weight
     // if we have only one ad just return it
     private fun getInsideAdFilteredByWeight(ads: ArrayList<InsideAd>?): InsideAd? {
-        Log.i(InsideAdSdk.LOG_TAG, "getInsideAdFilteredByWeight")
+        Log.i(LOG_TAG, "getInsideAdFilteredByWeight")
         var activeInsideAd: InsideAd? = null
 
         if (ads?.isNotEmpty() == true) {
@@ -356,7 +359,7 @@ object CampaignsFilterUtil {
             ) == true
         }
 
-        Log.i(InsideAdSdk.LOG_TAG, "activePlacement: $placement")
+        Log.i(LOG_TAG, "activePlacement: $placement")
 
         val startAfterSeconds =
             placement?.properties?.get("startAfterSeconds")
@@ -376,7 +379,7 @@ object CampaignsFilterUtil {
 
     // Define a generic function to select an object by it's weight randomly
     private fun <T> filterItemsByWeight(objects: ArrayList<T>, getWeight: (T) -> Int): T? {
-        Log.i(InsideAdSdk.LOG_TAG, "filterItemsByWeight")
+        Log.i(LOG_TAG, "filterItemsByWeight")
         if (objects.isEmpty()) {
             return null
         }

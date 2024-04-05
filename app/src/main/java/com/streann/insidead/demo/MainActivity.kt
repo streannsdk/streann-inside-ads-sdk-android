@@ -11,8 +11,8 @@ import androidx.constraintlayout.widget.ConstraintLayout
 import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.models.TargetingFilters
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.models.TargetingFilters
 import com.streann.insidead.utils.enums.AdType
 
 class MainActivity : AppCompatActivity() {
