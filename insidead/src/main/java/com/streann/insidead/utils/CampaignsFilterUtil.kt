@@ -31,7 +31,7 @@ object CampaignsFilterUtil {
 
             val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen)
 
-            insideAd = getInsideAdByPlacement(campaignPlacements)
+            insideAd = getInsideAdByPlacements(campaignPlacements)
             Log.i(InsideAdSdk.LOG_TAG, "insideAd $insideAd")
 
             setCurrentPlacement(insideAd, activeCampaign.placements)
@@ -139,7 +139,7 @@ object CampaignsFilterUtil {
         Log.i(InsideAdSdk.LOG_TAG, "filterCampaignsByContentTargeting")
         val targetingFilters = InsideAdSdk.targetingFilters ?: return arrayListOf()
 
-        val activeCampaigns = ArrayList<Campaign>()
+        val activeCampaigns = mutableListOf<Campaign>()
         val vodId = targetingFilters.vodId
         val channelId = targetingFilters.channelId
         val radioId = targetingFilters.radioId
@@ -206,7 +206,14 @@ object CampaignsFilterUtil {
                 }
             }
         }
-        return activeCampaigns
+
+        // Filter campaigns without targeting if the content id is not contained in the campaigns targets
+        if (activeCampaigns.isEmpty()) {
+            Log.i(InsideAdSdk.LOG_TAG, "no matches, find campaigns without targeting")
+            activeCampaigns.addAll(campaigns.filter { it.targeting.isNullOrEmpty() })
+        }
+
+        return ArrayList(activeCampaigns)
     }
 
     // method to get a filtered list of placements of the active campaign
@@ -270,7 +277,6 @@ object CampaignsFilterUtil {
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
-        Log.i(InsideAdSdk.LOG_TAG, "getFilteredPlacements $placements")
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
@@ -283,12 +289,12 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.d(InsideAdSdk.LOG_TAG, "filteredPlacements $filteredPlacements")
+        Log.i(InsideAdSdk.LOG_TAG, "getFilteredPlacements $filteredPlacements")
         return filteredPlacements
     }
 
     // method to get an inside ad of the list of filtered placements
-    private fun getInsideAdByPlacement(
+    private fun getInsideAdByPlacements(
         placements: List<Placement>?,
     ): InsideAd? {
         Log.i(InsideAdSdk.LOG_TAG, "getInsideAdByPlacement")

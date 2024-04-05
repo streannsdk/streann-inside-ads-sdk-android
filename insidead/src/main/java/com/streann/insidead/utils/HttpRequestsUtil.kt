@@ -718,11 +718,11 @@ object HttpRequestsUtil {
                 targeting.targets = emptyList()
             }
 
-            Log.d(InsideAdSdk.LOG_TAG, "targeting $targeting")
+            Log.i(InsideAdSdk.LOG_TAG, "targeting $targeting")
             targetingList.add(targeting)
         }
 
-        Log.d(InsideAdSdk.LOG_TAG, "targetingList $targetingList")
+        Log.i(InsideAdSdk.LOG_TAG, "targetingList $targetingList")
         return targetingList
     }
 
