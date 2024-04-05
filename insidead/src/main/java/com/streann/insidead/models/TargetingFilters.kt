@@ -1,6 +1,6 @@
 package com.streann.insidead.models
 
-data class AdTargetFilters(
+data class TargetingFilters(
     var vodId: String? = null,
     var channelId: String? = null,
     var radioId: String? = null,

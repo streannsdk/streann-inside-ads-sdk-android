@@ -13,7 +13,7 @@ import com.google.android.gms.ads.MobileAds
 import com.google.android.gms.ads.identifier.AdvertisingIdClient
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
-import com.streann.insidead.models.AdTargetFilters
+import com.streann.insidead.models.TargetingFilters
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.players.bannerads.BannerAdsPlayer
 import com.streann.insidead.players.googleima.GoogleImaPlayer
@@ -116,13 +116,13 @@ class InsideAdView @JvmOverloads constructor(
     fun requestAd(
         screen: String,
         isAdMuted: Boolean? = false,
-        adTargetFilters: AdTargetFilters? = null
+        targetingFilters: TargetingFilters? = null
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "requestAd")
         retryRequestHandler = Handler(Looper.getMainLooper())
 
         InsideAdSdk.isAdMuted = isAdMuted
-        InsideAdSdk.adTargetFilters = adTargetFilters
+        InsideAdSdk.targetingFilters = targetingFilters
         this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
 
