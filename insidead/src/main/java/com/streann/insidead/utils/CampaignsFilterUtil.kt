@@ -147,7 +147,7 @@ object CampaignsFilterUtil {
         val channelId = targetingFilters.channelId
         val radioId = targetingFilters.radioId
         val seriesId = targetingFilters.seriesId
-        val categoryId = targetingFilters.categoryId
+        val categoryIds = targetingFilters.categoryIds
         val contentProviderId = targetingFilters.contentProviderId
 
         for (campaign in campaigns) {
@@ -190,10 +190,9 @@ object CampaignsFilterUtil {
                     return@forEach
                 }
 
-                if (!categoryId.isNullOrEmpty() && targetsList.any {
-                        it.type == TargetType.CATEGORY.value && it.ids?.contains(
-                            categoryId
-                        ) == true
+                if (!categoryIds.isNullOrEmpty() && targetsList.any { target ->
+                        target.type == TargetType.CATEGORY.value &&
+                                isCategoryIdContained(target.ids ?: arrayListOf(), categoryIds)
                     }) {
                     activeCampaigns.add(campaign)
                     return@forEach
@@ -217,6 +216,18 @@ object CampaignsFilterUtil {
         }
 
         return ArrayList(activeCampaigns)
+    }
+
+    private fun isCategoryIdContained(
+        targetIds: ArrayList<String>,
+        categoryIds: ArrayList<String>
+    ): Boolean {
+        for (categoryId in categoryIds) {
+            if (categoryId in targetIds) {
+                return true
+            }
+        }
+        return false
     }
 
     // method to get a filtered list of placements of the active campaign

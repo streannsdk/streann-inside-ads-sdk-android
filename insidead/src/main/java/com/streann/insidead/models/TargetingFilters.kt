@@ -5,6 +5,6 @@ data class TargetingFilters(
     var channelId: String? = null,
     var radioId: String? = null,
     var seriesId: String? = null,
-    var categoryId: String? = null,
+    var categoryIds: ArrayList<String>? = null,
     var contentProviderId: String? = null,
 )

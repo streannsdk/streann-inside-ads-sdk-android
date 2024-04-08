@@ -12,7 +12,6 @@ import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
-import com.streann.insidead.models.TargetingFilters
 import com.streann.insidead.utils.enums.AdType
 
 class MainActivity : AppCompatActivity() {
@@ -81,12 +80,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         mInsideAdView?.requestAd(
-            screen = "Splash",
-            isAdMuted = false,
-            targetingFilters = TargetingFilters(
-                vodId = "659d4a92e4b04b818b1257db",
-                seriesId = "659ef73de4b065a6e1319f88"
-            )
+            screen = "Splash"
         )
 
         adStopText.setOnClickListener {

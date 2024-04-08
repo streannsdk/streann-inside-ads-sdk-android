@@ -135,7 +135,7 @@ object InsideAdSdk {
                     it.channelId.isNullOrEmpty() &&
                     it.radioId.isNullOrEmpty() &&
                     it.seriesId.isNullOrEmpty() &&
-                    it.categoryId.isNullOrEmpty() &&
+                    it.categoryIds.isNullOrEmpty() &&
                     it.contentProviderId.isNullOrEmpty()
         } ?: true
     }
