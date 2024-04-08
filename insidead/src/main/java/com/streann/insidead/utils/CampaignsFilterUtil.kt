@@ -43,6 +43,8 @@ object CampaignsFilterUtil {
 
     // method to get the active campaigns from the campaigns list
     private fun getActiveCampaign(campaigns: ArrayList<Campaign>?, screen: String): Campaign? {
+        Log.i(LOG_TAG, "getActiveCampaign")
+
         return campaigns?.let { allCampaigns ->
             val activeCampaigns = filterCampaignsByTimePeriod(allCampaigns)
                 .takeIf { it.isNotEmpty() }
@@ -287,8 +289,6 @@ object CampaignsFilterUtil {
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
-        Log.i(LOG_TAG, "getFilteredPlacements")
-
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
