@@ -100,6 +100,7 @@ class NativeAdsPlayer(
             override fun onAdLoaded() {
                 Log.i(InsideAdSdk.LOG_TAG, "onAdLoaded")
                 insideAdCallback?.insideAdLoaded()
+                setAdViewLayoutParams()
                 setCloseButtonVisibility()
             }
 
@@ -138,7 +139,9 @@ class NativeAdsPlayer(
                     val green = (dominantColor shr 8) and 0xFF
                     val blue = dominantColor and 0xFF
 
-                    val backgroundColor = Color.rgb(red, green, blue)
+                    val isCloseToWhite = red > 230 && green > 230 && blue > 230
+                    val backgroundColor =
+                        if (isCloseToWhite) Color.LTGRAY else Color.rgb(red, green, blue)
 
                     adView.callToActionView?.backgroundTintList =
                         ColorStateList.valueOf(backgroundColor)
@@ -242,6 +245,29 @@ class NativeAdsPlayer(
         addView(adView)
     }
 
+    private fun setAdViewLayoutParams() {
+        val params =
+            LayoutParams(
+                LayoutParams.MATCH_PARENT,
+                LayoutParams.MATCH_PARENT
+            )
+
+        layoutParams = params
+    }
+
+    private fun setCloseButtonVisibility() {
+        if (!InsideAdSdk.showAdForReels) {
+            InsideAdSdk.showCloseButtonAfterSeconds?.let {
+                showCloseButtonHandler?.postDelayed({
+                    adCloseButton?.visibility = VISIBLE
+                    adCloseButton?.setOnClickListener {
+                        stopAd()
+                    }
+                }, it)
+            }
+        }
+    }
+
     private fun getStartRatingImageView(starRating: Double?): Drawable? {
         return starRating?.let {
             when {
@@ -262,19 +288,6 @@ class NativeAdsPlayer(
                 )
 
                 else -> null
-            }
-        }
-    }
-
-    private fun setCloseButtonVisibility() {
-        if (!InsideAdSdk.showAdForReels) {
-            InsideAdSdk.showCloseButtonAfterSeconds?.let {
-                showCloseButtonHandler?.postDelayed({
-                    adCloseButton?.visibility = VISIBLE
-                    adCloseButton?.setOnClickListener {
-                        stopAd()
-                    }
-                }, it)
             }
         }
     }

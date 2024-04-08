@@ -10,5 +10,6 @@ data class Campaign(
     var timePeriods: ArrayList<TimePeriod>? = null,
     var weight: Int? = null,
     var placements: ArrayList<Placement>? = null,
-    var properties: Map<String, Number>? = null
+    var properties: Map<String, Number>? = null,
+    var targeting: ArrayList<Targeting>? = null,
 )

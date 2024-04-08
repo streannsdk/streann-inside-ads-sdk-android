@@ -12,7 +12,7 @@ import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
-import com.streann.insidead.utils.constants.Constants
+import com.streann.insidead.utils.enums.AdType
 
 class MainActivity : AppCompatActivity() {
 
@@ -80,7 +80,7 @@ class MainActivity : AppCompatActivity() {
         })
 
         mInsideAdView?.requestAd(
-            screen = "Reels"
+            screen = "Splash"
         )
 
         adStopText.setOnClickListener {
@@ -95,7 +95,7 @@ class MainActivity : AppCompatActivity() {
 
     private fun setAdViewLayoutParams() {
         val layoutParams =
-            if (insideAd?.adType == Constants.AD_TYPE_FULLSCREEN_NATIVE) {
+            if (insideAd?.adType == AdType.FULLSCREEN_NATIVE.value) {
                 ConstraintLayout.LayoutParams(
                     ConstraintLayout.LayoutParams.MATCH_PARENT,
                     ConstraintLayout.LayoutParams.MATCH_PARENT

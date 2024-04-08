@@ -21,7 +21,7 @@ class SplitActivity : AppCompatActivity() {
         mSplitInsideAdView.showSplitScreen(
             splitActivityWrapper,
             findViewById(android.R.id.content),
-            screen = "Reels",
+            screen = "Splash",
             isAdMuted = false,
             isInsideAdAbove = false,
             insideAdCallback = object : InsideAdCallback {

@@ -7,6 +7,7 @@ import com.streann.insidead.callbacks.CampaignCallback
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
+import com.streann.insidead.models.TargetingFilters
 import com.streann.insidead.utils.HttpRequestsUtil
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -32,6 +33,7 @@ object InsideAdSdk {
     internal var playerWidth: Int = 0
     internal var playerHeight: Int = 0
     internal var isAdMuted: Boolean? = false
+    internal var targetingFilters: TargetingFilters? = null
 
     internal var geoIp: GeoIp? = null
     internal var appPreferences: SharedPreferences? = null
@@ -125,6 +127,17 @@ object InsideAdSdk {
 
     fun getInsideAdCallback(): InsideAdCallback? {
         return insideAdCallback
+    }
+
+    fun areTargetingFiltersEmpty(): Boolean {
+        return targetingFilters?.let {
+            it.vodId.isNullOrEmpty() &&
+                    it.channelId.isNullOrEmpty() &&
+                    it.radioId.isNullOrEmpty() &&
+                    it.seriesId.isNullOrEmpty() &&
+                    it.categoryIds.isNullOrEmpty() &&
+                    it.contentProviderId.isNullOrEmpty()
+        } ?: true
     }
 
 }
