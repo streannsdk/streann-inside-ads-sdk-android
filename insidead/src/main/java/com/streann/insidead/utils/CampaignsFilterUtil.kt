@@ -103,7 +103,6 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(LOG_TAG, "filteredCampaigns $filteredCampaigns")
         return filteredCampaigns
     }
 
@@ -123,14 +122,12 @@ object CampaignsFilterUtil {
             if (isActiveCampaign) activeCampaigns.add(campaign)
         }
 
-        Log.i(LOG_TAG, "activeCampaignsByPlacement $activeCampaigns")
         return activeCampaigns
     }
 
     // method to check if the user has sent targeting filters
     private fun getCampaignsByContentTargeting(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
         return if (InsideAdSdk.areTargetingFiltersEmpty()) {
-            Log.i(LOG_TAG, "no targeting filters, return not modified campaigns")
             campaigns
         } else {
             filterCampaignsByContentTargeting(campaigns)
@@ -211,7 +208,6 @@ object CampaignsFilterUtil {
 
         // Filter campaigns without targeting if the content id is not contained in the campaigns targets
         if (activeCampaigns.isEmpty()) {
-            Log.i(LOG_TAG, "no matches, find campaigns without targeting")
             activeCampaigns.addAll(campaigns.filter { it.targeting.isNullOrEmpty() })
         }
 
@@ -291,6 +287,8 @@ object CampaignsFilterUtil {
         placements: ArrayList<Placement>?,
         screen: String
     ): List<Placement>? {
+        Log.i(LOG_TAG, "getFilteredPlacements")
+
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
@@ -303,7 +301,6 @@ object CampaignsFilterUtil {
             }
         }
 
-        Log.i(LOG_TAG, "getFilteredPlacements $filteredPlacements")
         return filteredPlacements
     }
 
