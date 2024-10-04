@@ -74,7 +74,7 @@ To use the Streann Inside Ad library in your project, follow these steps:
         )   
    ```
 
-- If you want to use banner ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
+- If you want to use banner or native ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
     - To do so, add a <meta-data> tag with android:name="com.google.android.gms.ads.APPLICATION_ID".
     - For android:value, insert your own Ad Manager app ID.
 
