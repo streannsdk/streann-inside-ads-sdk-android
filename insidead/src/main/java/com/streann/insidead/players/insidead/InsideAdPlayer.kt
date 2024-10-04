@@ -222,6 +222,9 @@ class InsideAdPlayer(
             mp.release()
         }
         mediaPlayer = null
+
+        insideAdCallback?.insideAdStop()
+        insideAdProgressCallback?.insideAdStopped()
     }
 
     private fun setupProgressBar() {
