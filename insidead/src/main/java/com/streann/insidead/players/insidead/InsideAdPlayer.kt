@@ -186,8 +186,7 @@ class InsideAdPlayer(
         videoProgressBar?.visibility = GONE
 
         mediaPlayer?.setOnCompletionListener {
-            stopLocalVideoAd()
-            removeHandlers()
+            stopAd()
         }
     }
 
@@ -222,9 +221,6 @@ class InsideAdPlayer(
             mp.release()
         }
         mediaPlayer = null
-
-        insideAdCallback?.insideAdStop()
-        insideAdProgressCallback?.insideAdStopped()
     }
 
     private fun setupProgressBar() {
