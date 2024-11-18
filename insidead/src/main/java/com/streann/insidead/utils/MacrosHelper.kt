@@ -223,6 +223,8 @@ object MacrosHelper {
         val descriptionUrl: String? = InsideAdSdk.descriptionUrl
         val userBirthYear: Int = InsideAdSdk.userBirthYear ?: 0
         val userGender: String? = InsideAdSdk.userGender
+        val contentTitle: String? = InsideAdSdk.targetingFilters?.contentTitle
+        val contentId: String = getContentId()
 
         val macros: MacrosBundle = MacrosUtil.createDefaultMacroBuilder()
             .appendsDomain(appDomain)
@@ -240,6 +242,8 @@ object MacrosHelper {
             .appendsBirthYear(userBirthYear)
             .appendsGender(userGender)
             .appendsUserAgent(WebSettings.getDefaultUserAgent(context))
+            .appendsContentId(contentId)
+            .appendsContentTitle(contentTitle)
             .build()
 
         var url: String? = insideAd.url
@@ -293,6 +297,22 @@ object MacrosHelper {
         macrosHashMap["US_PRIVACY"] = "[STREANN-US-PRIVACY]"
 
         return macrosHashMap
+    }
+
+    private fun getContentId(): String {
+        val vodId: String? = InsideAdSdk.targetingFilters?.vodId
+        val channelId: String? = InsideAdSdk.targetingFilters?.channelId
+        val radioId: String? = InsideAdSdk.targetingFilters?.radioId
+
+        if (!vodId.isNullOrEmpty()) {
+            return vodId
+        } else if (!channelId.isNullOrEmpty()) {
+            return channelId
+        } else if (!radioId.isNullOrEmpty()) {
+            return radioId
+        } else {
+            return ""
+        }
     }
 
 }

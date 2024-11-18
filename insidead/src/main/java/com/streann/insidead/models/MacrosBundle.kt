@@ -60,8 +60,8 @@ class MacrosBundle {
         private var siteUrl: String? = null
         private var appBundleId: String? = null
         private var domain: String? = null
-        private var contentId = ""
-        private var contentTitle = ""
+        private var contentId: String? = null
+        private var contentTitle: String? = null
         private var contentLength = ""
         private var contentUrl = ""
         private var contentEncodedUrl = ""
@@ -240,6 +240,16 @@ class MacrosBundle {
 
         fun appendsAdNotTracking(adNotTracking: Int): Builder {
             this.adNotTracking = adNotTracking
+            return this
+        }
+
+        fun appendsContentId(contentId: String?): Builder {
+            this.contentId = contentId
+            return this
+        }
+
+        fun appendsContentTitle(contentTitle: String?): Builder {
+            this.contentTitle = contentTitle
             return this
         }
 
