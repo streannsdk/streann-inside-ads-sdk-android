@@ -353,8 +353,8 @@ class InsideAdPlayer(
             learnMoreButton.visibility = VISIBLE
             learnMoreButton.setOnClickListener {
                 try {
-                    val intent =
-                        Intent(Intent.ACTION_VIEW, Uri.parse(clickThroughUrl))
+                    val intent = Intent(Intent.ACTION_VIEW, Uri.parse(clickThroughUrl))
+                    intent.setFlags(Intent.FLAG_ACTIVITY_NEW_TASK)
                     context.startActivity(intent)
                 } catch (e: ActivityNotFoundException) {
                     e.printStackTrace()
