@@ -347,9 +347,9 @@ class InsideAdPlayer(
         learnMoreButton.gravity = Gravity.END or Gravity.CENTER_VERTICAL
 
         val clickThroughUrl = insideAd?.properties?.clickThroughUrl
-        if (clickThroughUrl?.isBlank() == true)
+        if (clickThroughUrl?.isBlank() == true || clickThroughUrl.isNullOrEmpty()) {
             learnMoreButton.visibility = GONE
-        else {
+        } else {
             learnMoreButton.visibility = VISIBLE
             learnMoreButton.setOnClickListener {
                 try {
