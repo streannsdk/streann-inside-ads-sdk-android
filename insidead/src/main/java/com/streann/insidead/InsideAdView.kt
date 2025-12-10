@@ -22,6 +22,7 @@ import com.streann.insidead.players.nativeads.NativeAdsPlayer
 import com.streann.insidead.utils.CampaignsFilterUtil
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.SharedPreferencesHelper
+import com.streann.insidead.utils.enums.ViewType
 import com.streann.insidead.utils.constants.SharedPrefKeys
 import com.streann.insidead.utils.enums.AdType
 import java.util.concurrent.ExecutorService
@@ -139,6 +140,31 @@ class InsideAdView @JvmOverloads constructor(
         getInsideAdRetry()
     }
 
+    internal fun requestPrerollAd(
+        screen: String,
+        isAdMuted: Boolean? = false,
+        targetingFilters: TargetingFilters? = null
+    ) {
+        Log.i(InsideAdSdk.LOG_TAG, "requestPrerollAd")
+        retryRequestHandler = Handler(Looper.getMainLooper())
+
+        InsideAdSdk.isAdMuted = isAdMuted
+        InsideAdSdk.targetingFilters = targetingFilters
+        InsideAdSdk.isPrerollMode = true
+        this.insideAdCallback = InsideAdSdk.getPrerollAdCallback()
+        this.screen = screen
+
+        if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
+            val errorMsg = "Api Key and Base Url are required. Please implement the initializeSdk method."
+            Log.e(InsideAdSdk.LOG_TAG, errorMsg)
+            insideAdCallback?.insideAdError(errorMsg)
+            InsideAdSdk.isPrerollMode = false
+            return
+        }
+
+        getInsideAdRetry()
+    }
+
     private fun getInsideAdRetry() {
         Log.i(InsideAdSdk.LOG_TAG, "getInsideAdRetry")
         if (retryCount < maxRetries) {
@@ -149,6 +175,18 @@ class InsideAdView @JvmOverloads constructor(
                 }, retryDelayMillis)
             } else if (InsideAdSdk.campaignsList != null) {
                 getInsideAd(screen, insideAdCallback)
+            } else {
+                val errorMsg = "Failed to fetch campaigns from server"
+                insideAdCallback?.insideAdError(errorMsg)
+                if (InsideAdSdk.isPrerollMode) {
+                    InsideAdSdk.isPrerollMode = false
+                }
+            }
+        } else {
+            val errorMsg = "Campaign list not available after $maxRetries retries"
+            insideAdCallback?.insideAdError(errorMsg)
+            if (InsideAdSdk.isPrerollMode) {
+                InsideAdSdk.isPrerollMode = false
             }
         }
     }
@@ -161,13 +199,25 @@ class InsideAdView @JvmOverloads constructor(
         retryRequestHandler?.removeCallbacksAndMessages(null)
         retryRequestHandler = null
 
-        insideAd = CampaignsFilterUtil.getInsideAd(InsideAdSdk.campaignsList, screen)
+        val viewType = if (InsideAdSdk.isPrerollMode) ViewType.PREROLL.value else null
+        insideAd = CampaignsFilterUtil.getInsideAd(
+            InsideAdSdk.campaignsList,
+            screen,
+            viewType
+        )
 
         insideAdCallback?.let { callback ->
             insideAd?.let { ad ->
                 callback.insideAdReceived(ad)
                 fallbackAd = insideAd?.fallback
                 showAd(ad, callback)
+            } ?: run {
+                if (InsideAdSdk.isPrerollMode) {
+                    val errorMsg = "No PREROLL ad available for the specified criteria"
+                    Log.w(InsideAdSdk.LOG_TAG, errorMsg)
+                    callback.insideAdError(errorMsg)
+                    InsideAdSdk.isPrerollMode = false
+                }
             }
         }
     }
@@ -181,7 +231,11 @@ class InsideAdView @JvmOverloads constructor(
         adIntervalHandler = null
 
         showAdHandler = Handler(Looper.getMainLooper())
-        val delayMillis = if (InsideAdSdk.showAdForReels) 0 else InsideAdSdk.startAfterSeconds ?: 0
+        val delayMillis = if (InsideAdSdk.isPrerollMode || InsideAdSdk.showAdForReels) {
+            0
+        } else {
+            InsideAdSdk.startAfterSeconds ?: 0
+        }
 
         when (insideAd.adType) {
             AdType.VAST.value ->
@@ -308,6 +362,12 @@ class InsideAdView @JvmOverloads constructor(
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
+
+        if (InsideAdSdk.isPrerollMode) {
+            InsideAdSdk.isPrerollMode = false
+            return
+        }
+
         if (!InsideAdSdk.showAdForReels) {
             if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
                 adIntervalHandler = Handler(Looper.getMainLooper())
@@ -319,8 +379,15 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     override fun insideAdError() {
-        Log.i(InsideAdSdk.LOG_TAG, "insideAdError, show fallbackAd")
+        Log.i(InsideAdSdk.LOG_TAG, "insideAdError")
         insideAd = null
+
+        if (InsideAdSdk.isPrerollMode) {
+            Log.i(InsideAdSdk.LOG_TAG, "Preroll mode: skipping fallback ad")
+            InsideAdSdk.isPrerollMode = false
+            return
+        }
+
         insideAdCallback?.let { callback ->
             fallbackAd?.let { fallbackAd ->
                 Log.i(InsideAdSdk.LOG_TAG, "fallbackAd: $fallbackAd")

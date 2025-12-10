@@ -36,6 +36,9 @@ object InsideAdSdk {
     internal var targetingFilters: TargetingFilters? = null
 
     internal var geoIp: GeoIp? = null
+
+    private var prerollAdCallback: InsideAdCallback? = null
+    internal var isPrerollMode: Boolean = false
     internal var appPreferences: SharedPreferences? = null
 
     internal var intervalInMinutes: Long? = null
@@ -139,6 +142,25 @@ object InsideAdSdk {
                     it.contentProviderId.isNullOrEmpty() &&
                     it.contentTitle.isNullOrEmpty()
         } ?: true
+    }
+
+    fun setPrerollAdCallback(callback: InsideAdCallback) {
+        prerollAdCallback = callback
+    }
+
+    fun getPrerollAdCallback(): InsideAdCallback? {
+        return prerollAdCallback
+    }
+
+    fun requestPrerollAd(
+        context: android.content.Context,
+        adContainer: com.streann.insidead.InsideAdView,
+        screen: String = "",
+        isAdMuted: Boolean? = false,
+        targetingFilters: TargetingFilters? = null
+    ) {
+        Log.i(LOG_TAG, "requestPrerollAd - screen: $screen")
+        adContainer.requestPrerollAd(screen, isAdMuted, targetingFilters)
     }
 
 }

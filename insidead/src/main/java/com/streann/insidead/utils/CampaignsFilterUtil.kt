@@ -16,10 +16,10 @@ object CampaignsFilterUtil {
     private const val LOG_TAG = "CampaignsFilterUtil"
 
     // method to return an ad from the campaigns list
-    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String): InsideAd? {
+    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String, viewType: String? = null): InsideAd? {
         var insideAd: InsideAd? = null
 
-        val activeCampaign = getActiveCampaign(campaigns, screen)
+        val activeCampaign = getActiveCampaign(campaigns, screen, viewType)
         Log.i(LOG_TAG, "activeCampaign $activeCampaign")
 
         activeCampaign?.let {
@@ -30,7 +30,7 @@ object CampaignsFilterUtil {
             }
             InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
 
-            val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen)
+            val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen, viewType)
 
             insideAd = getInsideAdByPlacements(campaignPlacements)
             Log.i(LOG_TAG, "insideAd $insideAd")
@@ -42,13 +42,13 @@ object CampaignsFilterUtil {
     }
 
     // method to get the active campaigns from the campaigns list
-    private fun getActiveCampaign(campaigns: ArrayList<Campaign>?, screen: String): Campaign? {
+    private fun getActiveCampaign(campaigns: ArrayList<Campaign>?, screen: String, viewType: String? = null): Campaign? {
         Log.i(LOG_TAG, "getActiveCampaign")
 
         return campaigns?.let { allCampaigns ->
             val activeCampaigns = filterCampaignsByTimePeriod(allCampaigns)
                 .takeIf { it.isNotEmpty() }
-                ?.let { getActiveCampaignsByPlacements(it, screen) }
+                ?.let { getActiveCampaignsByPlacements(it, screen, viewType) }
                 ?.takeIf { it.isNotEmpty() }
                 ?.let { getCampaignsByContentTargeting(it) }
 
@@ -113,13 +113,14 @@ object CampaignsFilterUtil {
     // that means that campaign is active because its placements contain the screen that the user sent
     private fun getActiveCampaignsByPlacements(
         campaigns: ArrayList<Campaign>,
-        screen: String
+        screen: String,
+        viewType: String? = null
     ): ArrayList<Campaign> {
         val activeCampaigns = ArrayList<Campaign>()
         var activePlacements: List<Placement>?
 
         for (campaign in campaigns) {
-            activePlacements = getFilteredPlacements(campaign.placements, screen)
+            activePlacements = getFilteredPlacements(campaign.placements, screen, viewType)
             val isActiveCampaign = !activePlacements.isNullOrEmpty()
             if (isActiveCampaign) activeCampaigns.add(campaign)
         }
@@ -231,7 +232,8 @@ object CampaignsFilterUtil {
     // method to get a filtered list of placements of the active campaign
     private fun getPlacementsByCampaign(
         activeCampaign: Campaign?,
-        screen: String
+        screen: String,
+        viewType: String? = null
     ): List<Placement>? {
         Log.i(LOG_TAG, "getPlacementsByCampaign")
         var filteredPlacements: List<Placement>? = null
@@ -239,7 +241,7 @@ object CampaignsFilterUtil {
         activeCampaign?.let { campaign ->
             campaign.placements?.let { placements ->
                 if (placements.isNotEmpty()) {
-                    filteredPlacements = getFilteredPlacements(placements, screen)
+                    filteredPlacements = getFilteredPlacements(placements, screen, viewType)
                 }
             }
         }
@@ -266,7 +268,8 @@ object CampaignsFilterUtil {
     // if we have multiple campaigns combine a list of placements of all campaigns
     private fun getPlacementsByMultipleCampaigns(
         campaigns: ArrayList<Campaign>,
-        screen: String
+        screen: String,
+        viewType: String? = null
     ): List<Placement>? {
         val placementsList = ArrayList<Placement>()
 
@@ -281,23 +284,35 @@ object CampaignsFilterUtil {
             }
         }
 
-        return getFilteredPlacements(placementsList, screen)
+        return getFilteredPlacements(placementsList, screen, viewType)
     }
 
     // filter the list of placements according to screen
     private fun getFilteredPlacements(
         placements: ArrayList<Placement>?,
-        screen: String
+        screen: String,
+        viewType: String? = null
     ): List<Placement>? {
         var filteredPlacements: List<Placement>? = null
 
         if (placements != null) {
             filteredPlacements = placements.filter { placement ->
-                if (screen.isEmpty()) {
+                // Filter by screen/tags
+                val screenMatch = if (screen.isEmpty()) {
                     (placement.tags?.isEmpty() == true)
                 } else {
                     placement.tags?.any { it == screen } == true
                 }
+
+                // Filter by viewType if specified
+                val viewTypeMatch = if (viewType.isNullOrEmpty()) {
+                    true // Backward compatible: no filtering
+                } else {
+                    placement.viewType == viewType
+                }
+
+                // Both must match
+                screenMatch && viewTypeMatch
             }
         }
 
