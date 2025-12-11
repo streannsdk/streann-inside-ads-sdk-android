@@ -6,6 +6,7 @@ import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Placement
 import com.streann.insidead.utils.enums.TargetType
+import com.streann.insidead.utils.enums.ViewType
 import java.time.DayOfWeek
 import java.time.Instant
 import java.time.LocalDate
@@ -304,10 +305,12 @@ object CampaignsFilterUtil {
                     placement.tags?.any { it == screen } == true
                 }
 
-                // Filter by viewType if specified
+                // Filter by viewType
                 val viewTypeMatch = if (viewType.isNullOrEmpty()) {
-                    true // Backward compatible: no filtering
+                    // Regular ad request: exclude PREROLL ads
+                    placement.viewType != ViewType.PREROLL.value
                 } else {
+                    // Specific viewType request (e.g., PREROLL): only include matching ads
                     placement.viewType == viewType
                 }
 

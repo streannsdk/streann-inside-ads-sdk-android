@@ -39,6 +39,11 @@ object InsideAdSdk {
 
     private var prerollAdCallback: InsideAdCallback? = null
     internal var isPrerollMode: Boolean = false
+
+    // Temporary storage for regular ad parameters when preroll is active
+    internal var savedIsAdMuted: Boolean? = null
+    internal var savedTargetingFilters: TargetingFilters? = null
+
     internal var appPreferences: SharedPreferences? = null
 
     internal var intervalInMinutes: Long? = null

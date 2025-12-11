@@ -45,6 +45,14 @@
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@id/statusText" />
 
+    <!-- Regular Ad Container (for mid-roll ads during content playback) -->
+    <com.streann.insidead.InsideAdView
+        android:id="@+id/regularAdView"
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
+        app:layout_constraintTop_toBottomOf="@id/statusText" />
+
     <!-- Simulated Content View -->
     <LinearLayout
         android:id="@+id/contentView"
@@ -59,7 +67,7 @@
         app:layout_constraintBottom_toTopOf="@id/requestPrerollButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/statusText">
+        app:layout_constraintTop_toBottomOf="@id/regularAdView">
 
         <TextView
             android:layout_width="wrap_content"
