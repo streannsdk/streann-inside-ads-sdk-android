@@ -24,7 +24,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.19'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.20'
 }
 ```
 
@@ -194,6 +194,83 @@ To use InsideAdView in your project, follow these steps:
   insideAdView?.stopAd()
   ```
 
+**Preroll Ad**
+
+Preroll ads are ads that play before your main content starts (typically before a video player). Unlike regular ads, preroll ads:
+- Display immediately with no delay
+- Play only once (no automatic repetition)
+- Are requested manually by the app when opening a player
+
+To use preroll ads in your project, follow these steps:
+
+- Add the InsideAdView to your layout XML file:
+  ```xml
+  <com.streann.insidead.InsideAdView
+    android:id="@+id/prerollAdView"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content" />
+  ```
+
+- In your activity or fragment, initialize the InsideAdView:
+  ```kotlin
+  val prerollAdView = findViewById(R.id.prerollAdView)
+  ```
+
+- Setup the Preroll Ad callback (separate from regular ad callback):
+  ```kotlin
+  InsideAdSdk.setPrerollAdCallback(object : InsideAdCallback {
+    override fun insideAdReceived(insideAd: InsideAd) { }
+
+    override fun insideAdLoaded() {
+        // Call the InsideAdView playAd method to start playing the preroll ad
+        prerollAdView?.playAd()
+    }
+
+    override fun insideAdPlay() { }
+
+    override fun insideAdStop() {
+        // Preroll completed, start your main content here
+    }
+
+    override fun insideAdSkipped() { }
+
+    override fun insideAdClicked() { }
+
+    override fun insideAdError(error: String) {
+        // No preroll ad available, start your main content
+    }
+
+    override fun insideAdVolumeChanged(level: Int) { }
+  })
+  ```
+
+- Request a preroll ad (call this once when opening your player):
+  ```kotlin
+  InsideAdSdk.requestPrerollAd(
+    context = this,
+    adContainer = prerollAdView,
+    screen = "Video Player",
+    isAdMuted = false,  // Optional, default: false
+    targetingFilters = null  // Optional, for content targeting
+  )
+
+  - context - your activity or context
+  - adContainer - the InsideAdView that will display the preroll ad
+  - screen - enter one of the following screens: Splash or Video Player
+  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default: false)
+  - targetingFilters - optional targeting filters for content-specific ads
+  ```
+
+**Using Both Preroll and Regular Ads**
+
+You can use preroll ads and regular ads together in the same screen:
+
+1. Request and play the preroll ad when opening the player
+2. After the preroll completes (in `insideAdStop()` callback), start your main content
+3. Request regular ads during content playback using `requestAd()` for mid-roll ads
+
+Regular ads requested with `requestAd()` will automatically exclude preroll ads and work with intervals as usual.
+
 ## Sample App
 
-You can check out our InsideAdDemo App to see the InsideAdView in action.
+You can check out our InsideAdDemo App to see the InsideAdView and PrerollActivity in action.
