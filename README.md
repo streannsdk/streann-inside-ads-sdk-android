@@ -16,6 +16,24 @@ ad formats, and the presentation of image-based ads within your app's content.ta
 - Seamlessly integrate banner ads into your app's interface for enhanced monetization.
 - Enjoy full compatibility with various video types, including MP4, m3u8, and more.
 - Display image-based advertisements seamlessly within your app, enhancing visual appeal.
+- **NEW**: Callback lifecycle management to prevent memory leaks
+- **NEW**: Video player resize modes for fullscreen landscape ads
+- **NEW**: Debug mode for troubleshooting skip/close button issues
+
+## Documentation
+
+📚 **For detailed integration guide with best practices, see [SDK_USAGE_GUIDE.md](SDK_USAGE_GUIDE.md)**
+
+This comprehensive guide covers:
+- ✅ Proper callback lifecycle management (prevent crashes and memory leaks)
+- ✅ Video player sizing for fullscreen landscape ads
+- ✅ Debug mode for troubleshooting
+- ✅ Complete working examples
+- ✅ Common issues and solutions
+
+**Quick links:**
+- [Skip/Close Button Behavior](SKIP_BUTTON_BEHAVIOR.md) - Why buttons appear inconsistently
+- [Developer Guide](CLAUDE.md) - SDK architecture and implementation details
 
 ## Installation
 
