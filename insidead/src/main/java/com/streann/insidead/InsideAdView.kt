@@ -111,7 +111,10 @@ class InsideAdView @JvmOverloads constructor(
     private fun initializePlayers() {
         createGoogleImaView()
         mInsideAdPlayer = InsideAdPlayer(context, this)
-        addView(mInsideAdPlayer)
+        // Add with centered layout params so player is centered in portrait/landscape
+        val playerParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+        playerParams.gravity = android.view.Gravity.CENTER
+        addView(mInsideAdPlayer, playerParams)
         mBannerAdsPlayer = BannerAdsPlayer(context, this)
         addView(mBannerAdsPlayer)
         mNativeAdsPlayer = NativeAdsPlayer(context, this)
