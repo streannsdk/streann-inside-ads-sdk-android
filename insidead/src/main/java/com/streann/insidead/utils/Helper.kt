@@ -167,7 +167,8 @@ object Helper {
         val displayMetrics = resources.displayMetrics
         val screenWidth = displayMetrics.widthPixels
         val screenHeight = displayMetrics.heightPixels
-        val aspectRatio = 9.0 / 16.0
+        // Use orientation-aware aspect ratio: 16:9 for landscape, 9:16 for portrait
+        val aspectRatio = if (isLandscape) 9.0 / 16.0 else 9.0 / 16.0
 
         val calculatedWidth: Int
         val calculatedHeight: Int
@@ -188,9 +189,19 @@ object Helper {
             }
 
             com.streann.insidead.InsideAdView.ResizeMode.FILL -> {
-                // Fill screen width, maintain aspect ratio
-                calculatedWidth = screenWidth
-                calculatedHeight = (screenWidth * aspectRatio).toInt()
+                // Fill screen while maintaining aspect ratio - choose dimension that fits
+                val widthBasedHeight = (screenWidth * aspectRatio).toInt()
+                val heightBasedWidth = (screenHeight / aspectRatio).toInt()
+
+                if (widthBasedHeight <= screenHeight) {
+                    // Width-based calculation fits - use full width
+                    calculatedWidth = screenWidth
+                    calculatedHeight = widthBasedHeight
+                } else {
+                    // Height-based calculation needed - use full height
+                    calculatedWidth = heightBasedWidth
+                    calculatedHeight = screenHeight
+                }
             }
 
             com.streann.insidead.InsideAdView.ResizeMode.ZOOM -> {
@@ -212,8 +223,32 @@ object Helper {
             }
         }
 
-        view?.layoutParams?.width = calculatedWidth
-        view?.layoutParams?.height = calculatedHeight
+        // Create new layout params with calculated dimensions and center gravity
+        val parentView = view?.parent
+        if (parentView is android.view.ViewGroup) {
+            val newParams = when (view.layoutParams) {
+                is android.widget.FrameLayout.LayoutParams -> {
+                    android.widget.FrameLayout.LayoutParams(calculatedWidth, calculatedHeight).apply {
+                        gravity = android.view.Gravity.CENTER
+                    }
+                }
+                else -> {
+                    // Fallback: modify existing params
+                    view.layoutParams.apply {
+                        width = calculatedWidth
+                        height = calculatedHeight
+                        (this as? android.widget.FrameLayout.LayoutParams)?.gravity = android.view.Gravity.CENTER
+                    }
+                }
+            }
+            view.layoutParams = newParams
+        } else {
+            // No parent, just modify existing params
+            view?.layoutParams?.width = calculatedWidth
+            view?.layoutParams?.height = calculatedHeight
+            (view?.layoutParams as? android.widget.FrameLayout.LayoutParams)?.gravity =
+                android.view.Gravity.CENTER
+        }
     }
 
 }

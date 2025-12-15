@@ -54,6 +54,26 @@
         app:layout_constraintTop_toBottomOf="@id/insideAdView" />
 
     <Button
+        android:id="@+id/prerollProductionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Preroll Production Mode"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/prerollActivityButton" />
+
+    <Button
+        android:id="@+id/playerProductionButton"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="20dp"
+        android:text="Player Production Mode"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/prerollProductionButton" />
+
+    <Button
         android:id="@+id/splitActivityButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
@@ -62,6 +82,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/prerollActivityButton" />
+        app:layout_constraintTop_toBottomOf="@id/playerProductionButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>
