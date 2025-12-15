@@ -76,6 +76,9 @@ class InsideAdPlayer(
             )
         )
 
+        // Size the parent container so overlay UI stays within bounds
+        sizePlayerContainer()
+
         if (bitmap != null) {
             showLocalImageAd(bitmap)
             setupGradientBackground()
@@ -95,13 +98,23 @@ class InsideAdPlayer(
         }
     }
 
+    private fun sizePlayerContainer() {
+        // Size the parent container (this InsideAdPlayer) instead of child views
+        // This ensures all overlay UI elements stay within the video bounds
+        post {
+            Helper.setViewSize(this, resources, InsideAdSdk.resizeMode)
+            // Request layout to ensure centering is applied
+            requestLayout()
+        }
+    }
+
     private fun showLocalImageAd(bitmap: Bitmap) {
         imageAdView?.visibility = VISIBLE
         surfaceView?.visibility = GONE
         setCloseButtonVisibility()
 
         imageAdView?.setImageBitmap(bitmap)
-        Helper.setViewSize(imageAdView, resources, InsideAdSdk.resizeMode)
+        // No need to size imageAdView - it will fill the parent which is already sized
 
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
@@ -119,8 +132,9 @@ class InsideAdPlayer(
         surfaceView = SurfaceView(context)
         surfaceView?.holder?.addCallback(this)
 
-        addView(surfaceView)
-        Helper.setViewSize(surfaceView, resources, InsideAdSdk.resizeMode)
+        // Make video fill the parent container (which is already properly sized)
+        val params = LayoutParams(MATCH_PARENT, MATCH_PARENT)
+        addView(surfaceView, params)
 
         imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
