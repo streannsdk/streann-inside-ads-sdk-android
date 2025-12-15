@@ -148,28 +148,68 @@ object Helper {
         return bannerAdSize?.getHeightInPixels(context)
     }
 
-    fun setViewSize(view: View?, resources: Resources) {
+    /**
+     * Sets the view size based on screen dimensions and resize mode.
+     *
+     * @param view The view to resize
+     * @param resources Resources for accessing display metrics
+     * @param resizeMode How to resize the view (null defaults to FIT for backward compatibility)
+     */
+    fun setViewSize(
+        view: View?,
+        resources: Resources,
+        resizeMode: com.streann.insidead.InsideAdView.ResizeMode? = null
+    ) {
+        val mode = resizeMode ?: com.streann.insidead.InsideAdView.ResizeMode.FIT
         val isLandscape =
             resources.configuration.orientation == Configuration.ORIENTATION_LANDSCAPE
 
         val displayMetrics = resources.displayMetrics
         val screenWidth = displayMetrics.widthPixels
+        val screenHeight = displayMetrics.heightPixels
         val aspectRatio = 9.0 / 16.0
 
         val calculatedWidth: Int
         val calculatedHeight: Int
 
-        if (isLandscape) {
-            val videoWidth = screenWidth / 2
-            val videoHeight = (videoWidth * aspectRatio).toInt()
+        when (mode) {
+            com.streann.insidead.InsideAdView.ResizeMode.FIT -> {
+                // Original behavior: split-screen in landscape, full width in portrait
+                if (isLandscape) {
+                    val videoWidth = screenWidth / 2
+                    val videoHeight = (videoWidth * aspectRatio).toInt()
+                    calculatedWidth = videoWidth
+                    calculatedHeight = videoHeight
+                } else {
+                    val videoHeight = (screenWidth * aspectRatio).toInt()
+                    calculatedWidth = screenWidth
+                    calculatedHeight = videoHeight
+                }
+            }
 
-            calculatedWidth = videoWidth
-            calculatedHeight = videoHeight
-        } else {
-            val videoHeight = (screenWidth * aspectRatio).toInt()
+            com.streann.insidead.InsideAdView.ResizeMode.FILL -> {
+                // Fill screen width, maintain aspect ratio
+                calculatedWidth = screenWidth
+                calculatedHeight = (screenWidth * aspectRatio).toInt()
+            }
 
-            calculatedWidth = screenWidth
-            calculatedHeight = videoHeight
+            com.streann.insidead.InsideAdView.ResizeMode.ZOOM -> {
+                // Fill entire screen (may crop)
+                calculatedWidth = screenWidth
+                calculatedHeight = screenHeight
+            }
+
+            com.streann.insidead.InsideAdView.ResizeMode.FIXED_WIDTH -> {
+                // Use full width, adjust height based on aspect ratio
+                calculatedWidth = screenWidth
+                calculatedHeight = (screenWidth * aspectRatio).toInt()
+            }
+
+            com.streann.insidead.InsideAdView.ResizeMode.FIXED_HEIGHT -> {
+                // Use full height, adjust width based on aspect ratio
+                calculatedHeight = screenHeight
+                calculatedWidth = (screenHeight / aspectRatio).toInt()
+            }
         }
 
         view?.layoutParams?.width = calculatedWidth
