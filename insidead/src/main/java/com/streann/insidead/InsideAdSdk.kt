@@ -16,6 +16,63 @@ object InsideAdSdk {
 
     internal const val LOG_TAG = "InsideAdSdk"
 
+    /**
+     * Enable debug mode to get verbose logging for troubleshooting.
+     * This includes detailed logs for:
+     * - Skip button lifecycle (VAST ads only)
+     * - Ad loading and playback
+     * - Configuration changes
+     * - Error handling
+     *
+     * WARNING: Only enable this in debug builds as it generates extensive logs.
+     */
+    var debugMode: Boolean = false
+
+    /**
+     * Internal helper for debug logging.
+     * Only logs if debugMode is enabled.
+     */
+    internal fun debugLog(tag: String, message: String) {
+        if (debugMode) {
+            Log.d("$LOG_TAG-$tag", message)
+        }
+    }
+
+    /**
+     * Internal helper for detailed skip button state logging.
+     * Only logs if debugMode is enabled.
+     */
+    internal fun logSkipButtonState(
+        event: String,
+        adName: String? = null,
+        adType: String? = null,
+        isSkippable: Boolean? = null,
+        skipOffsetSeconds: Int? = null,
+        adDuration: Float? = null,
+        currentTime: Float? = null,
+        additionalInfo: Map<String, Any?>? = null
+    ) {
+        if (!debugMode) return
+
+        val sb = StringBuilder()
+        sb.appendLine("╔═══════════════════════════════════════════════════════════╗")
+        sb.appendLine("║          SKIP BUTTON DEBUG - $event")
+        sb.appendLine("╠═══════════════════════════════════════════════════════════╣")
+        adName?.let { sb.appendLine("║ Ad Name: $it") }
+        adType?.let { sb.appendLine("║ Ad Type: $it") }
+        isSkippable?.let { sb.appendLine("║ Is Skippable: $it") }
+        skipOffsetSeconds?.let { sb.appendLine("║ Skip Offset: ${it}s") }
+        adDuration?.let { sb.appendLine("║ Ad Duration: ${it}s") }
+        currentTime?.let { sb.appendLine("║ Current Time: ${it}s") }
+
+        additionalInfo?.forEach { (key, value) ->
+            sb.appendLine("║ $key: $value")
+        }
+
+        sb.appendLine("╚═══════════════════════════════════════════════════════════╝")
+        Log.d("$LOG_TAG-SkipButton", sb.toString())
+    }
+
     internal var apiKey: String = ""
     internal var apiToken: String = ""
     internal var baseUrl: String = ""
@@ -34,6 +91,7 @@ object InsideAdSdk {
     internal var playerHeight: Int = 0
     internal var isAdMuted: Boolean? = false
     internal var targetingFilters: TargetingFilters? = null
+    internal var resizeMode: InsideAdView.ResizeMode? = null
 
     internal var geoIp: GeoIp? = null
 
@@ -43,6 +101,9 @@ object InsideAdSdk {
     // Temporary storage for regular ad parameters when preroll is active
     internal var savedIsAdMuted: Boolean? = null
     internal var savedTargetingFilters: TargetingFilters? = null
+
+    // Track active preroll ad request to enable cancellation
+    internal var activePrerollAdView: InsideAdView? = null
 
     internal var appPreferences: SharedPreferences? = null
 
@@ -157,6 +218,47 @@ object InsideAdSdk {
         return prerollAdCallback
     }
 
+    /**
+     * Removes the preroll ad callback completely.
+     * Call this when you no longer want to receive preroll ad events.
+     * This should typically be called in Activity/Fragment onDestroy() or onStop().
+     */
+    fun removePrerollAdCallback() {
+        Log.i(LOG_TAG, "removePrerollAdCallback")
+        prerollAdCallback = null
+    }
+
+    /**
+     * Cancels any ongoing preroll ad request.
+     * Stops pending handlers, clears callbacks, and cleans up resources.
+     * Safe to call even if no preroll ad is active.
+     */
+    fun cancelPrerollAdRequest() {
+        Log.i(LOG_TAG, "cancelPrerollAdRequest")
+        activePrerollAdView?.cancelAdRequest()
+        activePrerollAdView = null
+        prerollAdCallback = null
+
+        // Restore regular ad parameters if preroll was in progress
+        if (isPrerollMode) {
+            isAdMuted = savedIsAdMuted
+            targetingFilters = savedTargetingFilters
+            isPrerollMode = false
+            savedIsAdMuted = null
+            savedTargetingFilters = null
+        }
+    }
+
+    /**
+     * Removes the regular inside ad callback completely.
+     * Call this when you no longer want to receive ad events.
+     * This should typically be called in Activity/Fragment onDestroy() or onStop().
+     */
+    fun removeInsideAdCallback() {
+        Log.i(LOG_TAG, "removeInsideAdCallback")
+        insideAdCallback = null
+    }
+
     fun requestPrerollAd(
         context: android.content.Context,
         adContainer: com.streann.insidead.InsideAdView,
@@ -165,6 +267,7 @@ object InsideAdSdk {
         targetingFilters: TargetingFilters? = null
     ) {
         Log.i(LOG_TAG, "requestPrerollAd - screen: $screen")
+        activePrerollAdView = adContainer
         adContainer.requestPrerollAd(screen, isAdMuted, targetingFilters)
     }
 

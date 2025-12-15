@@ -50,7 +50,7 @@ class GoogleImaPlayer(
 
         videoPlayer = findViewById(R.id.videoView)
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
-        Helper.setViewSize(videoPlayerContainer, resources)
+        Helper.setViewSize(videoPlayerContainer, resources, InsideAdSdk.resizeMode)
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
         videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!)
@@ -94,6 +94,8 @@ class GoogleImaPlayer(
         adsLoader!!.addAdsLoadedListener { adsManagerLoadedEvent ->
             adsManager = adsManagerLoadedEvent.adsManager
 
+            InsideAdSdk.debugLog("GoogleIma", "Ads loaded - AdsManager created")
+
             adsManager?.addAdErrorListener { adErrorEvent ->
                 Log.e(InsideAdSdk.LOG_TAG, "Ad Error: " + adErrorEvent.error.message)
                 insideAdCallback?.insideAdError(adErrorEvent.error.message)
@@ -113,20 +115,58 @@ class GoogleImaPlayer(
                     Log.i(InsideAdSdk.LOG_TAG, "Event: " + adEvent.type)
                 }
 
+                // Debug logging for skip button related events
                 when (adEvent.type) {
-                    AdEventType.LOADED ->
+                    AdEventType.LOADED -> {
                         adsManager?.start()
+                        logVastAdDetails("LOADED")
+                    }
+
+                    AdEventType.STARTED -> {
+                        logVastAdDetails("STARTED")
+                    }
 
                     AdEventType.ALL_ADS_COMPLETED -> {
+                        InsideAdSdk.debugLog("GoogleIma", "All ads completed")
                         adsManager?.destroy()
                         adsManager = null
                     }
 
+                    AdEventType.SKIPPABLE_STATE_CHANGED -> {
+                        val currentAd = adsManager?.currentAd
+                        val isSkippable = currentAd?.isSkippable ?: false
+                        val skipTimeOffset = currentAd?.skipTimeOffset ?: 0.0
+
+                        InsideAdSdk.logSkipButtonState(
+                            event = "SKIPPABLE_STATE_CHANGED",
+                            adName = currentAd?.title ?: "Unknown",
+                            adType = "VAST",
+                            isSkippable = isSkippable,
+                            skipOffsetSeconds = skipTimeOffset.toInt(),
+                            adDuration = currentAd?.duration?.toFloat(),
+                            additionalInfo = mapOf(
+                                "Skip Button Should Show" to isSkippable,
+                                "Ad ID" to (currentAd?.adId ?: "Unknown"),
+                                "Ad System" to (currentAd?.adSystem ?: "Unknown")
+                            )
+                        )
+                    }
+
                     AdEventType.SKIPPED -> {
+                        val currentAd = adsManager?.currentAd
+                        InsideAdSdk.logSkipButtonState(
+                            event = "SKIPPED (User Clicked Skip)",
+                            adName = currentAd?.title ?: "Unknown",
+                            adType = "VAST",
+                            additionalInfo = mapOf(
+                                "Skip Action" to "User clicked skip button"
+                            )
+                        )
                         insideAdCallback?.insideAdSkipped()
                     }
 
                     AdEventType.CLICKED -> {
+                        InsideAdSdk.debugLog("GoogleIma", "Ad clicked")
                         insideAdCallback?.insideAdClicked()
                     }
 
@@ -196,6 +236,47 @@ class GoogleImaPlayer(
 
     fun stopAd() {
         videoAdPlayerAdapter?.stopAdPlaying()
+    }
+
+    /**
+     * Logs detailed VAST ad information for debugging skip button behavior.
+     * This helps identify why skip button may not appear.
+     */
+    private fun logVastAdDetails(event: String) {
+        if (!InsideAdSdk.debugMode) return
+
+        val currentAd = adsManager?.currentAd
+        if (currentAd == null) {
+            InsideAdSdk.debugLog("GoogleIma", "$event - No current ad available")
+            return
+        }
+
+        val isSkippable = currentAd.isSkippable
+        val skipTimeOffset = currentAd.skipTimeOffset
+        val duration = currentAd.duration
+        val adId = currentAd.adId
+        val title = currentAd.title
+        val adSystem = currentAd.adSystem
+
+        InsideAdSdk.logSkipButtonState(
+            event = "$event (VAST Ad Details)",
+            adName = title ?: "Unknown",
+            adType = "VAST",
+            isSkippable = isSkippable,
+            skipOffsetSeconds = skipTimeOffset.toInt(),
+            adDuration = duration.toFloat(),
+            additionalInfo = mapOf(
+                "Ad ID" to (adId ?: "Unknown"),
+                "Ad System" to (adSystem ?: "Unknown"),
+                "Is Linear" to currentAd.isLinear,
+                "Ad Pod Info" to "Pod ${currentAd.adPodInfo.podIndex + 1}/${currentAd.adPodInfo.totalAds}",
+                "Skip Button Note" to if (isSkippable) {
+                    "Skip button will appear after $skipTimeOffset seconds"
+                } else {
+                    "This ad is NOT skippable (no skipoffset in VAST)"
+                }
+            )
+        )
     }
 
 }

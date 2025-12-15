@@ -62,6 +62,20 @@ class InsideAdPlayer(
         showCloseButtonHandler = Handler(Looper.getMainLooper())
         closeImageAdHandler = Handler(Looper.getMainLooper())
 
+        // Important: Local video/image ads don't have skip buttons
+        // They only have a close button that appears after showCloseButtonAfterSeconds
+        InsideAdSdk.logSkipButtonState(
+            event = "LOCAL AD STARTED",
+            adName = ad.name ?: "Unknown",
+            adType = if (bitmap != null) "LOCAL_IMAGE" else "LOCAL_VIDEO",
+            isSkippable = false,
+            additionalInfo = mapOf(
+                "Skip Button Support" to "NOT SUPPORTED - Local ads only have close button",
+                "Close Button Delay" to "${InsideAdSdk.showCloseButtonAfterSeconds?.div(1000) ?: 0}s",
+                "Ad URL" to (ad.url ?: "N/A")
+            )
+        )
+
         if (bitmap != null) {
             showLocalImageAd(bitmap)
             setupGradientBackground()
@@ -87,7 +101,7 @@ class InsideAdPlayer(
         setCloseButtonVisibility()
 
         imageAdView?.setImageBitmap(bitmap)
-        Helper.setViewSize(imageAdView, resources)
+        Helper.setViewSize(imageAdView, resources, InsideAdSdk.resizeMode)
 
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
@@ -106,7 +120,7 @@ class InsideAdPlayer(
         surfaceView?.holder?.addCallback(this)
 
         addView(surfaceView)
-        Helper.setViewSize(surfaceView, resources)
+        Helper.setViewSize(surfaceView, resources, InsideAdSdk.resizeMode)
 
         imageAdView?.visibility = GONE
         surfaceView?.visibility = VISIBLE
@@ -247,17 +261,32 @@ class InsideAdPlayer(
         addView(adCloseButton, params)
 
         adCloseButton?.setOnClickListener {
+            InsideAdSdk.debugLog("InsideAdPlayer", "Close button clicked (NOT skip button)")
             stopAd()
         }
+
+        InsideAdSdk.debugLog(
+            "InsideAdPlayer",
+            "Close button created - Will appear after ${InsideAdSdk.showCloseButtonAfterSeconds?.div(1000) ?: 0}s"
+        )
     }
 
     private fun setCloseButtonVisibility() {
         if (!InsideAdSdk.showAdForReels) {
-            InsideAdSdk.showCloseButtonAfterSeconds?.let {
+            InsideAdSdk.showCloseButtonAfterSeconds?.let { delayMillis ->
                 showCloseButtonHandler?.postDelayed({
                     adCloseButton?.visibility = VISIBLE
-                }, it)
+                    InsideAdSdk.debugLog(
+                        "InsideAdPlayer",
+                        "Close button NOW VISIBLE after ${delayMillis / 1000}s (this is NOT a skip button)"
+                    )
+                }, delayMillis)
             }
+        } else {
+            InsideAdSdk.debugLog(
+                "InsideAdPlayer",
+                "Close button disabled for Reels ads"
+            )
         }
     }
 

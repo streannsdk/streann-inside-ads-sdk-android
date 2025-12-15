@@ -182,6 +182,11 @@ class PrerollActivity : AppCompatActivity() {
         regularAdView?.visibility = View.GONE
         contentView?.visibility = View.GONE
 
+        // IMPORTANT: Set resize mode BEFORE requesting ad for best results
+        // ResizeMode.FILL fills screen width (recommended for fullscreen landscape ads)
+        // Other options: FIT (default split-screen), ZOOM (crop to fill), FIXED_WIDTH, FIXED_HEIGHT
+        prerollAdView?.setResizeMode(InsideAdView.ResizeMode.FILL)
+
         // Request preroll ad for "Video Player" screen
         InsideAdSdk.requestPrerollAd(
             context = this,
@@ -251,5 +256,21 @@ class PrerollActivity : AppCompatActivity() {
 
         regularAdView?.layoutParams = layoutParams
         regularAdView?.visibility = View.VISIBLE
+    }
+
+    override fun onDestroy() {
+        super.onDestroy()
+        Log.d(TAG, "onDestroy - Cleaning up callbacks and canceling ad requests")
+
+        // IMPORTANT: Cancel preroll ad request and remove callback
+        // This prevents callbacks from firing after the activity is destroyed
+        InsideAdSdk.cancelPrerollAdRequest()
+
+        // Also remove regular ad callback
+        InsideAdSdk.removeInsideAdCallback()
+
+        // Cancel any ongoing ad requests in the ad views
+        prerollAdView?.cancelAdRequest()
+        regularAdView?.cancelAdRequest()
     }
 }

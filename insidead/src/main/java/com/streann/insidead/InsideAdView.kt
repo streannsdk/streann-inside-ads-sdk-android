@@ -34,6 +34,41 @@ class InsideAdView @JvmOverloads constructor(
     defStyle: Int = 0
 ) : FrameLayout(context, attrs, defStyle), InsideAdProgressCallback {
 
+    /**
+     * Defines how the video player should resize to fill the available space.
+     */
+    enum class ResizeMode {
+        /**
+         * Maintain aspect ratio with letterboxing if needed (default behavior for split-screen).
+         * In landscape, video width is half of screen width.
+         */
+        FIT,
+
+        /**
+         * Fill entire screen width while maintaining aspect ratio.
+         * Recommended for fullscreen ads in landscape orientation.
+         */
+        FILL,
+
+        /**
+         * Crop video to fill entire view (may cut off edges).
+         * Best for fullscreen immersive experiences.
+         */
+        ZOOM,
+
+        /**
+         * Use full screen width, adjust height to maintain aspect ratio.
+         * Good for landscape fullscreen ads.
+         */
+        FIXED_WIDTH,
+
+        /**
+         * Use full screen height, adjust width to maintain aspect ratio.
+         * Good for portrait fullscreen ads.
+         */
+        FIXED_HEIGHT
+    }
+
     private var mInsideAdPlayer: InsideAdPlayer? = null
     private var mGoogleImaPlayer: GoogleImaPlayer? = null
     private var mBannerAdsPlayer: BannerAdsPlayer? = null
@@ -56,6 +91,9 @@ class InsideAdView @JvmOverloads constructor(
     private val maxRetries = 3
     private val retryDelayMillis = 3000L
     private var retryRequestHandler: Handler? = null
+
+    // Store the resize mode preference
+    private var resizeMode: ResizeMode = ResizeMode.FIT
 
     init {
         init()
@@ -196,6 +234,10 @@ class InsideAdView @JvmOverloads constructor(
                 insideAdCallback?.insideAdError(errorMsg)
                 if (InsideAdSdk.isPrerollMode) {
                     restoreRegularAdParameters()
+                    // Clear active preroll ad view reference
+                    if (InsideAdSdk.activePrerollAdView == this) {
+                        InsideAdSdk.activePrerollAdView = null
+                    }
                 }
             }
         } else {
@@ -203,6 +245,10 @@ class InsideAdView @JvmOverloads constructor(
             insideAdCallback?.insideAdError(errorMsg)
             if (InsideAdSdk.isPrerollMode) {
                 restoreRegularAdParameters()
+                // Clear active preroll ad view reference
+                if (InsideAdSdk.activePrerollAdView == this) {
+                    InsideAdSdk.activePrerollAdView = null
+                }
             }
         }
     }
@@ -233,6 +279,10 @@ class InsideAdView @JvmOverloads constructor(
                     Log.w(InsideAdSdk.LOG_TAG, errorMsg)
                     callback.insideAdError(errorMsg)
                     restoreRegularAdParameters()
+                    // Clear active preroll ad view reference
+                    if (InsideAdSdk.activePrerollAdView == this) {
+                        InsideAdSdk.activePrerollAdView = null
+                    }
                 }
             }
         }
@@ -252,6 +302,19 @@ class InsideAdView @JvmOverloads constructor(
         } else {
             InsideAdSdk.startAfterSeconds ?: 0
         }
+
+        // Log which ad type is being shown and its skip button support
+        val skipButtonSupport = when (insideAd.adType) {
+            AdType.VAST.value -> "YES - Google IMA SDK controls skip button based on VAST XML skipoffset"
+            AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> "NO - Only close button available"
+            AdType.BANNER.value, AdType.FULLSCREEN_NATIVE.value -> "N/A - Not applicable for this ad type"
+            else -> "UNKNOWN"
+        }
+
+        InsideAdSdk.debugLog(
+            "InsideAdView",
+            "Showing ${insideAd.adType} ad: ${insideAd.name} | Skip Button Support: $skipButtonSupport"
+        )
 
         when (insideAd.adType) {
             AdType.VAST.value ->
@@ -375,12 +438,84 @@ class InsideAdView @JvmOverloads constructor(
         }
     }
 
+    /**
+     * Cancels any ongoing ad request and clears all pending handlers.
+     * Safe to call even if no ad request is active.
+     * This should be called when the containing Activity/Fragment is destroyed.
+     */
+    fun cancelAdRequest() {
+        Log.i(InsideAdSdk.LOG_TAG, "cancelAdRequest")
+
+        // Cancel all pending handlers
+        retryRequestHandler?.removeCallbacksAndMessages(null)
+        retryRequestHandler = null
+
+        showAdHandler?.removeCallbacksAndMessages(null)
+        showAdHandler = null
+
+        adIntervalHandler?.removeCallbacksAndMessages(null)
+        adIntervalHandler = null
+
+        // Stop any playing ad
+        stopAd()
+
+        // Clear callback reference to prevent firing on destroyed activity
+        insideAdCallback = null
+
+        // Reset retry count
+        retryCount = 0
+
+        // Restore regular ad parameters if in preroll mode
+        if (InsideAdSdk.isPrerollMode) {
+            restoreRegularAdParameters()
+        }
+
+        // Clear active preroll ad view reference
+        if (InsideAdSdk.activePrerollAdView == this) {
+            InsideAdSdk.activePrerollAdView = null
+        }
+    }
+
+    /**
+     * Sets how the video player should resize to fill the available space.
+     * This affects how the internal video player calculates its dimensions.
+     *
+     * @param mode The resize mode to use. Defaults to FIT.
+     *
+     * Common usage:
+     * - ResizeMode.FIT - Default, maintains aspect ratio with letterboxing
+     * - ResizeMode.FILL - Fills screen width, recommended for fullscreen landscape ads
+     * - ResizeMode.ZOOM - Crops to fill entire view
+     * - ResizeMode.FIXED_WIDTH - Uses full width, adjusts height
+     * - ResizeMode.FIXED_HEIGHT - Uses full height, adjusts width
+     *
+     * Note: Call this BEFORE requestAd() or requestPrerollAd() for best results.
+     * If called after ad is loaded, it will apply to the next ad.
+     */
+    fun setResizeMode(mode: ResizeMode) {
+        Log.i(InsideAdSdk.LOG_TAG, "setResizeMode: $mode")
+        this.resizeMode = mode
+        InsideAdSdk.resizeMode = mode
+    }
+
+    /**
+     * Gets the current resize mode.
+     * @return The current ResizeMode
+     */
+    fun getResizeMode(): ResizeMode {
+        return resizeMode
+    }
+
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
 
         if (InsideAdSdk.isPrerollMode) {
             restoreRegularAdParameters()
+            // Clear active preroll ad view reference
+            if (InsideAdSdk.activePrerollAdView == this) {
+                InsideAdSdk.activePrerollAdView = null
+            }
             return
         }
 
@@ -401,6 +536,10 @@ class InsideAdView @JvmOverloads constructor(
         if (InsideAdSdk.isPrerollMode) {
             Log.i(InsideAdSdk.LOG_TAG, "Preroll mode: skipping fallback ad")
             restoreRegularAdParameters()
+            // Clear active preroll ad view reference
+            if (InsideAdSdk.activePrerollAdView == this) {
+                InsideAdSdk.activePrerollAdView = null
+            }
             return
         }
 
