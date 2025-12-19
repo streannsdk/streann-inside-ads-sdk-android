@@ -27,7 +27,9 @@
 
         <activity android:name=".SplitActivity" />
 
-        <activity android:name=".PrerollActivity" />
+        <activity
+            android:name=".PrerollActivity"
+            android:configChanges="orientation|screenSize" />
 
         <activity android:name=".PrerollProductionActivity" />
 
