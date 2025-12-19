@@ -1,5 +1,6 @@
 package com.streann.insidead.demo
 
+import android.content.res.Configuration
 import android.os.Bundle
 import android.util.Log
 import android.view.View
@@ -256,6 +257,24 @@ class PrerollActivity : AppCompatActivity() {
 
         regularAdView?.layoutParams = layoutParams
         regularAdView?.visibility = View.VISIBLE
+    }
+
+    override fun onConfigurationChanged(newConfig: Configuration) {
+        super.onConfigurationChanged(newConfig)
+
+        Log.d(TAG, "onConfigurationChanged - Orientation: ${newConfig.orientation}")
+
+        // When orientation changes, re-apply layout params for visible ad views
+        // This ensures the ConstraintLayout.LayoutParams are updated for the new orientation
+        if (prerollAdView?.visibility == View.VISIBLE) {
+            Log.d(TAG, "Updating preroll ad view layout params for new orientation")
+            setPrerollAdViewLayoutParams()
+        }
+
+        if (regularAdView?.visibility == View.VISIBLE) {
+            Log.d(TAG, "Updating regular ad view layout params for new orientation")
+            setRegularAdViewLayoutParams()
+        }
     }
 
     override fun onDestroy() {
