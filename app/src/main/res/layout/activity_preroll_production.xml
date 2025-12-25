@@ -4,11 +4,12 @@
     android:layout_height="match_parent"
     android:background="@android:color/black">
 
-    <com.streann.insidead.InsideAdView
-        android:id="@+id/prerollAdView"
+    <!-- Container for dynamically created InsideAdView -->
+    <!-- InsideAdView is created programmatically in showPrerollAd() -->
+    <FrameLayout
+        android:id="@+id/prerollAdContainer"
         android:layout_width="match_parent"
-        android:layout_height="match_parent"
-        android:visibility="gone"/>
+        android:layout_height="match_parent" />
 
     <ProgressBar
         android:id="@+id/loadingProgressBar"
