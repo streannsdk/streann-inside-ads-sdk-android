@@ -53,12 +53,6 @@ class InsideAdView @JvmOverloads constructor(
         FILL,
 
         /**
-         * Crop video to fill entire view (may cut off edges).
-         * Best for fullscreen immersive experiences.
-         */
-        ZOOM,
-
-        /**
          * Use full screen width, adjust height to maintain aspect ratio.
          * Good for landscape fullscreen ads.
          */
@@ -500,7 +494,6 @@ class InsideAdView @JvmOverloads constructor(
      * Common usage:
      * - ResizeMode.FIT - Default, maintains aspect ratio with letterboxing
      * - ResizeMode.FILL - Fills screen width, recommended for fullscreen landscape ads
-     * - ResizeMode.ZOOM - Crops to fill entire view
      * - ResizeMode.FIXED_WIDTH - Uses full width, adjusts height
      * - ResizeMode.FIXED_HEIGHT - Uses full height, adjusts width
      *
