@@ -204,12 +204,6 @@ object Helper {
                 }
             }
 
-            com.streann.insidead.InsideAdView.ResizeMode.ZOOM -> {
-                // Fill entire screen (may crop)
-                calculatedWidth = screenWidth
-                calculatedHeight = screenHeight
-            }
-
             com.streann.insidead.InsideAdView.ResizeMode.FIXED_WIDTH -> {
                 // Use full width, adjust height based on aspect ratio
                 calculatedWidth = screenWidth

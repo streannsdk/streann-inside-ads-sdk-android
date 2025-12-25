@@ -289,6 +289,71 @@ You can use preroll ads and regular ads together in the same screen:
 
 Regular ads requested with `requestAd()` will automatically exclude preroll ads and work with intervals as usual.
 
+## Advanced Features
+
+**Debug Mode**
+
+Enable debug mode to troubleshoot skip/close button issues and get detailed logs:
+
+```kotlin
+// Enable in your Application class or Activity
+InsideAdSdk.debugMode = true
+
+// Or conditionally enable for debug builds only
+if (BuildConfig.DEBUG) {
+    InsideAdSdk.debugMode = true
+}
+```
+
+Debug mode provides verbose logging for:
+- Skip button lifecycle (VAST ads only)
+- Ad loading and playback
+- Configuration changes
+- Error handling
+
+**Video Player Resize Modes**
+
+Control how fullscreen landscape ads are displayed using resize modes. Call `setResizeMode()` BEFORE requesting the ad:
+
+```kotlin
+// Set resize mode before requesting ad
+insideAdView.setResizeMode(InsideAdView.ResizeMode.FILL)
+
+// Then request the ad
+insideAdView.requestAd(screen = "Video Player")
+```
+
+Available resize modes:
+- `FIT` - Default, maintains aspect ratio with letterboxing
+- `FILL` - Fills screen width while maintaining aspect ratio (recommended for fullscreen landscape ads)
+- `FIXED_WIDTH` - Uses full screen width, adjusts height to maintain aspect ratio
+- `FIXED_HEIGHT` - Uses full screen height, adjusts width to maintain aspect ratio
+
+**Callback Lifecycle Management**
+
+Always clean up callbacks in your Activity/Fragment `onDestroy()` to prevent memory leaks and crashes:
+
+```kotlin
+override fun onDestroy() {
+    super.onDestroy()
+
+    // Clean up preroll ad callbacks and requests
+    InsideAdSdk.cancelPrerollAdRequest()  // Cancels request + removes callback
+
+    // Clean up regular ad callbacks
+    InsideAdSdk.removeInsideAdCallback()
+
+    // Cancel view-level handlers
+    insideAdView?.cancelAdRequest()
+}
+```
+
+Available cleanup methods:
+- `cancelPrerollAdRequest()` - Cancels ongoing preroll request and removes callback
+- `removePrerollAdCallback()` - Only removes preroll callback without canceling request
+- `removeInsideAdCallback()` - Removes regular ad callback
+- `cancelAdRequest()` (on view) - Cancels view-level ad request handlers
+
 ## Sample App
 
 You can check out our InsideAdDemo App to see the InsideAdView and PrerollActivity in action.
