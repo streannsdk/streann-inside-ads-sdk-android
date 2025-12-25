@@ -13,7 +13,6 @@ import com.streann.insidead.InsideAdView
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.TargetingFilters
-import com.streann.insidead.utils.enums.AdType
 
 class PrerollActivity : AppCompatActivity() {
 
@@ -224,36 +223,24 @@ class PrerollActivity : AppCompatActivity() {
     }
 
     private fun setPrerollAdViewLayoutParams() {
-        val layoutParams =
-            if (prerollAd?.adType == AdType.FULLSCREEN_NATIVE.value) {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.MATCH_PARENT
-                )
-            } else {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
+        // Always use MATCH_PARENT for both width and height to ensure proper centering
+        // The resize mode (FILL/FIT) will handle aspect ratio and sizing internally
+        val layoutParams = ConstraintLayout.LayoutParams(
+            ConstraintLayout.LayoutParams.MATCH_PARENT,
+            ConstraintLayout.LayoutParams.MATCH_PARENT
+        )
 
         prerollAdView?.layoutParams = layoutParams
         prerollAdView?.visibility = View.VISIBLE
     }
 
     private fun setRegularAdViewLayoutParams() {
-        val layoutParams =
-            if (regularAd?.adType == AdType.FULLSCREEN_NATIVE.value) {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.MATCH_PARENT
-                )
-            } else {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.WRAP_CONTENT
-                )
-            }
+        // Always use MATCH_PARENT for both width and height to ensure proper centering
+        // The resize mode (FILL/FIT) will handle aspect ratio and sizing internally
+        val layoutParams = ConstraintLayout.LayoutParams(
+            ConstraintLayout.LayoutParams.MATCH_PARENT,
+            ConstraintLayout.LayoutParams.MATCH_PARENT
+        )
 
         regularAdView?.layoutParams = layoutParams
         regularAdView?.visibility = View.VISIBLE
