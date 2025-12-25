@@ -31,7 +31,6 @@ class MainActivity : AppCompatActivity() {
 
         val adProgressText = findViewById<TextView>(R.id.adProgressText)
         val adStopText = findViewById<TextView>(R.id.adStopText)
-        val prerollActivityButton = findViewById<Button>(R.id.prerollActivityButton)
         val prerollProductionButton = findViewById<Button>(R.id.prerollProductionButton)
         val playerProductionButton = findViewById<Button>(R.id.playerProductionButton)
         val splitActivityButton = findViewById<Button>(R.id.splitActivityButton)
@@ -46,7 +45,6 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "insideAdLoaded")
                 adProgressText.text = ""
                 adStopText.visibility = View.VISIBLE
-                prerollActivityButton.visibility = View.GONE
                 prerollProductionButton.visibility = View.GONE
                 playerProductionButton.visibility = View.GONE
                 splitActivityButton.visibility = View.GONE
@@ -63,7 +61,6 @@ class MainActivity : AppCompatActivity() {
                 Log.i(TAG, "insideAdStop")
                 adStopText.visibility = View.GONE
                 mInsideAdView?.visibility = View.GONE
-                prerollActivityButton.visibility = View.VISIBLE
                 prerollProductionButton.visibility = View.VISIBLE
                 playerProductionButton.visibility = View.VISIBLE
                 splitActivityButton.visibility = View.VISIBLE
@@ -94,11 +91,6 @@ class MainActivity : AppCompatActivity() {
 
         adStopText.setOnClickListener {
             mInsideAdView?.stopAd()
-        }
-
-        prerollActivityButton?.setOnClickListener {
-            val intent = Intent(this, PrerollActivity::class.java)
-            this.startActivity(intent)
         }
 
         prerollProductionButton?.setOnClickListener {

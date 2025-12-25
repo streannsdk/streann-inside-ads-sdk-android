@@ -384,18 +384,11 @@ class InsideAdView @JvmOverloads constructor(
     private fun createGoogleImaView() {
         if (mGoogleImaPlayer == null) {
             mGoogleImaPlayer = GoogleImaPlayer(context, this)
-            addView(mGoogleImaPlayer)
-
-            // Ensure newly created GoogleImaPlayer uses current orientation dimensions
-            post {
-                mGoogleImaPlayer?.let { player ->
-                    val videoPlayerContainer = player.findViewById<ViewGroup>(R.id.videoPlayerContainer)
-                    videoPlayerContainer?.let {
-                        Helper.setViewSize(it, resources, InsideAdSdk.resizeMode)
-                        it.requestLayout()
-                    }
-                }
-            }
+            // Add with centered layout params so player is centered in portrait/landscape
+            val playerParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
+            playerParams.gravity = android.view.Gravity.CENTER
+            addView(mGoogleImaPlayer, playerParams)
+            // Sizing is handled in GoogleImaPlayer.init()
         }
     }
 
@@ -616,23 +609,14 @@ class InsideAdView @JvmOverloads constructor(
      */
     private fun resizeGoogleImaPlayer() {
         mGoogleImaPlayer?.let { player ->
-            // Find the videoPlayerContainer (R.id.videoPlayerContainer)
-            val videoPlayerContainer = player.findViewById<ViewGroup>(R.id.videoPlayerContainer)
+            // Size the GoogleImaPlayer itself (FrameLayout) for proper centering
+            Helper.setViewSize(player, resources, InsideAdSdk.resizeMode)
+            player.requestLayout()
 
-            if (videoPlayerContainer != null) {
-                Helper.setViewSize(videoPlayerContainer, resources, InsideAdSdk.resizeMode)
-                videoPlayerContainer.requestLayout()
-
-                InsideAdSdk.debugLog(
-                    "InsideAdView",
-                    "GoogleImaPlayer resized - videoPlayerContainer dimensions updated"
-                )
-            } else {
-                Log.w(
-                    InsideAdSdk.LOG_TAG,
-                    "Cannot resize GoogleImaPlayer - videoPlayerContainer not found"
-                )
-            }
+            InsideAdSdk.debugLog(
+                "InsideAdView",
+                "GoogleImaPlayer resized - dimensions updated"
+            )
         }
     }
 
