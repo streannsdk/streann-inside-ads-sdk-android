@@ -189,7 +189,6 @@ class PrerollActivity : AppCompatActivity() {
 |------|----------|----------|
 | `FIT` | Maintains aspect ratio with letterboxing<br>Landscape: Uses half screen width | Split-screen ads (default) |
 | `FILL` | Fills screen width, maintains aspect ratio | **Fullscreen landscape ads** (recommended) |
-| `ZOOM` | Crops to fill entire screen | Immersive fullscreen experiences |
 | `FIXED_WIDTH` | Uses full width, adjusts height | Landscape fullscreen ads |
 | `FIXED_HEIGHT` | Uses full height, adjusts width | Portrait fullscreen ads |
 
@@ -802,7 +801,6 @@ view.cancelAdRequest()                 // Cancel view-level handlers
 ```kotlin
 setResizeMode(InsideAdView.ResizeMode.FIT)          // Default, letterbox
 setResizeMode(InsideAdView.ResizeMode.FILL)         // Fill width (recommended)
-setResizeMode(InsideAdView.ResizeMode.ZOOM)         // Crop to fill
 setResizeMode(InsideAdView.ResizeMode.FIXED_WIDTH)  // Full width
 setResizeMode(InsideAdView.ResizeMode.FIXED_HEIGHT) // Full height
 ```
