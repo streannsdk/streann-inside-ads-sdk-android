@@ -63,11 +63,11 @@ class NativeAdsPlayer(
 
         val builder = AdLoader.Builder(context, adUrl)
 
-        InsideAdSdk.isAdMuted?.let {
-            val videoOptions = VideoOptions.Builder().setStartMuted(it).build()
-            val adOptions = NativeAdOptions.Builder().setVideoOptions(videoOptions).build()
-            builder.withNativeAdOptions(adOptions)
-        }
+        // Defensive: default to muted (true) if isAdMuted is null
+        val isMuted = InsideAdSdk.isAdMuted ?: true
+        val videoOptions = VideoOptions.Builder().setStartMuted(isMuted).build()
+        val adOptions = NativeAdOptions.Builder().setVideoOptions(videoOptions).build()
+        builder.withNativeAdOptions(adOptions)
 
         builder.forNativeAd { nativeAd ->
             this.nativeAd = nativeAd

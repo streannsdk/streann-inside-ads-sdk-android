@@ -89,7 +89,7 @@ object InsideAdSdk {
     internal var adLimitTracking: Int? = 0
     internal var playerWidth: Int = 0
     internal var playerHeight: Int = 0
-    internal var isAdMuted: Boolean? = false
+    internal var isAdMuted: Boolean? = true
     internal var targetingFilters: TargetingFilters? = null
     internal var resizeMode: InsideAdView.ResizeMode? = null
 
@@ -261,9 +261,9 @@ object InsideAdSdk {
 
     fun requestPrerollAd(
         context: android.content.Context,
-        adContainer: com.streann.insidead.InsideAdView,
+        adContainer: InsideAdView,
         screen: String = "",
-        isAdMuted: Boolean? = false,
+        isAdMuted: Boolean? = true,
         targetingFilters: TargetingFilters? = null
     ) {
         Log.i(LOG_TAG, "requestPrerollAd - screen: $screen")

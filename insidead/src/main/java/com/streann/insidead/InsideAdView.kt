@@ -94,6 +94,10 @@ class InsideAdView @JvmOverloads constructor(
     // Track current orientation to detect changes
     private var currentOrientation: Int = 0
 
+    // Store per-instance ad parameters to prevent race conditions with global state
+    private var instanceIsAdMuted: Boolean? = true
+    private var instanceTargetingFilters: TargetingFilters? = null
+
     init {
         init()
     }
@@ -159,14 +163,15 @@ class InsideAdView @JvmOverloads constructor(
 
     fun requestAd(
         screen: String,
-        isAdMuted: Boolean? = false,
+        isAdMuted: Boolean? = true,
         targetingFilters: TargetingFilters? = null
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "requestAd")
         retryRequestHandler = Handler(Looper.getMainLooper())
 
-        InsideAdSdk.isAdMuted = isAdMuted
-        InsideAdSdk.targetingFilters = targetingFilters
+        // Store in instance variables to prevent race conditions
+        this.instanceIsAdMuted = isAdMuted
+        this.instanceTargetingFilters = targetingFilters
         this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
 
@@ -185,19 +190,21 @@ class InsideAdView @JvmOverloads constructor(
 
     internal fun requestPrerollAd(
         screen: String,
-        isAdMuted: Boolean? = false,
+        isAdMuted: Boolean? = true,
         targetingFilters: TargetingFilters? = null
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "requestPrerollAd")
         retryRequestHandler = Handler(Looper.getMainLooper())
 
+        // Store in instance variables to prevent race conditions
+        this.instanceIsAdMuted = isAdMuted
+        this.instanceTargetingFilters = targetingFilters
+
         // Save current regular ad parameters and temporarily replace with preroll values
         InsideAdSdk.savedIsAdMuted = InsideAdSdk.isAdMuted
         InsideAdSdk.savedTargetingFilters = InsideAdSdk.targetingFilters
 
-        // Set preroll values to global parameters (players will read these)
-        InsideAdSdk.isAdMuted = isAdMuted
-        InsideAdSdk.targetingFilters = targetingFilters
+        // Set preroll flag (actual values will be written to global in showAd)
         InsideAdSdk.isPrerollMode = true
         this.insideAdCallback = InsideAdSdk.getPrerollAdCallback()
         this.screen = screen
@@ -214,8 +221,8 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     private fun restoreRegularAdParameters() {
-        // Restore original regular ad parameters
-        InsideAdSdk.isAdMuted = InsideAdSdk.savedIsAdMuted
+        // Restore original regular ad parameters (default to muted/true if saved value was null)
+        InsideAdSdk.isAdMuted = InsideAdSdk.savedIsAdMuted ?: true
         InsideAdSdk.targetingFilters = InsideAdSdk.savedTargetingFilters
         InsideAdSdk.isPrerollMode = false
 
@@ -301,6 +308,11 @@ class InsideAdView @JvmOverloads constructor(
         adIntervalHandler?.removeCallbacksAndMessages(null)
         adIntervalHandler = null
 
+        // Write instance values to global state immediately before player reads them
+        // This minimizes the race window to just milliseconds
+        InsideAdSdk.isAdMuted = this.instanceIsAdMuted
+        InsideAdSdk.targetingFilters = this.instanceTargetingFilters
+
         showAdHandler = Handler(Looper.getMainLooper())
         val delayMillis = if (InsideAdSdk.isPrerollMode || InsideAdSdk.showAdForReels) {
             0
@@ -318,7 +330,7 @@ class InsideAdView @JvmOverloads constructor(
 
         InsideAdSdk.debugLog(
             "InsideAdView",
-            "Showing ${insideAd.adType} ad: ${insideAd.name} | Skip Button Support: $skipButtonSupport"
+            "Showing ${insideAd.adType} ad: ${insideAd.name} | Skip Button Support: $skipButtonSupport | Muted: ${this.instanceIsAdMuted}"
         )
 
         when (insideAd.adType) {

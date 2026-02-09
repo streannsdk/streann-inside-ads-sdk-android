@@ -316,12 +316,15 @@ class InsideAdPlayer(
     }
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
-        adSoundPlaying = if (InsideAdSdk.isAdMuted == true) {
-            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
-            false
-        } else {
+        // Defensive: explicitly check for false, default to muted if null/true
+        adSoundPlaying = if (InsideAdSdk.isAdMuted == false) {
+            // Only unmute if explicitly set to false
             setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true
+        } else {
+            // Default to muted (sound off) if isAdMuted is null or true
+            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
+            false
         }
 
         adVolumeButton?.setOnClickListener {
