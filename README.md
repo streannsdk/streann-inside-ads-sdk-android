@@ -117,34 +117,34 @@ To use the SplitInsideAdView in your project, follow these steps:
 
 - Show split screen with your content and ad view:
 
-    ```kotlin 
+    ```kotlin
     splitInsideAdView.showSplitScreen(
         userView = yourContentView, ,
         parentView = findViewById(android.R.id.content),
         screen = "",
-        isAdMuted = false,
+        isAdMuted = true,
         isInsideAdAbove = false,
         insideAdCallback = object : InsideAdCallback {
             override fun insideAdReceived(insideAd: InsideAd) {}
-    
+
             override fun insideAdLoaded() {}
-    
+
             override fun insideAdPlay() {}
-    
+
             override fun insideAdStop() {}
-    
+
             override fun insideAdSkipped() {}
-    
+
             override fun insideAdClicked() {}
-    
+
             override fun insideAdError(error: String) {}
-    
+
             override fun insideAdVolumeChanged(level: Int) {}
         })
-    
+
     -userView - this parameter represents the content or view that the user wants to display in the split screen
     -screen - enter one of the following screens: Splash or Video Player
-    -isAdMuted - choose if you want your ad to be muted or not(optional parameter, default value: false)
+    -isAdMuted - choose if you want your ad to be muted or not(optional parameter, default value: true)
     -isInsideAdAbove - set to true if you want the ad above the content(optional parameter, default value: false)
     
     -InsideAdCallback - implement our interface to receive events from the ads ' progress
@@ -202,9 +202,9 @@ To use InsideAdView in your project, follow these steps:
       screen = "",
       isAdMuted = true
     )
-  
+
   - screen - enter one of the following screens: Splash or Video Player
-  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: false)
+  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default value: true)
     ```
 
 - To stop the ad while it's playing:
@@ -268,14 +268,14 @@ To use preroll ads in your project, follow these steps:
     context = this,
     adContainer = prerollAdView,
     screen = "Video Player",
-    isAdMuted = false,  // Optional, default: false
+    isAdMuted = true,  // Optional, default: true
     targetingFilters = null  // Optional, for content targeting
   )
 
   - context - your activity or context
   - adContainer - the InsideAdView that will display the preroll ad
   - screen - enter one of the following screens: Splash or Video Player
-  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default: false)
+  - isAdMuted - choose if you want your ad to be muted or not (optional parameter, default: true)
   - targetingFilters - optional targeting filters for content-specific ads
   ```
 

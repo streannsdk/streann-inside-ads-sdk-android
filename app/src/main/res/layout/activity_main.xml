@@ -43,22 +43,35 @@
         android:visibility="gone"
         app:layout_constraintTop_toBottomOf="@+id/adStopText" />
 
+    <TextView
+        android:id="@+id/mainActivityTitle"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="30dp"
+        android:text="Main: Regular Ad (Splash Screen, Muted)"
+        android:textColor="@color/white"
+        android:textSize="16sp"
+        android:textStyle="bold"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/insideAdView" />
+
     <Button
         android:id="@+id/prerollActivityButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="30dp"
-        android:text="Open Preroll Demo"
+        android:layout_marginTop="20dp"
+        android:text="Test: Preroll → Content → Regular Ad"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/insideAdView" />
+        app:layout_constraintTop_toBottomOf="@id/mainActivityTitle" />
 
     <Button
         android:id="@+id/prerollProductionButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Preroll Production Mode"
+        android:text="Test: Preroll Ad Only (Production)"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/prerollActivityButton" />
@@ -68,7 +81,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Player Production Mode"
+        android:text="Test: Regular Ad Split-Screen"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/prerollProductionButton" />
@@ -78,7 +91,7 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Open Split View"
+        android:text="Test: Split-Screen Ad Demo"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
