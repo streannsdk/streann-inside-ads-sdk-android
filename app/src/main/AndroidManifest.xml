@@ -27,13 +27,11 @@
 
         <activity android:name=".SplitActivity" />
 
-        <activity
-            android:name=".PrerollActivity"
+        <activity android:name=".PrerollProductionActivity"
             android:configChanges="orientation|screenSize" />
 
-        <activity android:name=".PrerollProductionActivity" />
-
-        <activity android:name=".PlayerProductionActivity" />
+        <activity android:name=".PlayerProductionActivity"
+            android:configChanges="orientation|screenSize" />
 
         <meta-data
             android:name="com.google.android.gms.ads.APPLICATION_ID"

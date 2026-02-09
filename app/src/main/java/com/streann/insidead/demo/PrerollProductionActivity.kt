@@ -22,26 +22,27 @@ import com.streann.insidead.models.TargetingFilters
  * This demonstrates the exact flow used in production:
  * 1. Show loading indicator
  * 2. Request preroll ad with timeout safety
- * 3. Set layout to MATCH_PARENT when ad loads
+ * 3. Create dynamic InsideAdView when ad is received
  * 4. Use FILL resize mode for proper fullscreen display
  * 5. Open next screen (simulated content) when ad completes
- * 6. Handle all error cases and cleanup properly
+ * 6. Handle all error cases and cleanup properly with re-entrancy protection
  */
 class PrerollProductionActivity : AppCompatActivity() {
 
     private val TAG = "PrerollProduction"
-    private lateinit var prerollAdView: InsideAdView
+    private lateinit var prerollAdContainer: FrameLayout
     private lateinit var loadingProgressBar: ProgressBar
     private var hasOpenedNextScreen = false
     private var timeoutHandler: Handler? = null
-    private var prerollAd: InsideAd? = null
+    private var dynamicPrerollAdView: InsideAdView? = null
+    private var isCleaningUpPrerollAd: Boolean = false
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "onCreate - Starting PrerollProductionActivity")
         setContentView(R.layout.activity_preroll_production)
 
-        prerollAdView = findViewById(R.id.prerollAdView)
+        prerollAdContainer = findViewById(R.id.prerollAdContainer)
         loadingProgressBar = findViewById(R.id.loadingProgressBar)
 
         // Setup back button handler to prevent going back during ad
@@ -51,35 +52,57 @@ class PrerollProductionActivity : AppCompatActivity() {
             }
         })
 
+        showPrerollAd()
+    }
+
+    private fun showPrerollAd() {
+        Log.i(TAG, "showPrerollAd: showing preroll ad overlay")
+
+        // Show loading indicator
+        loadingProgressBar.visibility = View.VISIBLE
+
+        // Create preroll ad view dynamically (matches PlayerActivity pattern)
+        dynamicPrerollAdView = InsideAdView(this).apply {
+            layoutParams = FrameLayout.LayoutParams(
+                FrameLayout.LayoutParams.MATCH_PARENT,
+                FrameLayout.LayoutParams.MATCH_PARENT
+            )
+            // Set resize mode BEFORE requesting ad
+            setResizeMode(InsideAdView.ResizeMode.FILL)
+        }
+
+        // Add to container
+        prerollAdContainer.addView(dynamicPrerollAdView, 0)
+        Log.i(TAG, "Created and added dynamic preroll ad view with FILL mode")
+
+        // Setup callbacks
         setupPrerollAdCallback()
+
+        // Start timeout
+        startTimeout()
+
+        // Request ad
         requestPrerollAd()
     }
 
     private fun setupPrerollAdCallback() {
+        Log.i(TAG, "Setting up preroll ad callback")
         InsideAdSdk.setPrerollAdCallback(object : InsideAdCallback {
             override fun insideAdReceived(insideAd: InsideAd) {
-                Log.i(TAG, "Preroll ad received: ${insideAd.name}")
-                prerollAd = insideAd
-                // Cancel timeout since SDK is responding - it will call other callbacks
+                Log.i(TAG, "✓ Preroll ad received: ${insideAd.name}")
                 cancelTimeout()
-                // Start a new longer timeout in case the ad never loads
                 startLongTimeout()
             }
 
             override fun insideAdLoaded() {
-                Log.i(TAG, "Preroll ad loaded - playing")
+                Log.i(TAG, "✓ Preroll ad loaded - playing")
                 cancelTimeout()
                 loadingProgressBar.visibility = View.GONE
 
-                // CRITICAL: Set layout params to match_parent for height
-                // This ensures the ad fills the screen in landscape
-                setPrerollAdViewLayoutParams()
-
-                // Set resize mode to FILL to fill screen properly
-                // FILL maintains aspect ratio and centers the content
-                prerollAdView.setResizeMode(InsideAdView.ResizeMode.FILL)
-
-                prerollAdView.playAd()
+                dynamicPrerollAdView?.let { adView ->
+                    adView.visibility = View.VISIBLE
+                    adView.playAd()
+                }
             }
 
             override fun insideAdPlay() {
@@ -87,16 +110,21 @@ class PrerollProductionActivity : AppCompatActivity() {
             }
 
             override fun insideAdStop() {
-                Log.i(TAG, "Preroll ad completed - opening next screen")
-                cancelTimeout()
-                openNextScreen()
+                if (isCleaningUpPrerollAd) {
+                    Log.i(TAG, "⚠️ insideAdStop called during cleanup, ignoring to prevent loop")
+                    return
+                }
+                Log.i(TAG, "Preroll ad completed")
+                hidePrerollAdAndContinue(shouldStopAd = false)
             }
 
             override fun insideAdSkipped() {
-                Log.i(TAG, "Preroll ad skipped - opening next screen")
-                cancelTimeout()
-                prerollAdView.stopAd()
-                openNextScreen()
+                if (isCleaningUpPrerollAd) {
+                    Log.i(TAG, "⚠️ insideAdSkipped called during cleanup, ignoring to prevent loop")
+                    return
+                }
+                Log.i(TAG, "Preroll ad skipped")
+                hidePrerollAdAndContinue(shouldStopAd = false)
             }
 
             override fun insideAdClicked() {
@@ -104,10 +132,12 @@ class PrerollProductionActivity : AppCompatActivity() {
             }
 
             override fun insideAdError(error: String) {
-                Log.i(TAG, "Preroll ad error: $error - opening next screen anyway")
-                cancelTimeout()
-                loadingProgressBar.visibility = View.GONE
-                openNextScreen()
+                if (isCleaningUpPrerollAd) {
+                    Log.i(TAG, "⚠️ insideAdError called during cleanup, ignoring to prevent loop")
+                    return
+                }
+                Log.i(TAG, "Preroll ad error: $error")
+                hidePrerollAdAndContinue(shouldStopAd = false)
             }
 
             override fun insideAdVolumeChanged(level: Int) {
@@ -117,54 +147,84 @@ class PrerollProductionActivity : AppCompatActivity() {
     }
 
     private fun cancelTimeout() {
-        timeoutHandler?.removeCallbacksAndMessages(null)
-        timeoutHandler = null
+        if (timeoutHandler != null) {
+            Log.i(TAG, "Canceling preroll timeout")
+            timeoutHandler?.removeCallbacksAndMessages(null)
+            timeoutHandler = null
+        }
     }
 
     private fun startTimeout() {
+        Log.i(TAG, "Starting 10 second timeout for SDK response")
+        cancelTimeout() // Cancel any existing timeout first
         timeoutHandler = Handler(Looper.getMainLooper())
         timeoutHandler?.postDelayed({
-            Log.i(TAG, "Preroll ad timeout (SDK not responding) - opening next screen anyway")
-            openNextScreen()
-        }, 5000) // 5 second timeout for SDK to respond
+            Log.i(TAG, "Preroll ad timeout (SDK not responding after 10s)")
+            hidePrerollAdAndContinue(shouldStopAd = true)
+        }, 10000) // 10 second timeout - increased from 5s to match PlayerActivity
     }
 
     private fun startLongTimeout() {
+        Log.i(TAG, "Starting 30 second timeout for ad loading")
+        cancelTimeout() // Cancel previous timeout
         timeoutHandler = Handler(Looper.getMainLooper())
         timeoutHandler?.postDelayed({
-            Log.i(TAG, "Preroll ad long timeout (ad not loading) - opening next screen anyway")
-            openNextScreen()
-        }, 30000) // 30 second timeout for ad to load/play
+            Log.i(TAG, "Preroll ad long timeout (ad not loading after 30s)")
+            hidePrerollAdAndContinue(shouldStopAd = true)
+        }, 30000) // 30 second timeout
+    }
+
+    private fun hidePrerollAdAndContinue(shouldStopAd: Boolean = true) {
+        Log.i(TAG, "hidePrerollAdAndContinue: continuing to next screen (shouldStopAd=$shouldStopAd)")
+
+        // Prevent re-entrancy
+        if (isCleaningUpPrerollAd) {
+            Log.i(TAG, "⚠️ Already cleaning up preroll ad, returning early")
+            return
+        }
+        isCleaningUpPrerollAd = true  // SET FLAG BEFORE SDK CALLS
+
+        cancelTimeout()
+
+        // Stop ad and remove the dynamic view completely
+        dynamicPrerollAdView?.let { adView ->
+            // Only call stopAd if we're forcibly stopping (timeout), not if SDK already stopped (callbacks)
+            if (shouldStopAd) {
+                adView.stopAd()
+            }
+
+            // Remove from parent view hierarchy
+            prerollAdContainer.removeView(adView)
+            Log.i(TAG, "Removed dynamic preroll ad view from hierarchy")
+        }
+
+        // Nullify the reference for garbage collection
+        dynamicPrerollAdView = null
+
+        loadingProgressBar.visibility = View.GONE
+
+        // Clean up callback - this internally calls stopAd() which may trigger callbacks
+        InsideAdSdk.cancelPrerollAdRequest()
+
+        // Reset flag after cleanup is complete
+        isCleaningUpPrerollAd = false
+
+        // Open next screen
+        openNextScreen()
     }
 
     private fun requestPrerollAd() {
         Log.i(TAG, "Requesting preroll ad")
 
-        // Start timeout safety - if SDK doesn't respond in 5 seconds, open next screen anyway
-        startTimeout()
-
-
-        InsideAdSdk.requestPrerollAd(
-            context = this,
-            adContainer = prerollAdView,
-            screen = "Video Player",
-            isAdMuted = true,
-            targetingFilters = null
-        )
-    }
-
-    private fun setPrerollAdViewLayoutParams() {
-        // Set layout params to fill screen (critical for landscape fullscreen)
-        // Using MATCH_PARENT for both width and height ensures proper fullscreen display
-        val layoutParams = FrameLayout.LayoutParams(
-            FrameLayout.LayoutParams.MATCH_PARENT,
-            FrameLayout.LayoutParams.MATCH_PARENT
-        )
-
-        prerollAdView.layoutParams = layoutParams
-        prerollAdView.visibility = View.VISIBLE
-
-        Log.i(TAG, "Layout params set to MATCH_PARENT for fullscreen display")
+        dynamicPrerollAdView?.let { adView ->
+            InsideAdSdk.requestPrerollAd(
+                context = this,
+                adContainer = adView,
+                screen = "Video Player",
+                isAdMuted = true,
+                targetingFilters = null
+            )
+        }
     }
 
     private fun openNextScreen() {
@@ -204,15 +264,22 @@ class PrerollProductionActivity : AppCompatActivity() {
         super.onDestroy()
         Log.i(TAG, "onDestroy - Cleaning up")
 
+        // Reset flags
+        isCleaningUpPrerollAd = false
+
         // Cancel timeout
         cancelTimeout()
 
-        // Stop ad playback
-        prerollAdView.stopAd()
+        // Clean up dynamic ad view
+        dynamicPrerollAdView?.let { adView ->
+            adView.stopAd()
+            adView.cancelAdRequest()
+            prerollAdContainer.removeView(adView)
+        }
+        dynamicPrerollAdView = null
 
-        // CRITICAL: Clean up callbacks and cancel ongoing requests to prevent
-        // callbacks from firing after activity is destroyed
-        prerollAdView.cancelAdRequest()
+        // Clean up preroll callback
+        InsideAdSdk.cancelPrerollAdRequest()
 
         Log.i(TAG, "Callbacks and requests cleaned up")
     }

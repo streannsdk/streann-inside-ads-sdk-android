@@ -50,7 +50,13 @@ class GoogleImaPlayer(
 
         videoPlayer = findViewById(R.id.videoView)
         val videoPlayerContainer = findViewById<ViewGroup>(R.id.videoPlayerContainer)
-        Helper.setViewSize(videoPlayerContainer, resources, InsideAdSdk.resizeMode)
+
+        // Size the parent container (this GoogleImaPlayer) instead of child videoPlayerContainer
+        // This ensures proper centering in portrait/landscape
+        post {
+            Helper.setViewSize(this, resources, InsideAdSdk.resizeMode)
+            requestLayout()
+        }
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
         videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!)
