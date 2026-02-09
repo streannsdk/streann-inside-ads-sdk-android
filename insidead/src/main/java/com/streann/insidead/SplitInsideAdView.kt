@@ -40,7 +40,7 @@ class SplitInsideAdView(
         userView: View,
         parentView: ViewGroup,
         screen: String,
-        isAdMuted: Boolean? = false,
+        isAdMuted: Boolean? = true,
         isInsideAdAbove: Boolean? = false,
         insideAdCallback: InsideAdCallback
     ) {
@@ -56,7 +56,7 @@ class SplitInsideAdView(
         userView: View,
         parentView: ViewGroup,
         screen: String,
-        isAdMuted: Boolean? = false,
+        isAdMuted: Boolean? = true,
         isInsideAdAbove: Boolean? = false
     ) {
         mInsideAdView = InsideAdView(context)
@@ -67,7 +67,8 @@ class SplitInsideAdView(
     private fun requestAd(
         userView: View,
         parentView: ViewGroup,
-        screen: String, isAdMuted: Boolean? = false, isInsideAdAbove: Boolean? = false
+        screen: String, isAdMuted: Boolean? = true,
+        isInsideAdAbove: Boolean? = false
     ) {
         InsideAdSdk.setInsideAdCallback(object : InsideAdCallback {
             override fun insideAdReceived(insideAd: InsideAd) {
