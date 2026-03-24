@@ -204,7 +204,9 @@ class InsideAdView @JvmOverloads constructor(
         InsideAdSdk.savedIsAdMuted = InsideAdSdk.isAdMuted
         InsideAdSdk.savedTargetingFilters = InsideAdSdk.targetingFilters
 
-        // Set preroll flag (actual values will be written to global in showAd)
+        // Write preroll values to global state before filtering runs
+        InsideAdSdk.isAdMuted = isAdMuted
+        InsideAdSdk.targetingFilters = targetingFilters
         InsideAdSdk.isPrerollMode = true
         this.insideAdCallback = InsideAdSdk.getPrerollAdCallback()
         this.screen = screen
@@ -477,8 +479,18 @@ class InsideAdView @JvmOverloads constructor(
         adIntervalHandler?.removeCallbacksAndMessages(null)
         adIntervalHandler = null
 
-        // Stop any playing ad
-        stopAd()
+        // Release Google IMA resources (destroy adsManager, clear listeners/callbacks)
+        mGoogleImaPlayer?.release()
+
+        // Stop any other playing ad types
+        insideAd?.let {
+            when (it.adType) {
+                AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.stopAd()
+                AdType.BANNER.value -> mBannerAdsPlayer?.stopAd()
+                AdType.FULLSCREEN_NATIVE.value -> mNativeAdsPlayer?.stopAd()
+                else -> {}
+            }
+        }
 
         // Clear callback reference to prevent firing on destroyed activity
         insideAdCallback = null
