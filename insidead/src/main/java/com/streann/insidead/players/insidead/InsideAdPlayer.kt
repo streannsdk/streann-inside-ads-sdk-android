@@ -59,6 +59,7 @@ class InsideAdPlayer(
     fun playAd(bitmap: Bitmap?, ad: InsideAd, callback: InsideAdCallback) {
         insideAd = ad
         insideAdCallback = callback
+        removeHandlers()
         showCloseButtonHandler = Handler(Looper.getMainLooper())
         closeImageAdHandler = Handler(Looper.getMainLooper())
 
@@ -221,7 +222,7 @@ class InsideAdPlayer(
     fun stopAd() {
         Log.i(InsideAdSdk.LOG_TAG, "stopAd")
 
-        if (mediaPlayer?.isPlaying == true) {
+        if (mediaPlayer != null) {
             stopLocalVideoAd()
         } else if (imageAdView?.visibility == VISIBLE) {
             imageAdView?.setImageBitmap(null)

@@ -98,6 +98,9 @@ class InsideAdView @JvmOverloads constructor(
     private var instanceIsAdMuted: Boolean? = true
     private var instanceTargetingFilters: TargetingFilters? = null
 
+    // Track whether this instance is handling a preroll ad (instance-level, not global)
+    private var isPrerollInstance: Boolean = false
+
     init {
         init()
     }
@@ -208,6 +211,7 @@ class InsideAdView @JvmOverloads constructor(
         InsideAdSdk.isAdMuted = isAdMuted
         InsideAdSdk.targetingFilters = targetingFilters
         InsideAdSdk.isPrerollMode = true
+        this.isPrerollInstance = true
         this.insideAdCallback = InsideAdSdk.getPrerollAdCallback()
         this.screen = screen
 
@@ -246,7 +250,7 @@ class InsideAdView @JvmOverloads constructor(
             } else {
                 val errorMsg = "Failed to fetch campaigns from server"
                 insideAdCallback?.insideAdError(errorMsg)
-                if (InsideAdSdk.isPrerollMode) {
+                if (isPrerollInstance) {
                     restoreRegularAdParameters()
                     // Clear active preroll ad view reference
                     if (InsideAdSdk.activePrerollAdView == this) {
@@ -257,7 +261,7 @@ class InsideAdView @JvmOverloads constructor(
         } else {
             val errorMsg = "Campaign list not available after $maxRetries retries"
             insideAdCallback?.insideAdError(errorMsg)
-            if (InsideAdSdk.isPrerollMode) {
+            if (isPrerollInstance) {
                 restoreRegularAdParameters()
                 // Clear active preroll ad view reference
                 if (InsideAdSdk.activePrerollAdView == this) {
@@ -275,7 +279,7 @@ class InsideAdView @JvmOverloads constructor(
         retryRequestHandler?.removeCallbacksAndMessages(null)
         retryRequestHandler = null
 
-        val viewType = if (InsideAdSdk.isPrerollMode) ViewType.PREROLL.value else null
+        val viewType = if (isPrerollInstance) ViewType.PREROLL.value else null
         insideAd = CampaignsFilterUtil.getInsideAd(
             InsideAdSdk.campaignsList,
             screen,
@@ -288,7 +292,7 @@ class InsideAdView @JvmOverloads constructor(
                 fallbackAd = insideAd?.fallback
                 showAd(ad, callback)
             } ?: run {
-                if (InsideAdSdk.isPrerollMode) {
+                if (isPrerollInstance) {
                     val errorMsg = "No PREROLL ad available for the specified criteria"
                     Log.w(InsideAdSdk.LOG_TAG, errorMsg)
                     callback.insideAdError(errorMsg)
@@ -316,7 +320,7 @@ class InsideAdView @JvmOverloads constructor(
         InsideAdSdk.targetingFilters = this.instanceTargetingFilters
 
         showAdHandler = Handler(Looper.getMainLooper())
-        val delayMillis = if (InsideAdSdk.isPrerollMode || InsideAdSdk.showAdForReels) {
+        val delayMillis = if (isPrerollInstance || InsideAdSdk.showAdForReels) {
             0
         } else {
             InsideAdSdk.startAfterSeconds ?: 0
@@ -402,6 +406,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private fun removeGoogleImaView() {
         if (mGoogleImaPlayer != null) {
+            mGoogleImaPlayer?.release()
             removeView(mGoogleImaPlayer)
             mGoogleImaPlayer = null
         }
@@ -498,8 +503,8 @@ class InsideAdView @JvmOverloads constructor(
         // Reset retry count
         retryCount = 0
 
-        // Restore regular ad parameters if in preroll mode
-        if (InsideAdSdk.isPrerollMode) {
+        // Restore regular ad parameters if this is a preroll instance
+        if (isPrerollInstance) {
             restoreRegularAdParameters()
         }
 
@@ -507,6 +512,11 @@ class InsideAdView @JvmOverloads constructor(
         if (InsideAdSdk.activePrerollAdView == this) {
             InsideAdSdk.activePrerollAdView = null
         }
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cancelAdRequest()
     }
 
     /**
@@ -689,7 +699,7 @@ class InsideAdView @JvmOverloads constructor(
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
 
-        if (InsideAdSdk.isPrerollMode) {
+        if (isPrerollInstance) {
             restoreRegularAdParameters()
             // Clear active preroll ad view reference
             if (InsideAdSdk.activePrerollAdView == this) {
@@ -712,8 +722,8 @@ class InsideAdView @JvmOverloads constructor(
         Log.i(InsideAdSdk.LOG_TAG, "insideAdError")
         insideAd = null
 
-        if (InsideAdSdk.isPrerollMode) {
-            Log.i(InsideAdSdk.LOG_TAG, "Preroll mode: skipping fallback ad")
+        if (isPrerollInstance) {
+            Log.i(InsideAdSdk.LOG_TAG, "Preroll instance: skipping fallback ad")
             restoreRegularAdParameters()
             // Clear active preroll ad view reference
             if (InsideAdSdk.activePrerollAdView == this) {

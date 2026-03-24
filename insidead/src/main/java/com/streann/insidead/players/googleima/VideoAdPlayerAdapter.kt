@@ -199,6 +199,12 @@ class VideoAdPlayerAdapter(
     }
 
     override fun release() {
+        stopAdTracking()
+        videoPlayer.setOnPreparedListener(null)
+        videoPlayer.setOnErrorListener(null)
+        videoPlayer.setOnCompletionListener(null)
+        videoAdPlayerCallbacks.clear()
+        loadedAdMediaInfo = null
     }
 
     override fun removeCallback(videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback) {

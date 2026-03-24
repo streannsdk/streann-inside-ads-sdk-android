@@ -246,10 +246,12 @@ class GoogleImaPlayer(
 
     fun release() {
         videoAdPlayerAdapter?.stopAdPlaying()
+        videoAdPlayerAdapter?.release()
         adsManager?.destroy()
         adsManager = null
         adsLoader?.contentComplete()
         insideAdCallback = null
+        insideAdProgressCallback = null
     }
 
     /**
