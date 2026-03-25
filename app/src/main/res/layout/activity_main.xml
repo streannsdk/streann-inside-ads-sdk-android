@@ -7,61 +7,38 @@
     android:background="@drawable/demo_app_bg"
     tools:context=".MainActivity">
 
-    <TextView
-        android:id="@+id/adProgressText"
-        android:layout_width="match_parent"
+    <Button
+        android:id="@+id/prerollButton"
+        android:layout_width="wrap_content"
         android:layout_height="wrap_content"
-        android:layout_marginTop="40dp"
-        android:gravity="center"
-        android:textColor="@color/white"
-        android:textSize="28sp"
-        android:textStyle="italic"
+        android:text="Test: Preroll Ad Only"
+        app:layout_constraintBottom_toTopOf="@id/playerButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toTopOf="parent" />
-
-    <TextView
-        android:id="@+id/adStopText"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="20dp"
-        android:gravity="center"
-        android:text="Stop Ad"
-        android:textColor="@color/white"
-        android:textSize="28sp"
-        android:textStyle="italic"
-        android:visibility="gone"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintEnd_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/adProgressText" />
-
-    <com.streann.insidead.InsideAdView
-        android:id="@+id/insideAdView"
-        android:layout_width="match_parent"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="50dp"
-        android:visibility="gone"
-        app:layout_constraintTop_toBottomOf="@+id/adStopText" />
+        app:layout_constraintTop_toTopOf="parent"
+        app:layout_constraintVertical_chainStyle="packed" />
 
     <Button
-        android:id="@+id/prerollProductionButton"
+        android:id="@+id/combinedButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
-        android:text="Test: Preroll Ad Only"
+        android:text="Test: Preroll + Regular Ad"
+        app:layout_constraintBottom_toTopOf="@id/playerButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/insideAdView" />
+        app:layout_constraintTop_toBottomOf="@id/prerollButton" />
 
     <Button
-        android:id="@+id/playerProductionButton"
+        android:id="@+id/playerButton"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginTop="20dp"
         android:text="Test: Regular Ad Split-Screen"
+        app:layout_constraintBottom_toTopOf="@id/splitActivityButton"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/prerollProductionButton" />
+        app:layout_constraintTop_toBottomOf="@id/combinedButton" />
 
     <Button
         android:id="@+id/splitActivityButton"
@@ -72,6 +49,6 @@
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/playerProductionButton" />
+        app:layout_constraintTop_toBottomOf="@id/playerButton" />
 
 </androidx.constraintlayout.widget.ConstraintLayout>

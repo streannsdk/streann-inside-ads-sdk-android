@@ -42,7 +42,7 @@ class NativeAdsPlayer(
 ) : FrameLayout(context) {
 
     private var adView: NativeAdView
-    private lateinit var nativeAd: NativeAd
+    private var nativeAd: NativeAd? = null
     private var adCloseButton: ImageView? = null
 
     private var insideAdCallback: InsideAdCallback? = null
@@ -294,12 +294,15 @@ class NativeAdsPlayer(
 
     fun stopAd() {
         Log.i(InsideAdSdk.LOG_TAG, "stopAd")
-        this.nativeAd.destroy()
+        this.nativeAd?.destroy()
+        this.nativeAd = null
         adCloseButton?.visibility = GONE
         removeView(adView)
         removeHandlers()
         insideAdCallback?.insideAdStop()
         insideAdProgressCallback?.insideAdStopped()
+        insideAdCallback = null
+        insideAdProgressCallback = null
     }
 
     private fun removeHandlers() {

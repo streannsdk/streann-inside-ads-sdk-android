@@ -244,6 +244,16 @@ class GoogleImaPlayer(
         videoAdPlayerAdapter?.stopAdPlaying()
     }
 
+    fun release() {
+        videoAdPlayerAdapter?.stopAdPlaying()
+        videoAdPlayerAdapter?.release()
+        adsManager?.destroy()
+        adsManager = null
+        adsLoader?.contentComplete()
+        insideAdCallback = null
+        insideAdProgressCallback = null
+    }
+
     /**
      * Logs detailed VAST ad information for debugging skip button behavior.
      * This helps identify why skip button may not appear.
