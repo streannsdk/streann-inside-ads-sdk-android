@@ -111,7 +111,9 @@ class PlayerActivity : AppCompatActivity() {
     private fun handleInsideAdReceived(insideAd: InsideAd) {
         Handler(Looper.getMainLooper()).post {
             Log.i(TAG, "handleInsideAdReceived: Adding InsideAdView to container")
-            addInsideAdView()
+            if (insideAdView.parent == null) {
+                addInsideAdView()
+            }
         }
     }
 
@@ -178,7 +180,6 @@ class PlayerActivity : AppCompatActivity() {
     private fun hideInsideAdView() {
         if (insideAdContainerRight.visibility == View.VISIBLE) {
             insideAdContainerRight.visibility = View.GONE
-            insideAdContainerRight.removeView(insideAdView)
 
             // Restore original flex direction
             if (playerWrapper.flexDirection == FlexDirection.ROW_REVERSE) {
