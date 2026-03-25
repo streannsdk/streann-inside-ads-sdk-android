@@ -18,7 +18,7 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.TargetingFilters
 
 /**
- * Production-like preroll ad scenario that matches the main app implementation.
+ * Preroll ad scenario that matches the main app implementation.
  * This demonstrates the exact flow used in production:
  * 1. Show loading indicator
  * 2. Request preroll ad with timeout safety
@@ -27,9 +27,9 @@ import com.streann.insidead.models.TargetingFilters
  * 5. Open next screen (simulated content) when ad completes
  * 6. Handle all error cases and cleanup properly with re-entrancy protection
  */
-class PrerollProductionActivity : AppCompatActivity() {
+class PrerollActivity : AppCompatActivity() {
 
-    private val TAG = "PrerollProduction"
+    private val TAG = "PrerollActivity"
     private lateinit var prerollAdContainer: FrameLayout
     private lateinit var loadingProgressBar: ProgressBar
     private var hasOpenedNextScreen = false
@@ -39,8 +39,8 @@ class PrerollProductionActivity : AppCompatActivity() {
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i(TAG, "onCreate - Starting PrerollProductionActivity")
-        setContentView(R.layout.activity_preroll_production)
+        Log.i(TAG, "onCreate - Starting PrerollActivity")
+        setContentView(R.layout.activity_preroll)
 
         prerollAdContainer = findViewById(R.id.prerollAdContainer)
         loadingProgressBar = findViewById(R.id.loadingProgressBar)

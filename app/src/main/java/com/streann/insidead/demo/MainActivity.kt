@@ -2,132 +2,25 @@ package com.streann.insidead.demo
 
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
-import android.view.View
 import android.widget.Button
-import android.widget.TextView
 import androidx.appcompat.app.AppCompatActivity
-import androidx.constraintlayout.widget.ConstraintLayout
-import com.streann.insidead.InsideAdSdk
-import com.streann.insidead.InsideAdView
-import com.streann.insidead.callbacks.InsideAdCallback
-import com.streann.insidead.models.InsideAd
-import com.streann.insidead.utils.enums.AdType
 
 class MainActivity : AppCompatActivity() {
-
-    private val TAG = this.javaClass.simpleName
-    private var insideAd: InsideAd? = null
-    private var mInsideAdView: InsideAdView? = null
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         setContentView(R.layout.activity_main)
-        setupInsideAdView()
-    }
 
-    private fun setupInsideAdView() {
-        mInsideAdView = findViewById(R.id.insideAdView)
-
-        val adProgressText = findViewById<TextView>(R.id.adProgressText)
-        val adStopText = findViewById<TextView>(R.id.adStopText)
-        val prerollProductionButton = findViewById<Button>(R.id.prerollProductionButton)
-        val playerProductionButton = findViewById<Button>(R.id.playerProductionButton)
-        val splitActivityButton = findViewById<Button>(R.id.splitActivityButton)
-
-        InsideAdSdk.setInsideAdCallback(object : InsideAdCallback {
-            override fun insideAdReceived(insideAd: InsideAd) {
-                Log.i(TAG, "insideAdReceived: $insideAd")
-                this@MainActivity.insideAd = insideAd
-            }
-
-            override fun insideAdLoaded() {
-                Log.i(TAG, "insideAdLoaded")
-                adProgressText.text = ""
-                adStopText.visibility = View.VISIBLE
-                prerollProductionButton.visibility = View.GONE
-                playerProductionButton.visibility = View.GONE
-                splitActivityButton.visibility = View.GONE
-
-                setAdViewLayoutParams()
-                mInsideAdView?.playAd()
-            }
-
-            override fun insideAdPlay() {
-                Log.i(TAG, "insideAdPlay")
-            }
-
-            override fun insideAdStop() {
-                Log.i(TAG, "insideAdStop")
-                adStopText.visibility = View.GONE
-                mInsideAdView?.visibility = View.GONE
-                prerollProductionButton.visibility = View.VISIBLE
-                playerProductionButton.visibility = View.VISIBLE
-                splitActivityButton.visibility = View.VISIBLE
-            }
-
-            override fun insideAdSkipped() {
-                Log.i(TAG, "insideAdSkipped")
-                mInsideAdView?.stopAd()
-            }
-
-            override fun insideAdClicked() {
-                Log.i(TAG, "insideAdClicked")
-            }
-
-            override fun insideAdError(error: String) {
-                Log.i(TAG, "insideAdError: $error")
-                adProgressText.text = "Error: $error"
-            }
-
-            override fun insideAdVolumeChanged(level: Int) {
-                Log.i(TAG, "insideAdVolumeChanged: $level")
-            }
-        })
-
-        mInsideAdView?.requestAd(
-            screen = "Splash"
-        )
-
-        adStopText.setOnClickListener {
-            mInsideAdView?.stopAd()
+        findViewById<Button>(R.id.prerollButton).setOnClickListener {
+            startActivity(Intent(this, PrerollActivity::class.java))
         }
 
-        prerollProductionButton?.setOnClickListener {
-            val intent = Intent(this, PrerollProductionActivity::class.java)
-            this.startActivity(intent)
+        findViewById<Button>(R.id.playerButton).setOnClickListener {
+            startActivity(Intent(this, PlayerActivity::class.java))
         }
 
-        playerProductionButton?.setOnClickListener {
-            val intent = Intent(this, PlayerProductionActivity::class.java)
-            this.startActivity(intent)
-        }
-
-        splitActivityButton?.setOnClickListener {
-            val intent = Intent(this, SplitActivity::class.java)
-            this.startActivity(intent)
+        findViewById<Button>(R.id.splitActivityButton).setOnClickListener {
+            startActivity(Intent(this, SplitActivity::class.java))
         }
     }
-
-    private fun setAdViewLayoutParams() {
-        val layoutParams =
-            if (insideAd?.adType == AdType.FULLSCREEN_NATIVE.value) {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.MATCH_PARENT
-                )
-            } else {
-                ConstraintLayout.LayoutParams(
-                    ConstraintLayout.LayoutParams.MATCH_PARENT,
-                    ConstraintLayout.LayoutParams.WRAP_CONTENT
-                ).apply {
-                    topToBottom = R.id.adStopText
-                    topMargin = 100
-                }
-            }
-
-        mInsideAdView?.layoutParams = layoutParams
-        mInsideAdView?.visibility = View.VISIBLE
-    }
-
 }
