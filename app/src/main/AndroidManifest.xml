@@ -30,6 +30,9 @@
         <activity android:name=".PrerollActivity"
             android:configChanges="orientation|screenSize" />
 
+        <activity android:name=".CombinedActivity"
+            android:configChanges="orientation|screenSize" />
+
         <activity android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize" />
 

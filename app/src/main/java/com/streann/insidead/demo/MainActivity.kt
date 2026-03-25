@@ -15,6 +15,10 @@ class MainActivity : AppCompatActivity() {
             startActivity(Intent(this, PrerollActivity::class.java))
         }
 
+        findViewById<Button>(R.id.combinedButton).setOnClickListener {
+            startActivity(Intent(this, CombinedActivity::class.java))
+        }
+
         findViewById<Button>(R.id.playerButton).setOnClickListener {
             startActivity(Intent(this, PlayerActivity::class.java))
         }
