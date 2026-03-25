@@ -27,10 +27,13 @@
 
         <activity android:name=".SplitActivity" />
 
-        <activity android:name=".PrerollProductionActivity"
+        <activity android:name=".PrerollActivity"
             android:configChanges="orientation|screenSize" />
 
-        <activity android:name=".PlayerProductionActivity"
+        <activity android:name=".CombinedActivity"
+            android:configChanges="orientation|screenSize" />
+
+        <activity android:name=".PlayerActivity"
             android:configChanges="orientation|screenSize" />
 
         <meta-data

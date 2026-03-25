@@ -36,6 +36,17 @@ class SplitInsideAdView(
         LayoutInflater.from(context).inflate(R.layout.split_ad_player, this)
     }
 
+    fun cancelAdRequest() {
+        mInsideAdView?.cancelAdRequest()
+        mInsideAdView = null
+        insideAdCallback = null
+    }
+
+    override fun onDetachedFromWindow() {
+        super.onDetachedFromWindow()
+        cancelAdRequest()
+    }
+
     fun showSplitScreen(
         userView: View,
         parentView: ViewGroup,

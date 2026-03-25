@@ -102,10 +102,14 @@ class BannerAdsPlayer(
 
     fun stopAd() {
         Log.i(InsideAdSdk.LOG_TAG, "stopAd")
+        adView?.destroy()
         removeView(adView)
+        adView = null
         Helper.setBannerAdHeight(null)
         insideAdCallback?.insideAdStop()
         insideAdProgressCallback?.insideAdStopped()
+        insideAdCallback = null
+        insideAdProgressCallback = null
         removeHandlers()
     }
 

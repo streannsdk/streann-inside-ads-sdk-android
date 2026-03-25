@@ -1,0 +1,60 @@
+<?xml version="1.0" encoding="utf-8"?>
+<FrameLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:background="@android:color/black">
+
+    <!-- Phase 2: Player + Regular Ad split-screen (hidden until preroll completes) -->
+    <com.google.android.flexbox.FlexboxLayout
+        xmlns:app="http://schemas.android.com/apk/res-auto"
+        android:id="@+id/player_wrapper"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:flexDirection="column">
+
+        <!-- Simulated Player View -->
+        <FrameLayout
+            android:id="@+id/player_view"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:background="@android:color/black">
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_gravity="center"
+                android:text="Simulated Video Player\n\n(Ad will appear on right in landscape)"
+                android:textAlignment="center"
+                android:textColor="@android:color/white"
+                android:textSize="24sp" />
+
+        </FrameLayout>
+
+        <!-- Inside Ad Container (appears on right side in landscape) -->
+        <FrameLayout
+            android:id="@+id/inside_ad_container_right"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:layout_weight="1"
+            android:visibility="gone" />
+
+    </com.google.android.flexbox.FlexboxLayout>
+
+    <!-- Phase 1: Preroll ad container (shown first, hidden after preroll) -->
+    <FrameLayout
+        android:id="@+id/prerollAdContainer"
+        android:layout_width="match_parent"
+        android:layout_height="match_parent" />
+
+    <ProgressBar
+        android:id="@+id/loadingProgressBar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_gravity="center"
+        android:indeterminate="true" />
+
+</FrameLayout>

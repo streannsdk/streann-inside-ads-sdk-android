@@ -18,7 +18,7 @@ import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.TargetingFilters
 
 /**
- * Production-like player with regular ads scenario.
+ * Player with regular ads scenario.
  * This demonstrates the exact flow used in production for mid-roll/regular ads:
  * 1. Create InsideAdView programmatically with ResizeMode.FIT
  * 2. Request regular ad (not preroll)
@@ -28,17 +28,17 @@ import com.streann.insidead.models.TargetingFilters
  * 6. Remove view when ad stops or errors
  * 7. Clean up in onStop
  */
-class PlayerProductionActivity : AppCompatActivity() {
+class PlayerActivity : AppCompatActivity() {
 
-    private val TAG = "PlayerProduction"
+    private val TAG = "PlayerActivity"
     private lateinit var playerWrapper: FlexboxLayout
     private lateinit var insideAdContainerRight: FrameLayout
     private lateinit var insideAdView: InsideAdView
 
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
-        Log.i(TAG, "onCreate - Starting PlayerProductionActivity")
-        setContentView(R.layout.activity_player_production)
+        Log.i(TAG, "onCreate - Starting PlayerActivity")
+        setContentView(R.layout.activity_player)
 
         playerWrapper = findViewById(R.id.player_wrapper)
         insideAdContainerRight = findViewById(R.id.inside_ad_container_right)
@@ -111,7 +111,9 @@ class PlayerProductionActivity : AppCompatActivity() {
     private fun handleInsideAdReceived(insideAd: InsideAd) {
         Handler(Looper.getMainLooper()).post {
             Log.i(TAG, "handleInsideAdReceived: Adding InsideAdView to container")
-            addInsideAdView()
+            if (insideAdView.parent == null) {
+                addInsideAdView()
+            }
         }
     }
 
@@ -178,7 +180,6 @@ class PlayerProductionActivity : AppCompatActivity() {
     private fun hideInsideAdView() {
         if (insideAdContainerRight.visibility == View.VISIBLE) {
             insideAdContainerRight.visibility = View.GONE
-            insideAdContainerRight.removeView(insideAdView)
 
             // Restore original flex direction
             if (playerWrapper.flexDirection == FlexDirection.ROW_REVERSE) {

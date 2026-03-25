@@ -41,36 +41,41 @@ class VideoAdPlayerAdapter(
 
     private fun notifyImaSdkAboutAdLoaded() {
         Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdLoaded")
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onLoaded(loadedAdMediaInfo!!)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onLoaded(adMediaInfo)
         }
     }
 
     private fun notifyImaSdkAboutAdStarted() {
         Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdStarted")
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onPlay(loadedAdMediaInfo!!)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onPlay(adMediaInfo)
         }
     }
 
     private fun notifyImaSdkAboutAdPaused() {
         Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdPaused")
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onPause(loadedAdMediaInfo!!)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onPause(adMediaInfo)
         }
     }
 
     private fun notifyImaSdkAboutAdEnded() {
         Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdEnded")
         savedAdPosition = 0
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onEnded(loadedAdMediaInfo!!)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onEnded(adMediaInfo)
         }
     }
 
     private fun notifyImaSdkAboutAdProgress(adProgress: VideoProgressUpdate) {
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onAdProgress(loadedAdMediaInfo!!, adProgress)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onAdProgress(adMediaInfo, adProgress)
         }
     }
 
@@ -91,8 +96,9 @@ class VideoAdPlayerAdapter(
             else -> {}
         }
 
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onError(loadedAdMediaInfo!!)
+        val adMediaInfo = loadedAdMediaInfo ?: return true
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onError(adMediaInfo)
         }
 
         return true
@@ -100,8 +106,9 @@ class VideoAdPlayerAdapter(
 
     private fun notifyImaSdkAboutAdVolumeChanged(level: Int) {
         Log.i(InsideAdSdk.LOG_TAG, "notifyImaSdkAboutAdVolumeChanged")
-        for (callback in videoAdPlayerCallbacks) {
-            callback.onVolumeChanged(loadedAdMediaInfo!!, level)
+        val adMediaInfo = loadedAdMediaInfo ?: return
+        for (callback in ArrayList(videoAdPlayerCallbacks)) {
+            callback.onVolumeChanged(adMediaInfo, level)
         }
     }
 
@@ -199,6 +206,12 @@ class VideoAdPlayerAdapter(
     }
 
     override fun release() {
+        stopAdTracking()
+        videoPlayer.setOnPreparedListener(null)
+        videoPlayer.setOnErrorListener(null)
+        videoPlayer.setOnCompletionListener(null)
+        videoAdPlayerCallbacks.clear()
+        loadedAdMediaInfo = null
     }
 
     override fun removeCallback(videoAdPlayerCallback: VideoAdPlayer.VideoAdPlayerCallback) {

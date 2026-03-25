@@ -161,9 +161,12 @@ object InsideAdSdk {
                     val geoCountryCode = geoIp.countryCode
                     if (geoCountryCode?.isNotBlank() == true) {
                         getCampaigns(geoCountryCode)
+                        return@execute
                     }
                 }
             }
+            // Shut down executor if we didn't reach getCampaigns (which handles its own shutdown)
+            requestCampaignExecutor?.shutdown()
         }
     }
 
