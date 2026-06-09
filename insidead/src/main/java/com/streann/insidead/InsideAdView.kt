@@ -734,6 +734,11 @@ class InsideAdView @JvmOverloads constructor(
 
         insideAdCallback?.let { callback ->
             fallbackAd?.let { fallbackAd ->
+                // Consume the fallback so it's only shown once. Without this,
+                // a failing fallback re-enters insideAdError() and is shown
+                // again indefinitely (e.g. an ad set as its own fallback, or
+                // any fallback that keeps erroring), causing an infinite loop.
+                this.fallbackAd = null
                 Log.i(InsideAdSdk.LOG_TAG, "fallbackAd: $fallbackAd")
                 fallbackAd.properties?.durationInSeconds?.let {
                     InsideAdSdk.durationInSeconds = Helper.getMillisFromSeconds(it.toLong())
