@@ -35,6 +35,11 @@ class PlayerActivity : AppCompatActivity() {
     private lateinit var insideAdContainerRight: FrameLayout
     private lateinit var insideAdView: InsideAdView
 
+    // Counts how many times an ad error has occurred. Used to make the fallback
+    // loop observable: without the one-shot fallback fix this climbs forever
+    // (~every 5s); with the fix it stops at 2 (primary + single fallback).
+    private var errorIterationCount = 0
+
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
         Log.i(TAG, "onCreate - Starting PlayerActivity")
@@ -140,10 +145,15 @@ class PlayerActivity : AppCompatActivity() {
     }
 
     private fun handleInsideAdError() {
+        errorIterationCount++
         Handler(Looper.getMainLooper()).post {
-            Log.i(TAG, "handleInsideAdError: Hiding and removing ad view")
+            Log.i(TAG, "handleInsideAdError: iteration #$errorIterationCount - Hiding ad view")
             hideInsideAdView()
-            removeInsideAdView()
+            // NOTE: Intentionally NOT calling removeInsideAdView() here.
+            // Removing the view detaches it from the window, which triggers
+            // InsideAdView.onDetachedFromWindow() -> cancelAdRequest(), masking
+            // the fallback loop. Keeping the view attached (as real integrations
+            // like flex-flix do) lets the loop run so it can be reproduced.
         }
     }
 
