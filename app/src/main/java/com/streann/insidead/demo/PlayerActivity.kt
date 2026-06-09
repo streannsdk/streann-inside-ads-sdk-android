@@ -152,8 +152,7 @@ class PlayerActivity : AppCompatActivity() {
             // NOTE: Intentionally NOT calling removeInsideAdView() here.
             // Removing the view detaches it from the window, which triggers
             // InsideAdView.onDetachedFromWindow() -> cancelAdRequest(), masking
-            // the fallback loop. Keeping the view attached (as real integrations
-            // like flex-flix do) lets the loop run so it can be reproduced.
+            // the fallback loop. Keeping the view attached lets the loop run so it can be reproduced.
         }
     }
 
