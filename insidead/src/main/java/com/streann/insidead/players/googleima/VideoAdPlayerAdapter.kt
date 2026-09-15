@@ -1,5 +1,6 @@
 package com.streann.insidead.players.googleima
 
+import android.os.Build
 import com.streann.insidead.models.AdRequestContext
 import android.media.AudioManager
 import android.media.MediaPlayer
@@ -177,7 +178,12 @@ class VideoAdPlayerAdapter(
     override fun playAd(adMediaInfo: AdMediaInfo) {
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
 
-        videoPlayer.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+        // VideoView.setAudioFocusRequest is API 26+. It is a platform method, so core library
+        // desugaring cannot cover it - on API 23-25 it would throw NoSuchMethodError. Skipping it
+        // there just means the VideoView keeps its default audio focus behaviour.
+        if (Build.VERSION.SDK_INT >= Build.VERSION_CODES.O) {
+            videoPlayer.setAudioFocusRequest(AudioManager.AUDIOFOCUS_NONE)
+        }
         videoPlayer.setVideoURI(Uri.parse(adMediaInfo.url))
 
         videoPlayer.setOnPreparedListener { mediaPlayer: MediaPlayer ->
