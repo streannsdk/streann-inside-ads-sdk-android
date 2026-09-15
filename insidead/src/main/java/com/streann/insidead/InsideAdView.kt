@@ -1,5 +1,6 @@
 package com.streann.insidead
 
+import com.streann.insidead.models.AdRequestContext
 import android.app.Application
 import android.content.Context
 import android.content.res.Configuration
@@ -62,7 +63,16 @@ class InsideAdView @JvmOverloads constructor(
          * Use full screen height, adjust width to maintain aspect ratio.
          * Good for portrait fullscreen ads.
          */
-        FIXED_HEIGHT
+        FIXED_HEIGHT,
+
+        /**
+         * Fill the ad view's parent container rather than the screen, keeping the 16:9 ratio.
+         *
+         * Every other mode measures against the display, which is wrong when the ad occupies a
+         * sub-region of the screen - as the multiview canvas and right bar do. Use this whenever
+         * the ad is embedded in a panel rather than shown fullscreen.
+         */
+        MATCH_CONTAINER
     }
 
     private var mInsideAdPlayer: InsideAdPlayer? = null
@@ -98,8 +108,23 @@ class InsideAdView @JvmOverloads constructor(
     private var instanceIsAdMuted: Boolean? = true
     private var instanceTargetingFilters: TargetingFilters? = null
 
-    // Track whether this instance is handling a preroll ad (instance-level, not global)
-    private var isPrerollInstance: Boolean = false
+    /**
+     * The dedicated slot this view is serving, or null for a regular ad request.
+     *
+     * Replaces the old isPrerollInstance boolean: with three slots (preroll, multiview canvas,
+     * multiview right bar) a flag no longer identifies the request. Survives interval repeats and
+     * is cleared only by cancelAdRequest().
+     */
+    private var requestViewType: ViewType? = null
+
+    /** Per-request state, so two slots can be in flight without overwriting each other. */
+    private var adRequestContext: AdRequestContext? = null
+
+    private val isPrerollInstance: Boolean
+        get() = requestViewType == ViewType.PREROLL
+
+    private val isDedicatedSlot: Boolean
+        get() = requestViewType != null
 
     init {
         init()
@@ -177,6 +202,8 @@ class InsideAdView @JvmOverloads constructor(
         this.instanceTargetingFilters = targetingFilters
         this.insideAdCallback = InsideAdSdk.getInsideAdCallback()
         this.screen = screen
+        this.requestViewType = null
+        this.adRequestContext = newRequestContext(null, screen, isAdMuted, targetingFilters)
 
         InsideAdSdk.showAdForReels = screen == "Reels"
 
@@ -211,7 +238,9 @@ class InsideAdView @JvmOverloads constructor(
         InsideAdSdk.isAdMuted = isAdMuted
         InsideAdSdk.targetingFilters = targetingFilters
         InsideAdSdk.isPrerollMode = true
-        this.isPrerollInstance = true
+        this.requestViewType = ViewType.PREROLL
+        this.adRequestContext =
+            newRequestContext(ViewType.PREROLL, screen, isAdMuted, targetingFilters)
         this.insideAdCallback = InsideAdSdk.getPrerollAdCallback()
         this.screen = screen
 
@@ -224,6 +253,68 @@ class InsideAdView @JvmOverloads constructor(
         }
 
         getInsideAdRetry()
+    }
+
+    /**
+     * Requests an ad for a dedicated placement slot, such as the multiview canvas or right bar.
+     *
+     * Unlike [requestPrerollAd] the ad repeats on the placement's intervalInMinutes and honours
+     * startAfterSeconds, so it behaves like a regular ad that is simply restricted to its own
+     * inventory. Several views may run different slots at the same time; each keeps its own state.
+     */
+    @JvmOverloads
+    fun requestAdForSlot(
+        viewType: ViewType,
+        screen: String,
+        isAdMuted: Boolean? = true,
+        targetingFilters: TargetingFilters? = null,
+        callback: InsideAdCallback? = null
+    ) {
+        Log.i(InsideAdSdk.LOG_TAG, "requestAdForSlot: ${viewType.value}")
+        retryRequestHandler = Handler(Looper.getMainLooper())
+
+        this.instanceIsAdMuted = isAdMuted
+        this.instanceTargetingFilters = targetingFilters
+        this.requestViewType = viewType
+        this.adRequestContext = newRequestContext(viewType, screen, isAdMuted, targetingFilters)
+        this.insideAdCallback = callback ?: InsideAdSdk.getAdCallback(viewType)
+        this.screen = screen
+
+        InsideAdSdk.setActiveSlotView(viewType, this)
+
+        if (TextUtils.isEmpty(apiKey) || TextUtils.isEmpty(baseUrl)) {
+            val errorMsg =
+                "Api Key and Base Url are required. Please implement the initializeSdk method."
+            Log.e(InsideAdSdk.LOG_TAG, errorMsg)
+            insideAdCallback?.insideAdError(errorMsg)
+            return
+        }
+
+        getInsideAdRetry()
+    }
+
+    private fun newRequestContext(
+        viewType: ViewType?,
+        screen: String,
+        isAdMuted: Boolean?,
+        targetingFilters: TargetingFilters?
+    ) = AdRequestContext(viewType, screen, isAdMuted, targetingFilters).also { ctx ->
+        ctx.showAdForReels = screen == "Reels"
+        ctx.resizeMode = resizeMode
+        // Measure this view, not the shared globals - with two slots alive those hold whichever
+        // view was laid out last, so both would report the same size to the ad server. Falls back
+        // to the globals only while this view is still unmeasured.
+        val density = if (scale > 0f) scale else 1f
+        ctx.playerWidth = (width / density).toInt().takeIf { it > 0 } ?: InsideAdSdk.playerWidth
+        ctx.playerHeight = (height / density).toInt().takeIf { it > 0 } ?: InsideAdSdk.playerHeight
+    }
+
+    /**
+     * Clears this view from the SDK's active-slot registry, but only when it is still the
+     * registered view - another view may have taken the slot over in the meantime.
+     */
+    private fun clearActiveSlot() {
+        InsideAdSdk.clearActiveSlotView(requestViewType, this)
     }
 
     private fun restoreRegularAdParameters() {
@@ -250,24 +341,14 @@ class InsideAdView @JvmOverloads constructor(
             } else {
                 val errorMsg = "Failed to fetch campaigns from server"
                 insideAdCallback?.insideAdError(errorMsg)
-                if (isPrerollInstance) {
-                    restoreRegularAdParameters()
-                    // Clear active preroll ad view reference
-                    if (InsideAdSdk.activePrerollAdView == this) {
-                        InsideAdSdk.activePrerollAdView = null
-                    }
-                }
+                if (isPrerollInstance) restoreRegularAdParameters()
+                if (isDedicatedSlot) clearActiveSlot()
             }
         } else {
             val errorMsg = "Campaign list not available after $maxRetries retries"
             insideAdCallback?.insideAdError(errorMsg)
-            if (isPrerollInstance) {
-                restoreRegularAdParameters()
-                // Clear active preroll ad view reference
-                if (InsideAdSdk.activePrerollAdView == this) {
-                    InsideAdSdk.activePrerollAdView = null
-                }
-            }
+            if (isPrerollInstance) restoreRegularAdParameters()
+            if (isDedicatedSlot) clearActiveSlot()
         }
     }
 
@@ -279,12 +360,19 @@ class InsideAdView @JvmOverloads constructor(
         retryRequestHandler?.removeCallbacksAndMessages(null)
         retryRequestHandler = null
 
-        val viewType = if (isPrerollInstance) ViewType.PREROLL.value else null
-        insideAd = CampaignsFilterUtil.getInsideAd(
+        val ctx = adRequestContext
+        val selection = CampaignsFilterUtil.selectAd(
             InsideAdSdk.campaignsList,
             screen,
-            viewType
+            requestViewType,
+            ctx?.targetingFilters ?: instanceTargetingFilters
         )
+        insideAd = selection?.insideAd
+
+        // Carry the selected ad's timings on this request rather than in shared state, then
+        // mirror them onto the deprecated globals for anything still reading those.
+        selection?.let { ctx?.applySelection(it) }
+        ctx?.publishToGlobals()
 
         insideAdCallback?.let { callback ->
             insideAd?.let { ad ->
@@ -292,14 +380,22 @@ class InsideAdView @JvmOverloads constructor(
                 fallbackAd = insideAd?.fallback
                 showAd(ad, callback)
             } ?: run {
-                if (isPrerollInstance) {
-                    val errorMsg = "No PREROLL ad available for the specified criteria"
+                if (isDedicatedSlot) {
+                    val errorMsg =
+                        "No ${requestViewType?.value} ad available for the specified criteria"
                     Log.w(InsideAdSdk.LOG_TAG, errorMsg)
                     callback.insideAdError(errorMsg)
-                    restoreRegularAdParameters()
-                    // Clear active preroll ad view reference
-                    if (InsideAdSdk.activePrerollAdView == this) {
-                        InsideAdSdk.activePrerollAdView = null
+
+                    if (isPrerollInstance) {
+                        // Preroll is one-shot: nothing to retry, so release the slot.
+                        restoreRegularAdParameters()
+                        clearActiveSlot()
+                    } else {
+                        // A repeating slot must survive a cycle with no eligible ad - a lapsed
+                        // time period or a momentary targeting miss should not kill it for the
+                        // life of the screen. Keep the slot registered so it stays cancellable.
+                        setPlayerVisibility(GONE, GONE, GONE, GONE)
+                        scheduleNextAd()
                     }
                 }
             }
@@ -320,10 +416,13 @@ class InsideAdView @JvmOverloads constructor(
         InsideAdSdk.targetingFilters = this.instanceTargetingFilters
 
         showAdHandler = Handler(Looper.getMainLooper())
-        val delayMillis = if (isPrerollInstance || InsideAdSdk.showAdForReels) {
+        // Preroll plays immediately by definition. Multiview slots are persistent surfaces, so
+        // they honour the placement's startAfterSeconds like a regular ad.
+        val ctx = adRequestContext
+        val delayMillis = if (isPrerollInstance || (ctx?.showAdForReels ?: InsideAdSdk.showAdForReels)) {
             0
         } else {
-            InsideAdSdk.startAfterSeconds ?: 0
+            ctx?.startAfterSecondsMillis ?: InsideAdSdk.startAfterSeconds ?: 0
         }
 
         // Log which ad type is being shown and its skip button support
@@ -390,6 +489,7 @@ class InsideAdView @JvmOverloads constructor(
     private fun showGoogleImaAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         createGoogleImaView()
         setPlayerVisibility(VISIBLE, GONE, GONE, GONE)
+        mGoogleImaPlayer?.requestContext = adRequestContext
         mGoogleImaPlayer?.playAd(insideAd, insideAdCallback)
     }
 
@@ -414,6 +514,7 @@ class InsideAdView @JvmOverloads constructor(
 
     private fun showLocalVideoAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
+        mInsideAdPlayer?.requestContext = adRequestContext
         mInsideAdPlayer?.playAd(null, insideAd, insideAdCallback)
     }
 
@@ -426,6 +527,7 @@ class InsideAdView @JvmOverloads constructor(
             Log.i(InsideAdSdk.LOG_TAG, "loadAd")
             insideAdCallback.insideAdLoaded()
             setPlayerVisibility(GONE, VISIBLE, GONE, GONE)
+            mInsideAdPlayer?.requestContext = adRequestContext
             mInsideAdPlayer?.playAd(bitmap, insideAd, insideAdCallback)
         } ?: run {
             insideAdCallback.insideAdError("Error while getting AD.")
@@ -435,11 +537,13 @@ class InsideAdView @JvmOverloads constructor(
 
     private fun showBannerAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         setPlayerVisibility(GONE, GONE, VISIBLE, GONE)
+        mBannerAdsPlayer?.requestContext = adRequestContext
         mBannerAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
     private fun showNativeAd(insideAd: InsideAd, insideAdCallback: InsideAdCallback) {
         setPlayerVisibility(GONE, GONE, GONE, VISIBLE)
+        mNativeAdsPlayer?.requestContext = adRequestContext
         mNativeAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
@@ -509,9 +613,12 @@ class InsideAdView @JvmOverloads constructor(
         }
 
         // Clear active preroll ad view reference
-        if (InsideAdSdk.activePrerollAdView == this) {
-            InsideAdSdk.activePrerollAdView = null
-        }
+        clearActiveSlot()
+
+        // Drop the slot identity so a re-attached view does not keep reporting the old slot, and
+        // so the context stops retaining the caller's targeting filters.
+        requestViewType = null
+        adRequestContext = null
     }
 
     override fun onDetachedFromWindow() {
@@ -535,6 +642,7 @@ class InsideAdView @JvmOverloads constructor(
      * If called after ad is loaded, it will apply to the next ad.
      */
     fun setResizeMode(mode: ResizeMode) {
+        adRequestContext?.resizeMode = mode
         Log.i(InsideAdSdk.LOG_TAG, "setResizeMode: $mode")
         this.resizeMode = mode
         InsideAdSdk.resizeMode = mode
@@ -699,23 +807,20 @@ class InsideAdView @JvmOverloads constructor(
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
 
+        // Hide every player once the ad is over. Player visibility was previously only ever set
+        // when showing an ad, so a finished player stayed visible - and still explicitly sized by
+        // sizePlayerContainer() - leaving an empty box occupying the slot until the next ad in the
+        // interval arrived. showXxxAd() sets the right player back to VISIBLE.
+        setPlayerVisibility(GONE, GONE, GONE, GONE)
+
         if (isPrerollInstance) {
             restoreRegularAdParameters()
-            // Clear active preroll ad view reference
-            if (InsideAdSdk.activePrerollAdView == this) {
-                InsideAdSdk.activePrerollAdView = null
-            }
+            clearActiveSlot()
             return
         }
 
-        if (!InsideAdSdk.showAdForReels) {
-            if (InsideAdSdk.intervalInMinutes != null && InsideAdSdk.intervalInMinutes!! > 0) {
-                adIntervalHandler = Handler(Looper.getMainLooper())
-                adIntervalHandler?.postDelayed({
-                    getInsideAd(screen, insideAdCallback)
-                }, InsideAdSdk.intervalInMinutes!!)
-            }
-        }
+        // Regular and multiview ads repeat on their own placement's interval.
+        scheduleNextAd()
     }
 
     override fun insideAdError() {
@@ -725,26 +830,51 @@ class InsideAdView @JvmOverloads constructor(
         if (isPrerollInstance) {
             Log.i(InsideAdSdk.LOG_TAG, "Preroll instance: skipping fallback ad")
             restoreRegularAdParameters()
-            // Clear active preroll ad view reference
-            if (InsideAdSdk.activePrerollAdView == this) {
-                InsideAdSdk.activePrerollAdView = null
-            }
+            clearActiveSlot()
             return
         }
 
-        insideAdCallback?.let { callback ->
-            fallbackAd?.let { fallbackAd ->
-                // Consume the fallback so it's only shown once. Without this,
-                // a failing fallback re-enters insideAdError() and is shown
-                // again indefinitely (e.g. an ad set as its own fallback, or
-                // any fallback that keeps erroring), causing an infinite loop.
-                this.fallbackAd = null
-                Log.i(InsideAdSdk.LOG_TAG, "fallbackAd: $fallbackAd")
-                fallbackAd.properties?.durationInSeconds?.let {
-                    InsideAdSdk.durationInSeconds = Helper.getMillisFromSeconds(it.toLong())
-                }
-                showAd(fallbackAd, callback)
+        val callback = insideAdCallback
+        val fallback = fallbackAd
+
+        if (callback != null && fallback != null) {
+            // Consume the fallback so it's only shown once. Without this,
+            // a failing fallback re-enters insideAdError() and is shown
+            // again indefinitely (e.g. an ad set as its own fallback, or
+            // any fallback that keeps erroring), causing an infinite loop.
+            this.fallbackAd = null
+            Log.i(InsideAdSdk.LOG_TAG, "fallbackAd: $fallback")
+            fallback.properties?.durationInSeconds?.let {
+                val millis = Helper.getMillisFromSeconds(it.toLong())
+                adRequestContext?.durationInSecondsMillis = millis
+                InsideAdSdk.durationInSeconds = millis
             }
+            showAd(fallback, callback)
+            return
+        }
+
+        // No fallback to fall back to. Release the slot and try again on the next interval
+        // instead of leaving it dark forever - a persistent surface like the multiview canvas or
+        // right bar must recover on its own from a single bad creative.
+        setPlayerVisibility(GONE, GONE, GONE, GONE)
+        scheduleNextAd()
+    }
+
+    /**
+     * Schedules the next ad for this request's interval, if it has one. The interval comes from
+     * the request context so concurrent slots repeat on their own schedules.
+     */
+    private fun scheduleNextAd() {
+        val ctx = adRequestContext
+        val forReels = ctx?.showAdForReels ?: InsideAdSdk.showAdForReels
+        val intervalMillis = ctx?.intervalInMinutesMillis ?: InsideAdSdk.intervalInMinutes
+
+        if (!forReels && intervalMillis != null && intervalMillis > 0) {
+            adIntervalHandler?.removeCallbacksAndMessages(null)
+            adIntervalHandler = Handler(Looper.getMainLooper())
+            adIntervalHandler?.postDelayed({
+                getInsideAd(screen, insideAdCallback)
+            }, intervalMillis)
         }
     }
 

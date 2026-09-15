@@ -1,5 +1,6 @@
 package com.streann.insidead.players.googleima
 
+import com.streann.insidead.models.AdRequestContext
 import android.media.AudioManager
 import android.media.MediaPlayer
 import android.net.Uri
@@ -34,6 +35,15 @@ class VideoAdPlayerAdapter(
         private const val POLLING_TIME_MS: Long = 250
         private const val INITIAL_DELAY_MS: Long = 250
     }
+
+    /**
+     * Per-request state for the ad this player is showing. Set by InsideAdView immediately before
+     * playback starts. Reads fall back to the deprecated InsideAdSdk globals when it is null, so
+     * any path that does not set a context behaves exactly as it did before.
+     */
+    internal var requestContext: AdRequestContext? = null
+
+    private val ctxIsAdMuted get() = requestContext?.isAdMuted ?: InsideAdSdk.isAdMuted
 
     init {
         this.videoPlayerVolumeButton = videoPlayerVolumeButton
@@ -225,7 +235,7 @@ class VideoAdPlayerAdapter(
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         // Defensive: explicitly check for false, default to muted if null/true
-        adSoundPlaying = if (InsideAdSdk.isAdMuted == false) {
+        adSoundPlaying = if (ctxIsAdMuted == false) {
             // Only unmute if explicitly set to false
             setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true

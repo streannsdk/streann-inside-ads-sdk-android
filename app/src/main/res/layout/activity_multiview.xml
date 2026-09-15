@@ -1,0 +1,79 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Mimics the multiview layout: a 4-player grid on the left with the canvas ad overlaid on it,
+  and the streams-selector "right bar" down the right edge with its own ad. Both ad slots are
+  requested at the same time to prove they do not interfere.
+-->
+<LinearLayout xmlns:android="http://schemas.android.com/apk/res/android"
+    android:layout_width="match_parent"
+    android:layout_height="match_parent"
+    android:orientation="horizontal"
+    android:background="#101014">
+
+    <!-- Left: the player grid area, with the canvas ad on top of it -->
+    <FrameLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="3">
+
+        <GridLayout
+            android:id="@+id/mockPlayerGrid"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:columnCount="2"
+            android:rowCount="2"
+            android:padding="4dp" />
+
+        <FrameLayout
+            android:id="@+id/canvasAdContainer"
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/canvasStatus"
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_gravity="top|start"
+            android:padding="8dp"
+            android:textColor="#80FFFFFF"
+            android:textSize="11sp"
+            android:text="canvas: idle" />
+    </FrameLayout>
+
+    <!-- Right: the streams selector bar, with the right-bar ad at the top of it -->
+    <LinearLayout
+        android:layout_width="0dp"
+        android:layout_height="match_parent"
+        android:layout_weight="1"
+        android:orientation="vertical"
+        android:background="#18181F"
+        android:padding="4dp">
+
+        <!-- height=wrap so that hiding it actually gives the space back to the stream list,
+             matching how the real selector should push items down rather than reserve a gap -->
+        <FrameLayout
+            android:id="@+id/rightBarAdContainer"
+            android:layout_width="match_parent"
+            android:layout_height="140dp"
+            android:visibility="gone" />
+
+        <TextView
+            android:id="@+id/rightBarStatus"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:padding="4dp"
+            android:textColor="#80FFFFFF"
+            android:textSize="11sp"
+            android:text="right bar: idle" />
+
+        <TextView
+            android:layout_width="match_parent"
+            android:layout_height="0dp"
+            android:layout_weight="2"
+            android:gravity="center"
+            android:textColor="#60FFFFFF"
+            android:textSize="12sp"
+            android:text="stream list" />
+    </LinearLayout>
+</LinearLayout>

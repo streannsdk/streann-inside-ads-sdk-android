@@ -1,5 +1,6 @@
 package com.streann.insidead.players.bannerads
 
+import com.streann.insidead.models.AdRequestContext
 import android.annotation.SuppressLint
 import android.content.Context
 import android.os.Handler
@@ -30,6 +31,16 @@ class BannerAdsPlayer(
 
     private var insideAdCallback: InsideAdCallback? = null
     private var insideAdProgressCallback: InsideAdProgressCallback? = callback
+
+    /**
+     * Per-request state for the ad this player is showing. Set by InsideAdView immediately before
+     * playback starts. Reads fall back to the deprecated InsideAdSdk globals when it is null, so
+     * any path that does not set a context behaves exactly as it did before.
+     */
+    internal var requestContext: AdRequestContext? = null
+
+    private val ctxShowAdForReels get() = requestContext?.showAdForReels ?: InsideAdSdk.showAdForReels
+    private val ctxDurationInSeconds get() = requestContext?.durationInSecondsMillis ?: InsideAdSdk.durationInSeconds
 
     init {
         LayoutInflater.from(context).inflate(R.layout.banner_ad_player, this)
@@ -85,8 +96,8 @@ class BannerAdsPlayer(
                 Log.i(InsideAdSdk.LOG_TAG, "onAdLoaded")
                 insideAdCallback?.insideAdLoaded()
 
-                if (!InsideAdSdk.showAdForReels) {
-                    InsideAdSdk.durationInSeconds?.let {
+                if (!ctxShowAdForReels) {
+                    ctxDurationInSeconds?.let {
                         closeBannerAdHandler?.postDelayed({
                             stopAd()
                         }, it)

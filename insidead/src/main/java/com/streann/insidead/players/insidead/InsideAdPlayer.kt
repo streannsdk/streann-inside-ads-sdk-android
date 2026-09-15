@@ -1,5 +1,6 @@
 package com.streann.insidead.players.insidead
 
+import com.streann.insidead.models.AdRequestContext
 import android.annotation.SuppressLint
 import android.content.ActivityNotFoundException
 import android.content.Context
@@ -47,9 +48,31 @@ class InsideAdPlayer(
     private var showCloseButtonHandler: Handler? = null
     private var closeImageAdHandler: Handler? = null
 
+    /**
+     * Guards against a video that never finishes buffering. MediaPlayer.prepareAsync() has no
+     * timeout of its own, so an oversized or high-bitrate creative can sit in onPrepared limbo
+     * indefinitely - the slot stays empty and no error is ever reported. Google IMA already
+     * applies an equivalent timeout for VAST (setLoadVideoTimeout).
+     */
+    private var loadTimeoutHandler: Handler? = null
+    private var isMediaPrepared: Boolean = false
+
     private var savedAdPosition = 0
     private var adSoundPlaying = true
     private var isSurfaceDestroyed: Boolean = false
+
+    /**
+     * Per-request state for the ad this player is showing. Set by InsideAdView immediately before
+     * playback starts. Reads fall back to the deprecated InsideAdSdk globals when it is null, so
+     * any path that does not set a context behaves exactly as it did before.
+     */
+    internal var requestContext: AdRequestContext? = null
+
+    private val ctxShowCloseButtonAfterSeconds get() = requestContext?.showCloseButtonAfterSecondsMillis ?: InsideAdSdk.showCloseButtonAfterSeconds
+    private val ctxDurationInSeconds get() = requestContext?.durationInSecondsMillis ?: InsideAdSdk.durationInSeconds
+    private val ctxShowAdForReels get() = requestContext?.showAdForReels ?: InsideAdSdk.showAdForReels
+    private val ctxResizeMode get() = requestContext?.resizeMode ?: InsideAdSdk.resizeMode
+    private val ctxIsAdMuted get() = requestContext?.isAdMuted ?: InsideAdSdk.isAdMuted
 
     init {
         LayoutInflater.from(context).inflate(R.layout.inside_ad_player, this)
@@ -72,7 +95,7 @@ class InsideAdPlayer(
             isSkippable = false,
             additionalInfo = mapOf(
                 "Skip Button Support" to "NOT SUPPORTED - Local ads only have close button",
-                "Close Button Delay" to "${InsideAdSdk.showCloseButtonAfterSeconds?.div(1000) ?: 0}s",
+                "Close Button Delay" to "${ctxShowCloseButtonAfterSeconds?.div(1000) ?: 0}s",
                 "Ad URL" to (ad.url ?: "N/A")
             )
         )
@@ -103,7 +126,7 @@ class InsideAdPlayer(
         // Size the parent container (this InsideAdPlayer) instead of child views
         // This ensures all overlay UI elements stay within the video bounds
         post {
-            Helper.setViewSize(this, resources, InsideAdSdk.resizeMode)
+            Helper.setViewSize(this, resources, ctxResizeMode)
             // Request layout to ensure centering is applied
             requestLayout()
         }
@@ -120,8 +143,8 @@ class InsideAdPlayer(
         Log.i(InsideAdSdk.LOG_TAG, "playAd")
         insideAdCallback?.insideAdPlay()
 
-        if (!InsideAdSdk.showAdForReels) {
-            InsideAdSdk.durationInSeconds?.let {
+        if (!ctxShowAdForReels) {
+            ctxDurationInSeconds?.let {
                 closeImageAdHandler?.postDelayed({
                     stopAd()
                 }, it)
@@ -142,6 +165,9 @@ class InsideAdPlayer(
     }
 
     private fun prepareMediaPlayer(videoUrl: Uri) {
+        isMediaPrepared = false
+        startLoadTimeout()
+
         mediaPlayer = MediaPlayer().apply {
             try {
                 setDataSource(context, videoUrl)
@@ -149,6 +175,8 @@ class InsideAdPlayer(
 
                 setOnPreparedListener { mediaPlayer ->
                     Log.i(InsideAdSdk.LOG_TAG, "loadAd")
+                    isMediaPrepared = true
+                    cancelLoadTimeout()
                     insideAdCallback?.insideAdLoaded()
 
                     if (savedAdPosition > 0) {
@@ -160,14 +188,44 @@ class InsideAdPlayer(
                 }
 
                 setOnErrorListener { _: MediaPlayer?, errorType: Int, _: Int ->
+                    cancelLoadTimeout()
                     notifySdkAboutAdError(errorType)
                     true
                 }
             } catch (e: Exception) {
                 e.printStackTrace()
+                cancelLoadTimeout()
                 notifySdkAboutAdError(MediaPlayer.MEDIA_ERROR_UNKNOWN)
             }
         }
+    }
+
+    private fun startLoadTimeout() {
+        val timeout = InsideAdSdk.localVideoLoadTimeoutMillis
+        if (timeout <= 0) return
+
+        cancelLoadTimeout()
+        loadTimeoutHandler = Handler(Looper.getMainLooper())
+        loadTimeoutHandler?.postDelayed({
+            if (!isMediaPrepared) {
+                Log.e(
+                    InsideAdSdk.LOG_TAG,
+                    "Local video ad did not finish loading within ${timeout}ms - giving up so the " +
+                            "slot can fall back or be released. The creative is most likely too " +
+                            "large or too high a bitrate to stream."
+                )
+                // Tear the whole ad down, not just the MediaPlayer: the surface, spinner, gradient
+                // and buttons must go too, otherwise a fallback ad renders underneath the dead
+                // ad's views and their field references are overwritten, leaking them for good.
+                stopLocalVideoAd()
+                notifySdkAboutAdError(MediaPlayer.MEDIA_ERROR_TIMED_OUT)
+            }
+        }, timeout)
+    }
+
+    private fun cancelLoadTimeout() {
+        loadTimeoutHandler?.removeCallbacksAndMessages(null)
+        loadTimeoutHandler = null
     }
 
     private fun notifySdkAboutAdError(errorType: Int): Boolean {
@@ -282,13 +340,13 @@ class InsideAdPlayer(
 
         InsideAdSdk.debugLog(
             "InsideAdPlayer",
-            "Close button created - Will appear after ${InsideAdSdk.showCloseButtonAfterSeconds?.div(1000) ?: 0}s"
+            "Close button created - Will appear after ${ctxShowCloseButtonAfterSeconds?.div(1000) ?: 0}s"
         )
     }
 
     private fun setCloseButtonVisibility() {
-        if (!InsideAdSdk.showAdForReels) {
-            InsideAdSdk.showCloseButtonAfterSeconds?.let { delayMillis ->
+        if (!ctxShowAdForReels) {
+            ctxShowCloseButtonAfterSeconds?.let { delayMillis ->
                 showCloseButtonHandler?.postDelayed({
                     adCloseButton?.visibility = VISIBLE
                     InsideAdSdk.debugLog(
@@ -318,7 +376,7 @@ class InsideAdPlayer(
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         // Defensive: explicitly check for false, default to muted if null/true
-        adSoundPlaying = if (InsideAdSdk.isAdMuted == false) {
+        adSoundPlaying = if (ctxIsAdMuted == false) {
             // Only unmute if explicitly set to false
             setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true
@@ -424,6 +482,7 @@ class InsideAdPlayer(
         closeImageAdHandler = null
         showCloseButtonHandler?.removeCallbacksAndMessages(null)
         showCloseButtonHandler = null
+        cancelLoadTimeout()
     }
 
     override fun surfaceCreated(holder: SurfaceHolder) {

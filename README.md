@@ -42,9 +42,26 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.27'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.28'
 }
 ```
+
+### Minimum SDK and desugaring
+
+The library is **minSdk 23**. It uses `java.time`, which is an API 26 platform feature, so if your
+app is below **minSdk 26** you must enable core library desugaring or those calls crash at runtime
+on API 23-25:
+
+```gradle
+android {
+    compileOptions { coreLibraryDesugaringEnabled true }
+}
+dependencies {
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3'
+}
+```
+
+If your app is minSdk 26 or above, nothing is needed.
 
 To use our library you need to add the JitPack maven repository to the list of repositories
 in your settings.gradle file:
@@ -288,6 +305,55 @@ You can use preroll ads and regular ads together in the same screen:
 3. Request regular ads during content playback using `requestAd()` for mid-roll ads
 
 Regular ads requested with `requestAd()` will automatically exclude preroll ads and work with intervals as usual.
+
+## Multiview Ads
+
+Two dedicated slots serve the Multiview SDK, and unlike preroll they may be on screen **at the same
+time**:
+
+| ViewType | Renders in |
+|---|---|
+| `MULTIVIEW_CANVAS` | the multiview player grid |
+| `MULTIVIEW_RIGHT_BAR` | the multiview streams selector |
+
+```kotlin
+val canvasAdView = InsideAdView(context).apply {
+    // Sizes against the parent container rather than the screen - required for ads
+    // embedded in a panel instead of shown fullscreen.
+    setResizeMode(InsideAdView.ResizeMode.MATCH_CONTAINER)
+}
+canvasContainer.addView(canvasAdView)
+
+InsideAdSdk.requestMultiviewCanvasAd(
+    adContainer = canvasAdView,
+    screen = "",
+    isAdMuted = true,
+    callback = object : InsideAdCallback {
+        override fun insideAdLoaded() { canvasAdView.playAd() }
+        // ... remaining callbacks
+    }
+)
+```
+
+`requestMultiviewRightBarAd(...)` is the equivalent for the right bar. Each slot keeps its own mute
+state, targeting, timings and callbacks, so the two never interfere.
+
+These ads **repeat** on the placement's `intervalInMinutes` (like regular ads, unlike preroll),
+honour `startAfterSeconds`, work with all five ad types, and support fallback ads.
+
+> **`screen` must match the placement tags.** A placement with no `tags` matches **only** an empty
+> `screen` string. If your multiview placements are untagged, pass `screen = ""`.
+
+Release the callbacks when the screen goes away - they capture your Activity:
+
+```kotlin
+override fun onDestroy() {
+    super.onDestroy()
+    InsideAdSdk.cancelAllDedicatedAdRequests()
+}
+```
+
+Individual slots can be cancelled with `InsideAdSdk.cancelAdRequest(ViewType.MULTIVIEW_CANVAS)`.
 
 ## Advanced Features
 

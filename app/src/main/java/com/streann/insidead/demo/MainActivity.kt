@@ -26,5 +26,9 @@ class MainActivity : AppCompatActivity() {
         findViewById<Button>(R.id.splitActivityButton).setOnClickListener {
             startActivity(Intent(this, SplitActivity::class.java))
         }
+
+        findViewById<Button>(R.id.multiviewButton).setOnClickListener {
+            startActivity(Intent(this, MultiviewActivity::class.java))
+        }
     }
 }

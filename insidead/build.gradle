@@ -9,7 +9,7 @@ android {
     compileSdk 34
 
     defaultConfig {
-        minSdk 26
+        minSdk 23
         targetSdk 34
 
         aarMetadata {
@@ -28,8 +28,20 @@ android {
     }
 
     compileOptions {
+        // java.time (Instant/LocalTime/DayOfWeek) is used by the campaign models and
+        // filtering, and is part of the public API surface. It is API 26+ on the platform,
+        // so desugaring is what allows minSdk 23. Consuming apps below minSdk 26 must
+        // enable core library desugaring too - it is applied at the app's dex step.
+        coreLibraryDesugaringEnabled true
+
         sourceCompatibility JavaVersion.VERSION_1_8
         targetCompatibility JavaVersion.VERSION_1_8
+    }
+
+    testOptions {
+        // CampaignsFilterUtil calls android.util.Log; without this the unit tests fail
+        // with "Method i in android.util.Log not mocked".
+        unitTests.returnDefaultValues = true
     }
 
     kotlinOptions {
@@ -38,6 +50,9 @@ android {
 }
 
 dependencies {
+    // 1.2.3 is the last line compatible with AGP 7.3.1; desugar_jdk_libs 2.x requires AGP 7.4+.
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3'
+
     implementation 'androidx.core:core-ktx:1.10.0'
     implementation 'androidx.appcompat:appcompat:1.6.1'
     implementation 'com.google.android.material:material:1.9.0'
