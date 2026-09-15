@@ -57,7 +57,7 @@ android {
     compileOptions { coreLibraryDesugaringEnabled true }
 }
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3'
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
 }
 ```
 
