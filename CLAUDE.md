@@ -103,12 +103,14 @@ Key models in `insidead/src/main/java/com/streann/insidead/models/`:
 
 Key enums in `insidead/src/main/java/com/streann/insidead/utils/enums/`:
 
-- **ViewType** (NEW) - Defines placement viewType values:
+- **ViewType** - Placement slots reserved for a dedicated ad request:
   - `PREROLL` - Ads shown before content starts
-  - `MIDROLL` - Ads shown during content playback
-  - `POSTROLL` - Ads shown after content ends
-  - `OVERLAY` - Ads overlaid on content
-  - `UNSPECIFIED` - No specific viewType
+  - `MULTIVIEW_CANVAS` - Ads shown over the multiview player grid
+  - `MULTIVIEW_RIGHT_BAR` - Ads shown in the multiview streams selector
+
+  Matching is case/separator-insensitive via `ViewType.fromRaw()`, so backend casing drift cannot
+  break delivery. `ViewType.DEDICATED_SLOTS` is the set that regular `requestAd()` calls must never
+  serve - any new slot MUST be added there or it leaks into regular ad traffic.
 
 ### Ad Request Flow
 
@@ -175,7 +177,13 @@ Campaigns include properties that control behavior:
 ## Important SDK Requirements
 
 From README.md:
-- **Minimum SDK**: 26 (Android 8.0)
+- **Minimum SDK**: 23 (Android 6.0). `play-services-ads` sets this floor; it cannot go lower.
+  `java.time` is used by the campaign models, so the library enables core library desugaring -
+  **consuming apps below minSdk 26 must enable it too**:
+  ```gradle
+  compileOptions { coreLibraryDesugaringEnabled true }
+  dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3' }
+  ```
 - **Target SDK**: 34
 - **Required**: JitPack repository in `settings.gradle`
 - **For Banner/Native Ads**: Must add Google Ad Manager App ID to AndroidManifest.xml
@@ -193,8 +201,8 @@ From README.md:
 
 Key files modified/created for preroll ad support:
 
-1. **insidead/src/main/java/com/streann/insidead/utils/enums/ViewType.kt** (NEW)
-   - Enum defining placement viewType values (PREROLL, MIDROLL, POSTROLL, OVERLAY)
+1. **insidead/src/main/java/com/streann/insidead/utils/enums/ViewType.kt**
+   - Enum defining placement viewType values (PREROLL, MULTIVIEW_CANVAS, MULTIVIEW_RIGHT_BAR)
 
 2. **insidead/src/main/java/com/streann/insidead/InsideAdSdk.kt** (MODIFIED)
    - Added `prerollAdCallback`, `isPrerollMode` flags
@@ -224,3 +232,43 @@ Key files modified/created for preroll ad support:
 
 6. **app/src/main/res/layout/activity_preroll.xml** (MODIFIED)
    - Added second InsideAdView for regular ads during content playback
+
+## Multiview Ad Slots
+
+Two placement slots serve the Multiview SDK, and unlike preroll they can be **on screen at the same
+time**:
+
+| ViewType | Renders in |
+|---|---|
+| `MULTIVIEW_CANVAS` | the max-4-player grid |
+| `MULTIVIEW_RIGHT_BAR` | the streams selector |
+
+```kotlin
+InsideAdSdk.setAdCallback(ViewType.MULTIVIEW_CANVAS, callback)
+InsideAdSdk.requestMultiviewCanvasAd(adContainer = canvasAdView, screen = "", isAdMuted = true)
+InsideAdSdk.requestMultiviewRightBarAd(adContainer = rightBarAdView, screen = "", isAdMuted = false)
+// in onDestroy()
+InsideAdSdk.cancelAllDedicatedAdRequests()
+```
+
+Behaviour: repeats on the placement's `intervalInMinutes` (like a regular ad, unlike preroll),
+honours `startAfterSeconds`, supports all five `AdType`s, and supports fallback ads.
+
+Use `InsideAdView.ResizeMode.MATCH_CONTAINER` for these slots - every other mode sizes against the
+screen, which is wrong for an ad embedded in a panel.
+
+**`screen` must match the placement's tags.** Placements with no `tags` (the current multiview
+inventory) match **only** an empty `screen` string.
+
+### Per-request state
+
+`AdRequestContext` holds everything that belongs to one request (mute state, targeting, timings,
+geometry). It exists because `InsideAdSdk` used to keep this as global mutable state, which allowed
+only one ad in flight - preroll worked around it by saving and restoring the globals, which does not
+generalise to two concurrent slots.
+
+Players read `requestContext?.X ?: InsideAdSdk.X`, so the globals survive as deprecated mirrors of
+the most recent request and any unmigrated path behaves exactly as before.
+
+`CampaignsFilterUtil.selectAd()` is the pure selection entry point and returns the chosen ad plus
+its timings. The older `getInsideAd()` is deprecated: it still writes the globals as a side effect.

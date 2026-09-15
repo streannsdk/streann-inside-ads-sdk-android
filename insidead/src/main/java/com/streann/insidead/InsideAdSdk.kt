@@ -1,5 +1,7 @@
 package com.streann.insidead
 
+import java.util.EnumMap
+import com.streann.insidead.utils.enums.ViewType
 import android.content.SharedPreferences
 import android.text.TextUtils
 import android.util.Log
@@ -8,6 +10,7 @@ import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.GeoIp
 import com.streann.insidead.models.TargetingFilters
+import com.streann.insidead.models.isEmpty
 import com.streann.insidead.utils.HttpRequestsUtil
 import java.util.concurrent.Executors
 import java.util.concurrent.ScheduledExecutorService
@@ -95,15 +98,22 @@ object InsideAdSdk {
 
     internal var geoIp: GeoIp? = null
 
-    private var prerollAdCallback: InsideAdCallback? = null
+    /**
+     * Callbacks and in-flight views per dedicated slot.
+     *
+     * These were single fields when preroll was the only slot. The multiview canvas and right bar
+     * can be on screen at the same time, so each slot needs its own entry or they clobber each
+     * other.
+     */
+    private val slotCallbacks = EnumMap<ViewType, InsideAdCallback>(ViewType::class.java)
+    private val activeSlotViews = EnumMap<ViewType, InsideAdView>(ViewType::class.java)
+
     internal var isPrerollMode: Boolean = false
 
     // Temporary storage for regular ad parameters when preroll is active
     internal var savedIsAdMuted: Boolean? = null
     internal var savedTargetingFilters: TargetingFilters? = null
 
-    // Track active preroll ad request to enable cancellation
-    internal var activePrerollAdView: InsideAdView? = null
 
     internal var appPreferences: SharedPreferences? = null
 
@@ -117,6 +127,17 @@ object InsideAdSdk {
 
     private var insideAdCallback: InsideAdCallback? = null
     private var requestCampaignExecutor: ScheduledExecutorService? = null
+
+    /**
+     * How long a LOCAL_VIDEO ad may spend loading before it is abandoned, in milliseconds.
+     *
+     * MediaPlayer.prepareAsync() will wait forever on a creative that is too large or too high a
+     * bitrate to stream, leaving the ad slot empty with no error raised. When this elapses the ad
+     * reports an error, which lets the configured fallback ad run instead.
+     *
+     * Set to 0 to disable. Default 15s, matching the Google IMA video load timeout.
+     */
+    var localVideoLoadTimeoutMillis: Long = 15_000L
 
     var intervalForReels: Int? = null
     internal var showAdForReels: Boolean = false
@@ -201,49 +222,50 @@ object InsideAdSdk {
         return insideAdCallback
     }
 
-    fun areTargetingFiltersEmpty(): Boolean {
-        return targetingFilters?.let {
-            it.vodId.isNullOrEmpty() &&
-                    it.channelId.isNullOrEmpty() &&
-                    it.radioId.isNullOrEmpty() &&
-                    it.seriesId.isNullOrEmpty() &&
-                    it.categoryIds.isNullOrEmpty() &&
-                    it.contentProviderId.isNullOrEmpty() &&
-                    it.contentTitle.isNullOrEmpty()
-        } ?: true
+    fun areTargetingFiltersEmpty(): Boolean = targetingFilters.isEmpty()
+
+    // ---- dedicated slot callbacks ------------------------------------------------------------
+
+    /** Registers the callback that receives events for [viewType]. */
+    fun setAdCallback(viewType: ViewType, callback: InsideAdCallback) {
+        slotCallbacks[viewType] = callback
     }
 
-    fun setPrerollAdCallback(callback: InsideAdCallback) {
-        prerollAdCallback = callback
+    fun getAdCallback(viewType: ViewType): InsideAdCallback? = slotCallbacks[viewType]
+
+    /**
+     * Removes the callback for [viewType]. Call this from onDestroy()/onStop() - the callback
+     * usually captures an Activity, so holding it leaks the screen.
+     */
+    fun removeAdCallback(viewType: ViewType) {
+        Log.i(LOG_TAG, "removeAdCallback: ${viewType.value}")
+        slotCallbacks.remove(viewType)
     }
 
-    fun getPrerollAdCallback(): InsideAdCallback? {
-        return prerollAdCallback
+    internal fun setActiveSlotView(viewType: ViewType, view: InsideAdView) {
+        activeSlotViews[viewType] = view
+    }
+
+    /** Clears [view] from the registry only if it is still the view registered for that slot. */
+    internal fun clearActiveSlotView(viewType: ViewType?, view: InsideAdView) {
+        val slot = viewType ?: return
+        if (activeSlotViews[slot] === view) {
+            activeSlotViews.remove(slot)
+        }
     }
 
     /**
-     * Removes the preroll ad callback completely.
-     * Call this when you no longer want to receive preroll ad events.
-     * This should typically be called in Activity/Fragment onDestroy() or onStop().
+     * Cancels any in-flight request for [viewType]. Safe to call when nothing is active.
+     *
+     * Only preroll restores the saved global parameters - the multiview slots never swap them,
+     * so there is nothing for them to put back.
      */
-    fun removePrerollAdCallback() {
-        Log.i(LOG_TAG, "removePrerollAdCallback")
-        prerollAdCallback = null
-    }
+    fun cancelAdRequest(viewType: ViewType) {
+        Log.i(LOG_TAG, "cancelAdRequest: ${viewType.value}")
+        activeSlotViews.remove(viewType)?.cancelAdRequest()
+        slotCallbacks.remove(viewType)
 
-    /**
-     * Cancels any ongoing preroll ad request.
-     * Stops pending handlers, clears callbacks, and cleans up resources.
-     * Safe to call even if no preroll ad is active.
-     */
-    fun cancelPrerollAdRequest() {
-        Log.i(LOG_TAG, "cancelPrerollAdRequest")
-        activePrerollAdView?.cancelAdRequest()
-        activePrerollAdView = null
-        prerollAdCallback = null
-
-        // Restore regular ad parameters if preroll was in progress
-        if (isPrerollMode) {
+        if (viewType == ViewType.PREROLL && isPrerollMode) {
             isAdMuted = savedIsAdMuted
             targetingFilters = savedTargetingFilters
             isPrerollMode = false
@@ -251,6 +273,73 @@ object InsideAdSdk {
             savedTargetingFilters = null
         }
     }
+
+    /** Cancels every dedicated slot request. Convenient for onDestroy(). */
+    fun cancelAllDedicatedAdRequests() {
+        ViewType.values().forEach { cancelAdRequest(it) }
+    }
+
+    // ---- multiview convenience -----------------------------------------------------------------
+
+    /** Requests an ad for the multiview canvas (the player grid). */
+    @JvmOverloads
+    fun requestMultiviewCanvasAd(
+        adContainer: InsideAdView,
+        screen: String = "",
+        isAdMuted: Boolean? = true,
+        targetingFilters: TargetingFilters? = null,
+        callback: InsideAdCallback? = null
+    ) = requestSlotAd(
+        ViewType.MULTIVIEW_CANVAS, adContainer, screen, isAdMuted, targetingFilters, callback
+    )
+
+    /** Requests an ad for the multiview right bar (the streams selector). */
+    @JvmOverloads
+    fun requestMultiviewRightBarAd(
+        adContainer: InsideAdView,
+        screen: String = "",
+        isAdMuted: Boolean? = true,
+        targetingFilters: TargetingFilters? = null,
+        callback: InsideAdCallback? = null
+    ) = requestSlotAd(
+        ViewType.MULTIVIEW_RIGHT_BAR, adContainer, screen, isAdMuted, targetingFilters, callback
+    )
+
+    @JvmOverloads
+    fun requestSlotAd(
+        viewType: ViewType,
+        adContainer: InsideAdView,
+        screen: String = "",
+        isAdMuted: Boolean? = true,
+        targetingFilters: TargetingFilters? = null,
+        callback: InsideAdCallback? = null
+    ) {
+        Log.i(LOG_TAG, "requestSlotAd - viewType: ${viewType.value}, screen: $screen")
+        callback?.let { slotCallbacks[viewType] = it }
+        activeSlotViews[viewType] = adContainer
+        adContainer.requestAdForSlot(viewType, screen, isAdMuted, targetingFilters, callback)
+    }
+
+    // ---- preroll: unchanged public surface, delegating to the slot registry --------------------
+
+    fun setPrerollAdCallback(callback: InsideAdCallback) =
+        setAdCallback(ViewType.PREROLL, callback)
+
+    fun getPrerollAdCallback(): InsideAdCallback? = getAdCallback(ViewType.PREROLL)
+
+    /**
+     * Removes the preroll ad callback completely.
+     * Call this when you no longer want to receive preroll ad events.
+     * This should typically be called in Activity/Fragment onDestroy() or onStop().
+     */
+    fun removePrerollAdCallback() = removeAdCallback(ViewType.PREROLL)
+
+    /**
+     * Cancels any ongoing preroll ad request.
+     * Stops pending handlers, clears callbacks, and cleans up resources.
+     * Safe to call even if no preroll ad is active.
+     */
+    fun cancelPrerollAdRequest() = cancelAdRequest(ViewType.PREROLL)
 
     /**
      * Removes the regular inside ad callback completely.
@@ -270,7 +359,7 @@ object InsideAdSdk {
         targetingFilters: TargetingFilters? = null
     ) {
         Log.i(LOG_TAG, "requestPrerollAd - screen: $screen")
-        activePrerollAdView = adContainer
+        activeSlotViews[ViewType.PREROLL] = adContainer
         adContainer.requestPrerollAd(screen, isAdMuted, targetingFilters)
     }
 

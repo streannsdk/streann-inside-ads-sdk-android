@@ -1,5 +1,6 @@
 package com.streann.insidead.players.googleima
 
+import com.streann.insidead.models.AdRequestContext
 import android.annotation.SuppressLint
 import android.content.Context
 import android.util.Log
@@ -41,6 +42,15 @@ class GoogleImaPlayer(
     private var insideAdCallback: InsideAdCallback? = null
     private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
+    /**
+     * Per-request state for the ad this player is showing. Set by InsideAdView immediately before
+     * playback starts. Reads fall back to the deprecated InsideAdSdk globals when it is null, so
+     * any path that does not set a context behaves exactly as it did before.
+     */
+    internal var requestContext: AdRequestContext? = null
+
+    private val ctxResizeMode get() = requestContext?.resizeMode ?: InsideAdSdk.resizeMode
+
     init {
         init()
     }
@@ -54,7 +64,7 @@ class GoogleImaPlayer(
         // Size the parent container (this GoogleImaPlayer) instead of child videoPlayerContainer
         // This ensures proper centering in portrait/landscape
         post {
-            Helper.setViewSize(this, resources, InsideAdSdk.resizeMode)
+            Helper.setViewSize(this, resources, ctxResizeMode)
             requestLayout()
         }
 
@@ -236,7 +246,21 @@ class GoogleImaPlayer(
 
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdCallback = listener
-        val url = MacrosHelper.populateVASTURL(context, insideAd)
+
+        // The adapter reads the mute state. Without this it falls back to the global
+        // InsideAdSdk.isAdMuted, which whichever slot ran showAd() last has already overwritten -
+        // so two concurrent slots would share one mute state.
+        videoAdPlayerAdapter?.requestContext = requestContext
+
+        // init() sized this view at construction time, before any request existed and before the
+        // view was attached, so ctxResizeMode was still null and a MATCH_CONTAINER parent still
+        // measured 0. Re-size now that both are known.
+        post {
+            Helper.setViewSize(this, resources, ctxResizeMode)
+            requestLayout()
+        }
+
+        val url = MacrosHelper.populateVASTURL(context, insideAd, requestContext)
         url?.let { requestAds(it) }
     }
 
