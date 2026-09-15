@@ -36,7 +36,11 @@ android {
 }
 
 dependencies {
-    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3'
+    // Pinned to 1.2.2: 1.2.3 breaks the release L8 task with
+    // "Missing class jdk.internal.misc.Unsafe" (ConcurrentHashMap$TreeBin). Only the release
+    // variant shrinks the desugar library, so debug builds do not catch it.
+    // 2.x is not an option here - it requires AGP 7.4+ and this project is on 7.3.1.
+    coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2'
 
     implementation project(':insidead')
 

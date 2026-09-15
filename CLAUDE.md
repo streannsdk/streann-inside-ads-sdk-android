@@ -182,7 +182,7 @@ From README.md:
   **consuming apps below minSdk 26 must enable it too**:
   ```gradle
   compileOptions { coreLibraryDesugaringEnabled true }
-  dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.3' }
+  dependencies { coreLibraryDesugaring 'com.android.tools:desugar_jdk_libs:1.2.2' }
   ```
 - **Target SDK**: 34
 - **Required**: JitPack repository in `settings.gradle`
