@@ -16,6 +16,12 @@
         android:theme="@style/Theme.InsideAdDemo"
         tools:targetApi="31">
         <activity
+            android:name=".MultiviewActivity"
+            android:configChanges="orientation|screenSize"
+            android:exported="false"
+            android:screenOrientation="landscape" />
+
+        <activity
             android:name=".MainActivity"
             android:exported="true">
             <intent-filter>

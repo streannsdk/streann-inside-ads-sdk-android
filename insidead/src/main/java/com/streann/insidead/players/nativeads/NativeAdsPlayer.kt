@@ -1,5 +1,6 @@
 package com.streann.insidead.players.nativeads
 
+import com.streann.insidead.models.AdRequestContext
 import android.annotation.SuppressLint
 import android.content.Context
 import android.content.res.ColorStateList
@@ -50,6 +51,17 @@ class NativeAdsPlayer(
 
     private var showCloseButtonHandler: Handler? = null
 
+    /**
+     * Per-request state for the ad this player is showing. Set by InsideAdView immediately before
+     * playback starts. Reads fall back to the deprecated InsideAdSdk globals when it is null, so
+     * any path that does not set a context behaves exactly as it did before.
+     */
+    internal var requestContext: AdRequestContext? = null
+
+    private val ctxIsAdMuted get() = requestContext?.isAdMuted ?: InsideAdSdk.isAdMuted
+    private val ctxShowAdForReels get() = requestContext?.showAdForReels ?: InsideAdSdk.showAdForReels
+    private val ctxShowCloseButtonAfterSeconds get() = requestContext?.showCloseButtonAfterSecondsMillis ?: InsideAdSdk.showCloseButtonAfterSeconds
+
     init {
         adView = LayoutInflater.from(context)
             .inflate(R.layout.native_ad_player, null) as NativeAdView
@@ -64,7 +76,7 @@ class NativeAdsPlayer(
         val builder = AdLoader.Builder(context, adUrl)
 
         // Defensive: default to muted (true) if isAdMuted is null
-        val isMuted = InsideAdSdk.isAdMuted ?: true
+        val isMuted = ctxIsAdMuted ?: true
         val videoOptions = VideoOptions.Builder().setStartMuted(isMuted).build()
         val adOptions = NativeAdOptions.Builder().setVideoOptions(videoOptions).build()
         builder.withNativeAdOptions(adOptions)
@@ -256,8 +268,8 @@ class NativeAdsPlayer(
     }
 
     private fun setCloseButtonVisibility() {
-        if (!InsideAdSdk.showAdForReels) {
-            InsideAdSdk.showCloseButtonAfterSeconds?.let {
+        if (!ctxShowAdForReels) {
+            ctxShowCloseButtonAfterSeconds?.let {
                 showCloseButtonHandler?.postDelayed({
                     adCloseButton?.visibility = VISIBLE
                     adCloseButton?.setOnClickListener {

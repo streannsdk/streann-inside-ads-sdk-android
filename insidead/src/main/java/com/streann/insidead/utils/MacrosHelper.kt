@@ -1,5 +1,7 @@
 package com.streann.insidead.utils
 
+import com.streann.insidead.models.TargetingFilters
+import com.streann.insidead.models.AdRequestContext
 import android.content.Context
 import android.text.TextUtils
 import android.webkit.WebSettings
@@ -215,7 +217,22 @@ object MacrosHelper {
         return url
     }
 
-    fun populateVASTURL(context: Context?, insideAd: InsideAd): String? {
+    /**
+     * @param requestContext per-request state for the ad being played. When null the deprecated
+     *   InsideAdSdk globals are used, preserving the previous behaviour for callers that have not
+     *   been migrated.
+     */
+    fun populateVASTURL(context: Context?, insideAd: InsideAd): String? =
+        populateVASTURL(context, insideAd, null)
+
+    internal fun populateVASTURL(
+        context: Context?,
+        insideAd: InsideAd,
+        requestContext: AdRequestContext?
+    ): String? {
+        val targetingFilters = requestContext?.targetingFilters ?: InsideAdSdk.targetingFilters
+        val playerWidth = requestContext?.playerWidth?.takeIf { it > 0 } ?: InsideAdSdk.playerWidth
+        val playerHeight = requestContext?.playerHeight?.takeIf { it > 0 } ?: InsideAdSdk.playerHeight
         val geoIp: GeoIp? = InsideAdSdk.geoIp
         val appDomain: String? = InsideAdSdk.appDomain
         val siteUrl: String? = InsideAdSdk.siteUrl
@@ -223,13 +240,13 @@ object MacrosHelper {
         val descriptionUrl: String? = InsideAdSdk.descriptionUrl
         val userBirthYear: Int = InsideAdSdk.userBirthYear ?: 0
         val userGender: String? = InsideAdSdk.userGender
-        val contentTitle: String? = InsideAdSdk.targetingFilters?.contentTitle
-        val contentId: String = getContentId()
+        val contentTitle: String? = targetingFilters?.contentTitle
+        val contentId: String = getContentId(targetingFilters)
 
         val macros: MacrosBundle = MacrosUtil.createDefaultMacroBuilder()
             .appendsDomain(appDomain)
-            .appendsPlayerWidth(InsideAdSdk.playerWidth)
-            .appendsPlayerHeight(InsideAdSdk.playerHeight)
+            .appendsPlayerWidth(playerWidth)
+            .appendsPlayerHeight(playerHeight)
             .appendsLatitude(geoIp?.latitude!!.toDouble())
             .appendsLongitude(geoIp.longitude!!.toDouble())
             .appendsNetwork(geoIp.connType)
@@ -299,10 +316,10 @@ object MacrosHelper {
         return macrosHashMap
     }
 
-    private fun getContentId(): String {
-        val vodId: String? = InsideAdSdk.targetingFilters?.vodId
-        val channelId: String? = InsideAdSdk.targetingFilters?.channelId
-        val radioId: String? = InsideAdSdk.targetingFilters?.radioId
+    private fun getContentId(targetingFilters: TargetingFilters?): String {
+        val vodId: String? = targetingFilters?.vodId
+        val channelId: String? = targetingFilters?.channelId
+        val radioId: String? = targetingFilters?.radioId
 
         if (!vodId.isNullOrEmpty()) {
             return vodId

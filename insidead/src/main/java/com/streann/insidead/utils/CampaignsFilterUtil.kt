@@ -5,6 +5,8 @@ import com.streann.insidead.InsideAdSdk
 import com.streann.insidead.models.Campaign
 import com.streann.insidead.models.InsideAd
 import com.streann.insidead.models.Placement
+import com.streann.insidead.models.TargetingFilters
+import com.streann.insidead.models.isEmpty
 import com.streann.insidead.utils.enums.TargetType
 import com.streann.insidead.utils.enums.ViewType
 import java.time.DayOfWeek
@@ -16,34 +18,95 @@ import kotlin.random.Random
 object CampaignsFilterUtil {
     private const val LOG_TAG = "CampaignsFilterUtil"
 
-    // method to return an ad from the campaigns list
-    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String, viewType: String? = null): InsideAd? {
-        var insideAd: InsideAd? = null
+    /**
+     * The outcome of selecting an ad: the ad itself plus the timings that belong to *its*
+     * placement and campaign.
+     *
+     * These used to be written straight into [InsideAdSdk] as a side effect of selection, which
+     * meant two concurrent ad requests silently overwrote each other's timings. Returning them
+     * keeps selection pure and lets each request own its own values.
+     */
+    internal data class AdSelection(
+        val insideAd: InsideAd,
+        val startAfterSecondsMillis: Long?,
+        val showCloseButtonAfterSecondsMillis: Long?,
+        val intervalInMinutesMillis: Long?,
+        val intervalForReels: Int?
+    )
 
-        val activeCampaign = getActiveCampaign(campaigns, screen, viewType)
+    /**
+     * Selects an ad without touching any global state.
+     *
+     * @param viewType the dedicated slot being filled, or null for a regular ad request.
+     * @param targetingFilters passed in rather than read from [InsideAdSdk] so that concurrent
+     *   requests can target different content.
+     */
+    internal fun selectAd(
+        campaigns: ArrayList<Campaign>?,
+        screen: String,
+        viewType: ViewType?,
+        targetingFilters: TargetingFilters?
+    ): AdSelection? {
+        val activeCampaign = getActiveCampaign(campaigns, screen, viewType, targetingFilters)
         Log.i(LOG_TAG, "activeCampaign $activeCampaign")
+        if (activeCampaign == null) return null
 
-        activeCampaign?.let {
-            val intervalInMinutes =
-                activeCampaign.properties?.get("intervalInMinutes")
-            val intervalInMillis = intervalInMinutes?.toFloat()?.let {
-                Helper.getMillisFromMinutes(it)
-            }
-            InsideAdSdk.intervalInMinutes = intervalInMillis ?: 0
+        val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen, viewType)
+        val insideAd = getInsideAdByPlacements(campaignPlacements) ?: return null
+        Log.i(LOG_TAG, "insideAd $insideAd")
 
-            val campaignPlacements = getPlacementsByCampaign(activeCampaign, screen, viewType)
+        val intervalInMillis = activeCampaign.properties?.get("intervalInMinutes")
+            ?.toFloat()?.let { Helper.getMillisFromMinutes(it) }
 
-            insideAd = getInsideAdByPlacements(campaignPlacements)
-            Log.i(LOG_TAG, "insideAd $insideAd")
+        val placement = findPlacementForAd(insideAd, activeCampaign.placements)
+        Log.i(LOG_TAG, "activePlacement: $placement")
 
-            setCurrentPlacement(insideAd, activeCampaign.placements)
-        }
+        return AdSelection(
+            insideAd = insideAd,
+            startAfterSecondsMillis = placement?.properties?.get("startAfterSeconds")
+                ?.toLong()?.let { Helper.getMillisFromSeconds(it) },
+            showCloseButtonAfterSecondsMillis = placement?.properties?.get("showCloseButtonAfterSeconds")
+                ?.toLong()?.let { Helper.getMillisFromSeconds(it) },
+            intervalInMinutesMillis = intervalInMillis ?: 0,
+            intervalForReels = placement?.properties?.get("intervalForReels")
+        )
+    }
 
-        return insideAd
+    /**
+     * Legacy entry point: selects an ad and publishes its timings into the [InsideAdSdk]
+     * singleton, exactly as before.
+     *
+     * Retained because it is public API on a public object and integrators may call it. New code
+     * should use [selectAd], which does not mutate shared state.
+     */
+    @Deprecated(
+        "Mutates global SDK state, so it cannot support concurrent ad requests. Prefer requesting " +
+                "ads through InsideAdView, which keeps per-request state."
+    )
+    fun getInsideAd(campaigns: ArrayList<Campaign>?, screen: String, viewType: String? = null): InsideAd? {
+        val selection = selectAd(
+            campaigns,
+            screen,
+            ViewType.fromRaw(viewType),
+            InsideAdSdk.targetingFilters
+        )
+
+        // Preserve the historical side effects for callers that still read these globals.
+        InsideAdSdk.intervalInMinutes = selection?.intervalInMinutesMillis ?: 0
+        InsideAdSdk.startAfterSeconds = selection?.startAfterSecondsMillis
+        InsideAdSdk.showCloseButtonAfterSeconds = selection?.showCloseButtonAfterSecondsMillis
+        InsideAdSdk.intervalForReels = selection?.intervalForReels
+
+        return selection?.insideAd
     }
 
     // method to get the active campaigns from the campaigns list
-    private fun getActiveCampaign(campaigns: ArrayList<Campaign>?, screen: String, viewType: String? = null): Campaign? {
+    private fun getActiveCampaign(
+        campaigns: ArrayList<Campaign>?,
+        screen: String,
+        viewType: ViewType? = null,
+        targetingFilters: TargetingFilters? = null
+    ): Campaign? {
         Log.i(LOG_TAG, "getActiveCampaign")
 
         return campaigns?.let { allCampaigns ->
@@ -51,7 +114,7 @@ object CampaignsFilterUtil {
                 .takeIf { it.isNotEmpty() }
                 ?.let { getActiveCampaignsByPlacements(it, screen, viewType) }
                 ?.takeIf { it.isNotEmpty() }
-                ?.let { getCampaignsByContentTargeting(it) }
+                ?.let { getCampaignsByContentTargeting(it, targetingFilters) }
 
             activeCampaigns?.let { filteredCampaigns ->
                 if (filteredCampaigns.isNotEmpty()) {
@@ -115,7 +178,7 @@ object CampaignsFilterUtil {
     private fun getActiveCampaignsByPlacements(
         campaigns: ArrayList<Campaign>,
         screen: String,
-        viewType: String? = null
+        viewType: ViewType? = null
     ): ArrayList<Campaign> {
         val activeCampaigns = ArrayList<Campaign>()
         var activePlacements: List<Placement>?
@@ -130,18 +193,24 @@ object CampaignsFilterUtil {
     }
 
     // method to check if the user has sent targeting filters
-    private fun getCampaignsByContentTargeting(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
-        return if (InsideAdSdk.areTargetingFiltersEmpty()) {
+    private fun getCampaignsByContentTargeting(
+        campaigns: ArrayList<Campaign>,
+        targetingFilters: TargetingFilters?
+    ): ArrayList<Campaign> {
+        return if (targetingFilters.isEmpty()) {
             campaigns
         } else {
-            filterCampaignsByContentTargeting(campaigns)
+            filterCampaignsByContentTargeting(campaigns, targetingFilters)
         }
     }
 
     // method to filter campaigns by content targeting
-    private fun filterCampaignsByContentTargeting(campaigns: ArrayList<Campaign>): ArrayList<Campaign> {
+    private fun filterCampaignsByContentTargeting(
+        campaigns: ArrayList<Campaign>,
+        filters: TargetingFilters?
+    ): ArrayList<Campaign> {
         Log.i(LOG_TAG, "filterCampaignsByContentTargeting")
-        val targetingFilters = InsideAdSdk.targetingFilters ?: return arrayListOf()
+        val targetingFilters = filters ?: return arrayListOf()
 
         val activeCampaigns = mutableListOf<Campaign>()
         val vodId = targetingFilters.vodId
@@ -234,7 +303,7 @@ object CampaignsFilterUtil {
     private fun getPlacementsByCampaign(
         activeCampaign: Campaign?,
         screen: String,
-        viewType: String? = null
+        viewType: ViewType? = null
     ): List<Placement>? {
         Log.i(LOG_TAG, "getPlacementsByCampaign")
         var filteredPlacements: List<Placement>? = null
@@ -250,76 +319,39 @@ object CampaignsFilterUtil {
         return filteredPlacements
     }
 
-    // method to get a filtered list of placements of the active campaigns
-    private fun getPlacementsByCampaigns(
-        campaigns: ArrayList<Campaign>?,
-        screen: String
-    ): List<Placement>? {
-        var placements: List<Placement>? = null
-
-        if (campaigns?.isNotEmpty() == true) {
-            placements = if (campaigns.size > 1) {
-                getPlacementsByMultipleCampaigns(campaigns, screen)
-            } else getFilteredPlacements(campaigns[0].placements, screen)
-        }
-
-        return placements
-    }
-
-    // if we have multiple campaigns combine a list of placements of all campaigns
-    private fun getPlacementsByMultipleCampaigns(
-        campaigns: ArrayList<Campaign>,
+    // filter the list of placements according to screen tags AND viewType
+    internal fun getFilteredPlacements(
+        placements: List<Placement>?,
         screen: String,
-        viewType: String? = null
+        viewType: ViewType? = null
     ): List<Placement>? {
-        val placementsList = ArrayList<Placement>()
+        if (placements == null) return null
 
-        for (campaign in campaigns) {
-            if (campaign.placements?.isNotEmpty() == true) {
-                val placements = campaign.placements
-                if (placements != null) {
-                    for (placement in placements) {
-                        placementsList.add(placement)
-                    }
-                }
+        return placements.filter { placement ->
+            // Filter by screen/tags
+            val screenMatch = if (screen.isEmpty()) {
+                (placement.tags?.isEmpty() == true)
+            } else {
+                placement.tags?.any { it == screen } == true
             }
-        }
 
-        return getFilteredPlacements(placementsList, screen, viewType)
-    }
-
-    // filter the list of placements according to screen
-    private fun getFilteredPlacements(
-        placements: ArrayList<Placement>?,
-        screen: String,
-        viewType: String? = null
-    ): List<Placement>? {
-        var filteredPlacements: List<Placement>? = null
-
-        if (placements != null) {
-            filteredPlacements = placements.filter { placement ->
-                // Filter by screen/tags
-                val screenMatch = if (screen.isEmpty()) {
-                    (placement.tags?.isEmpty() == true)
-                } else {
-                    placement.tags?.any { it == screen } == true
-                }
-
-                // Filter by viewType
-                val viewTypeMatch = if (viewType.isNullOrEmpty()) {
-                    // Regular ad request: exclude PREROLL ads
-                    placement.viewType != ViewType.PREROLL.value
-                } else {
-                    // Specific viewType request (e.g., PREROLL): only include matching ads
-                    placement.viewType == viewType
-                }
-
-                // Both must match
-                screenMatch && viewTypeMatch
+            // Filter by viewType. Comparison runs on the normalised enum rather than the raw
+            // string, so backend casing ("multiview_canvas" vs "MULTIVIEW_CANVAS") cannot leak
+            // dedicated inventory into regular traffic.
+            val placementViewType = ViewType.fromRaw(placement.viewType)
+            val viewTypeMatch = if (viewType == null) {
+                // Regular ad request: serve only placements that are not reserved for a slot.
+                // An absent, empty or unrecognised viewType is not a dedicated slot, so those
+                // placements stay eligible here.
+                placementViewType !in ViewType.DEDICATED_SLOTS
+            } else {
+                // Dedicated slot request: only that exact slot.
+                placementViewType == viewType
             }
-        }
 
-        return filteredPlacements
+            // Both must match
+            screenMatch && viewTypeMatch
+        }
     }
 
     // method to get an inside ad of the list of filtered placements
@@ -374,33 +406,12 @@ object CampaignsFilterUtil {
         return activeInsideAd
     }
 
-    // method to set the active placement and placement's properties according to the returned active ad
-    private fun setCurrentPlacement(
+    // finds the placement that owns the selected ad, so its properties can be read
+    private fun findPlacementForAd(
         insideAd: InsideAd?,
         placements: List<Placement>?
-    ) {
-        val placement = placements?.find { placement ->
-            placement.ads?.contains(
-                insideAd
-            ) == true
-        }
-
-        Log.i(LOG_TAG, "activePlacement: $placement")
-
-        val startAfterSeconds =
-            placement?.properties?.get("startAfterSeconds")
-        InsideAdSdk.startAfterSeconds = startAfterSeconds?.toLong()?.let {
-            Helper.getMillisFromSeconds(it)
-        }
-
-        val showCloseButtonAfterSeconds =
-            placement?.properties?.get("showCloseButtonAfterSeconds")
-        InsideAdSdk.showCloseButtonAfterSeconds =
-            showCloseButtonAfterSeconds?.toLong()?.let {
-                Helper.getMillisFromSeconds(it)
-            }
-
-        InsideAdSdk.intervalForReels = placement?.properties?.get("intervalForReels")
+    ): Placement? = placements?.find { placement ->
+        placement.ads?.any { it === insideAd } == true
     }
 
     // Define a generic function to select an object by it's weight randomly
@@ -412,6 +423,13 @@ object CampaignsFilterUtil {
 
         // Calculate total weight
         val totalWeight = objects.sumOf { getWeight(it) }
+
+        // Random.nextInt throws IllegalArgumentException on a non-positive bound, which happens
+        // whenever every candidate has weight 0 (or the weights are missing). Fall back to an
+        // even pick rather than crashing the ad request.
+        if (totalWeight <= 0) {
+            return objects[Random.nextInt(objects.size)]
+        }
 
         // Generate a random value between 0 and totalWeight
         val randomNumber = Random.nextInt(totalWeight)

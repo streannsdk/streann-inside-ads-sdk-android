@@ -215,6 +215,28 @@ object Helper {
                 calculatedHeight = screenHeight
                 calculatedWidth = (screenHeight / aspectRatio).toInt()
             }
+
+            com.streann.insidead.InsideAdView.ResizeMode.MATCH_CONTAINER -> {
+                // Size against the parent container instead of the display, for ads embedded in a
+                // panel. Falls back to the screen when the parent has not been measured yet.
+                val parent = view?.parent as? android.view.ViewGroup
+                val containerWidth = parent?.width ?: 0
+                val containerHeight = parent?.height ?: 0
+
+                // Before the first layout pass the parent measures 0. Sizing to the screen here
+                // would overflow the panel - exactly what this mode exists to prevent - so leave
+                // the view alone and let the next layout pass size it.
+                if (containerWidth <= 0 || containerHeight <= 0) return
+
+                val widthBasedHeight = (containerWidth * aspectRatio).toInt()
+                if (widthBasedHeight <= containerHeight) {
+                    calculatedWidth = containerWidth
+                    calculatedHeight = widthBasedHeight
+                } else {
+                    calculatedWidth = (containerHeight / aspectRatio).toInt()
+                    calculatedHeight = containerHeight
+                }
+            }
         }
 
         // Create new layout params with calculated dimensions and center gravity
