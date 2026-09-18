@@ -244,6 +244,11 @@ class GoogleImaPlayer(
         })
     }
 
+    /** Mutes or unmutes the VAST ad while it is playing. */
+    internal fun setMuted(muted: Boolean) {
+        videoAdPlayerAdapter?.setMuted(muted)
+    }
+
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdCallback = listener
 

@@ -374,6 +374,21 @@ class InsideAdPlayer(
         setupLearnMoreLayout(adVolumeButton, params)
     }
 
+    /**
+     * Mutes or unmutes the ad while it is playing. See VideoAdPlayerAdapter.setMuted.
+     */
+    internal fun setMuted(muted: Boolean) {
+        val player = mediaPlayer ?: return
+        if (muted != adSoundPlaying) return
+
+        if (muted) {
+            setAdSound(player, 0, R.drawable.ic_volume_off)
+        } else {
+            setAdSound(player, 1, R.drawable.ic_volume_up)
+        }
+        adSoundPlaying = !muted
+    }
+
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         // Defensive: explicitly check for false, default to muted if null/true
         adSoundPlaying = if (ctxIsAdMuted == false) {
