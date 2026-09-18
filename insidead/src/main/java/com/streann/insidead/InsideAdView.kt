@@ -547,6 +547,24 @@ class InsideAdView @JvmOverloads constructor(
         mNativeAdsPlayer?.playAd(insideAd, insideAdCallback)
     }
 
+    /**
+     * Mutes or unmutes the ad currently playing in this view.
+     *
+     * The isAdMuted value passed when requesting an ad is fixed for the life of that request, so
+     * this is the way to hand audio over once an ad is already running - for example when the host
+     * app's own player takes over sound while the ad continues to play.
+     *
+     * No-op for ad types without audio control (banner, native).
+     */
+    fun setAdMuted(muted: Boolean) {
+        Log.i(InsideAdSdk.LOG_TAG, "setAdMuted: $muted")
+        when (insideAd?.adType) {
+            AdType.VAST.value -> mGoogleImaPlayer?.setMuted(muted)
+            AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.setMuted(muted)
+            else -> {}
+        }
+    }
+
     fun stopAd() {
         insideAd?.let {
             when (it.adType) {

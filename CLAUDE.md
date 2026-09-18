@@ -254,6 +254,11 @@ InsideAdSdk.cancelAllDedicatedAdRequests()
 Behaviour: repeats on the placement's `intervalInMinutes` (like a regular ad, unlike preroll),
 honours `startAfterSeconds`, supports all five `AdType`s, and supports fallback ads.
 
+`InsideAdView.setAdMuted(muted)` mutes or unmutes the ad that is currently playing. `isAdMuted` is
+fixed when the ad is requested, so this is the only way to hand audio over mid-ad - the multiview
+grid uses it when the user unmutes a stream while an ad is running. It dispatches to the player for
+the current `adType`; banner and native have no audio control and ignore it.
+
 Use `InsideAdView.ResizeMode.MATCH_CONTAINER` for these slots - every other mode sizes against the
 screen, which is wrong for an ad embedded in a panel.
 

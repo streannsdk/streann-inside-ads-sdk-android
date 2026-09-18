@@ -30,6 +30,9 @@ class VideoAdPlayerAdapter(
     private var loadedAdMediaInfo: AdMediaInfo? = null
 
     private var adSoundPlaying = true
+
+    /** Held so the ad can be muted after playback has started, not only when it begins. */
+    private var currentMediaPlayer: MediaPlayer? = null
     private var videoPlayerVolumeButton: FrameLayout
 
     companion object {
@@ -239,7 +242,27 @@ class VideoAdPlayerAdapter(
         stopAdTracking()
     }
 
+    /**
+     * Mutes or unmutes the ad while it is playing.
+     *
+     * Needed when something else on screen takes over audio - a host app playing its own content
+     * alongside the ad, for instance - which the initial isAdMuted value cannot express because it
+     * is fixed when the ad is requested.
+     */
+    internal fun setMuted(muted: Boolean) {
+        val mediaPlayer = currentMediaPlayer ?: return
+        if (muted != adSoundPlaying) return
+
+        if (muted) {
+            setAdSound(mediaPlayer, 0, R.drawable.ic_volume_off)
+        } else {
+            setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
+        }
+        adSoundPlaying = !muted
+    }
+
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
+        currentMediaPlayer = mediaPlayer
         // Defensive: explicitly check for false, default to muted if null/true
         adSoundPlaying = if (ctxIsAdMuted == false) {
             // Only unmute if explicitly set to false

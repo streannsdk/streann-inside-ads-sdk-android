@@ -42,7 +42,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.29'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.30'
 }
 ```
 
@@ -335,7 +335,20 @@ InsideAdSdk.requestMultiviewCanvasAd(
 )
 ```
 
-`requestMultiviewRightBarAd(...)` is the equivalent for the right bar. Each slot keeps its own mute
+`requestMultiviewRightBarAd(...)` is the equivalent for the right bar.
+
+### Handing audio over while an ad plays
+
+`isAdMuted` is fixed for the life of a request, so use `setAdMuted()` when something else on
+screen needs the sound after an ad has already started - for example the user unmuting one of
+your own players while the ad runs:
+
+```kotlin
+adView.setAdMuted(true)   // give the sound back to your player
+adView.setAdMuted(false)  // take it again
+```
+
+Applies to VAST and local video ads; banner and native ads have no audio control and ignore it. Each slot keeps its own mute
 state, targeting, timings and callbacks, so the two never interfere.
 
 These ads **repeat** on the placement's `intervalInMinutes` (like regular ads, unlike preroll),
