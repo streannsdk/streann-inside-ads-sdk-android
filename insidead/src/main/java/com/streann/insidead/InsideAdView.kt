@@ -120,6 +120,13 @@ class InsideAdView @JvmOverloads constructor(
     /** Per-request state, so two slots can be in flight without overwriting each other. */
     private var adRequestContext: AdRequestContext? = null
 
+    /**
+     * The ad actually on screen, which is not always [insideAd]: insideAdError() nulls that and
+     * then shows the fallback, so dispatching on it left setAdMuted() and stopAd() doing nothing
+     * for the whole of a fallback ad.
+     */
+    private var playingAd: InsideAd? = null
+
     private val isPrerollInstance: Boolean
         get() = requestViewType == ViewType.PREROLL
 
@@ -407,6 +414,7 @@ class InsideAdView @JvmOverloads constructor(
         insideAdCallback: InsideAdCallback
     ) {
         Log.i(InsideAdSdk.LOG_TAG, "showAd")
+        playingAd = insideAd
         adIntervalHandler?.removeCallbacksAndMessages(null)
         adIntervalHandler = null
 
@@ -558,7 +566,7 @@ class InsideAdView @JvmOverloads constructor(
      */
     fun setAdMuted(muted: Boolean) {
         Log.i(InsideAdSdk.LOG_TAG, "setAdMuted: $muted")
-        when (insideAd?.adType) {
+        when (playingAd?.adType) {
             AdType.VAST.value -> mGoogleImaPlayer?.setMuted(muted)
             AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.setMuted(muted)
             else -> {}
@@ -566,7 +574,8 @@ class InsideAdView @JvmOverloads constructor(
     }
 
     fun stopAd() {
-        insideAd?.let {
+        // playingAd, not insideAd: a fallback ad is on screen without insideAd being set.
+        playingAd?.let {
             when (it.adType) {
                 AdType.VAST.value -> mGoogleImaPlayer?.stopAd()
                 AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.stopAd()
@@ -610,7 +619,7 @@ class InsideAdView @JvmOverloads constructor(
         mGoogleImaPlayer?.release()
 
         // Stop any other playing ad types
-        insideAd?.let {
+        playingAd?.let {
             when (it.adType) {
                 AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.stopAd()
                 AdType.BANNER.value -> mBannerAdsPlayer?.stopAd()
@@ -637,6 +646,7 @@ class InsideAdView @JvmOverloads constructor(
         // so the context stops retaining the caller's targeting filters.
         requestViewType = null
         adRequestContext = null
+        playingAd = null
     }
 
     override fun onDetachedFromWindow() {
@@ -824,6 +834,7 @@ class InsideAdView @JvmOverloads constructor(
     override fun insideAdStopped() {
         Log.i(InsideAdSdk.LOG_TAG, "insideAdStopped")
         removeGoogleImaView()
+        playingAd = null
 
         // Hide every player once the ad is over. Player visibility was previously only ever set
         // when showing an ad, so a finished player stayed visible - and still explicitly sized by

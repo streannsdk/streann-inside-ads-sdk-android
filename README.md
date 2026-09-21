@@ -55,7 +55,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.31'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.32'
 }
 ```
 
@@ -348,7 +348,8 @@ InsideAdSdk.requestMultiviewCanvasAd(
 )
 ```
 
-`requestMultiviewRightBarAd(...)` is the equivalent for the right bar.
+`requestMultiviewRightBarAd(...)` is the equivalent for the right bar. Each slot keeps its own
+mute state, targeting, timings and callbacks, so the two never interfere.
 
 ### Handing audio over while an ad plays
 
@@ -361,8 +362,7 @@ adView.setAdMuted(true)   // give the sound back to your player
 adView.setAdMuted(false)  // take it again
 ```
 
-Applies to VAST and local video ads; banner and native ads have no audio control and ignore it. Each slot keeps its own mute
-state, targeting, timings and callbacks, so the two never interfere.
+Applies to VAST and local video ads; banner and native ads have no audio control and ignore it.
 
 These ads **repeat** on the placement's `intervalInMinutes` (like regular ads, unlike preroll),
 honour `startAfterSeconds`, work with all five ad types, and support fallback ads.
