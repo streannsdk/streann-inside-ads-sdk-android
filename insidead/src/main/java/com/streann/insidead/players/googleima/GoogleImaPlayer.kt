@@ -21,6 +21,7 @@ import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
+import com.streann.insidead.utils.SafeAdClickContext
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.MacrosHelper
 
@@ -99,7 +100,11 @@ class GoogleImaPlayer(
 
         sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
-        adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
+        // Wrapped so an ad click that no installed app can handle is contained rather than
+        // crashing the host: IMA calls startActivity itself and does not catch that.
+        adsLoader = sdkFactory!!.createAdsLoader(
+            SafeAdClickContext(context), settings, adDisplayContainer
+        )
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
             Log.i(InsideAdSdk.LOG_TAG, "Ad Error: " + adErrorEvent.error.message)
