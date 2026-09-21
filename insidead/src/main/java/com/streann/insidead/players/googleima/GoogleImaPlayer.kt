@@ -40,7 +40,8 @@ class GoogleImaPlayer(
 
     /**
      * Guards against reporting the same ad as finished twice, now that both the natural end and a
-     * skip route through [notifyAdFinished]. Reset when the next ad starts.
+     * skip route through [notifyAdFinished]. Reset when each ad starts, so every ad in a pod can
+     * report itself finished exactly once.
      */
     private var adFinishedNotified = false
     private var videoPlayerVolumeButton: FrameLayout? = null
@@ -155,6 +156,9 @@ class GoogleImaPlayer(
                     }
 
                     AdEventType.STARTED -> {
+                        // Per ad, not per request: a pod plays several ads through one playAd(),
+                        // and each has to be able to report itself finished.
+                        adFinishedNotified = false
                         logVastAdDetails("STARTED")
                     }
 
@@ -200,7 +204,13 @@ class GoogleImaPlayer(
                         // stopAdPlaying() is a no-op by this point because the VideoView has
                         // already stopped. Without this nothing tells the host the ad is over, so
                         // the ad view stays on screen for good and the slot is never reused.
-                        notifyAdFinished()
+                        //
+                        // Posted, not called inline: reporting the ad finished tears this player
+                        // down (removeGoogleImaView -> release -> adsManager.destroy) and we are
+                        // still inside IMA's dispatch of the SKIPPED event. Destroying the
+                        // AdsManager there kills the rest of an ad pod and pushes a late onEnded
+                        // back into IMA.
+                        post { notifyAdFinished() }
                     }
 
                     AdEventType.CLICKED -> {
