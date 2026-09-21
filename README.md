@@ -1,5 +1,18 @@
 # streann-inside-ads-sdk-android
 
+## Inside-Ad Technology Notice
+
+Inside-Ad is proprietary and patent-protected technology developed by Streann Media.
+
+Any use, reproduction, modification, distribution, integration, or commercial implementation of
+Inside-Ad or any related components is strictly prohibited without a valid written licensing
+agreement with Streann Media.
+
+To request access, licensing, or partnership information, please contact Streann Media at
+info@streann.com
+
+---
+
 Streann Inside Ad library is designed to incorporate playback functionality
 seamlessly of diverse ad formats into your Android applications. One standout feature of this
 library is its split-screen option, enabling you to effortlessly display ads side by side with your
@@ -42,7 +55,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.30'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.31'
 }
 ```
 
