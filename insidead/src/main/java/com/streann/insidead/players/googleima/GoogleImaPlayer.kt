@@ -21,7 +21,6 @@ import com.streann.insidead.R
 import com.streann.insidead.callbacks.InsideAdCallback
 import com.streann.insidead.callbacks.InsideAdProgressCallback
 import com.streann.insidead.models.InsideAd
-import com.streann.insidead.utils.SafeAdClickContext
 import com.streann.insidead.utils.Helper
 import com.streann.insidead.utils.MacrosHelper
 
@@ -106,11 +105,17 @@ class GoogleImaPlayer(
 
         sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
-        // Wrapped so an ad click that no installed app can handle is contained rather than
-        // crashing the host: IMA calls startActivity itself and does not catch that.
-        adsLoader = sdkFactory!!.createAdsLoader(
-            SafeAdClickContext(context), settings, adDisplayContainer
-        )
+        // Must be the real Activity context.
+        //
+        // Wrapping it in a ContextWrapper to catch ActivityNotFoundException - IMA opens
+        // clickthroughs itself and does not catch that, so a creative with an unresolvable
+        // intent:// deep link can crash the host - breaks clickthroughs outright: app-install ads
+        // do nothing on tap and the skip countdown stalls, because IMA needs the Activity itself
+        // to open one. Tried in 1.0.31 and reverted; do not reintroduce it.
+        //
+        // A creative whose clickthrough resolves to nothing is a trafficking problem and is
+        // better fixed at the source.
+        adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
             Log.i(InsideAdSdk.LOG_TAG, "Ad Error: " + adErrorEvent.error.message)
