@@ -99,6 +99,35 @@ object InsideAdSdk {
     internal var geoIp: GeoIp? = null
 
     /**
+     * The viewer's country as the host app knows it (ISO 3166-1 alpha-2, uppercase), set through
+     * [initializeSdk] or [setCountryCode]. When set it decides which campaigns are fetched and the
+     * COUNTRY macro, instead of the geo-IP lookup: the host may know better than the IP (a VPN, a
+     * traveller), and the host's other features (channels, polls) already follow it. Geo-IP still
+     * runs for the location, network and IP macros.
+     */
+    @Volatile
+    internal var hostCountryCode: String? = null
+
+    /** The country campaigns are filtered by: the host's when set, else geo-IP's. */
+    internal val effectiveCountryCode: String?
+        get() = hostCountryCode ?: geoIp?.countryCode?.takeIf { it.isNotBlank() }
+
+    /**
+     * Bumped by every campaign request. A response carrying an older value is dropped, so a slow
+     * fetch for the previous country can never overwrite the campaigns for the current one.
+     */
+    @Volatile
+    private var campaignRequestGeneration = 0
+
+    /** True while a request is still on its geo-IP step, before it has picked the country. */
+    @Volatile
+    private var countryPending = false
+
+    /** The country the current campaigns were requested for. */
+    @Volatile
+    private var requestedCountryCode: String? = null
+
+    /**
      * Callbacks and in-flight views per dedicated slot.
      *
      * These were single fields when preroll was the only slot. The multiview canvas and right bar
@@ -145,7 +174,8 @@ object InsideAdSdk {
     fun initializeSdk(
         apiKey: String, apiToken: String, baseUrl: String, appDomain: String? = "",
         siteUrl: String? = "", storeUrl: String? = "", descriptionUrl: String? = "",
-        userBirthYear: Int? = 0, userGender: String? = ""
+        userBirthYear: Int? = 0, userGender: String? = "",
+        countryCode: String? = null
     ) {
         this.apiKey = apiKey
         this.apiToken = apiToken
@@ -156,9 +186,32 @@ object InsideAdSdk {
         this.descriptionUrl = descriptionUrl
         this.userBirthYear = userBirthYear
         this.userGender = userGender
+        this.hostCountryCode = normalizeCountryCode(countryCode)
 
         requestCampaign()
     }
+
+    /**
+     * Sets the viewer's country the host app uses (e.g. "MX"), so ads follow it instead of the
+     * geo-IP lookup. Null or blank goes back to geo-IP. When the country changes after
+     * [initializeSdk], the campaigns are fetched again for the new one.
+     */
+    fun setCountryCode(countryCode: String?) {
+        val normalized = normalizeCountryCode(countryCode)
+        if (normalized == hostCountryCode) return
+        hostCountryCode = normalized
+        if (apiKey.isEmpty() || baseUrl.isEmpty()) return  // not initialized yet: initializeSdk fetches
+        // A request still on its geo-IP step reads the country afterwards, so it picks this one up;
+        // and campaigns already fetched for the same country need no second request.
+        if (countryPending || effectiveCountryCode == requestedCountryCode) return
+        Log.i(LOG_TAG, "country changed to ${normalized ?: "geo-IP"}, re-fetching campaigns")
+        campaignsList = null
+        campaignsErrorOrNull = false
+        requestCampaign()
+    }
+
+    private fun normalizeCountryCode(countryCode: String?): String? =
+        countryCode?.trim()?.uppercase(java.util.Locale.ROOT)?.takeIf { it.isNotEmpty() }
 
     private fun requestCampaign(
     ) {
@@ -172,44 +225,57 @@ object InsideAdSdk {
             return
         }
 
-        requestCampaignExecutor = Executors.newSingleThreadScheduledExecutor()
-        requestCampaignExecutor!!.execute {
-            val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
-            if (!geoIpUrl.isNullOrBlank()) {
-                val geoIp = HttpRequestsUtil.getGeoIp(geoIpUrl)
-                if (geoIp != null) {
-                    InsideAdSdk.geoIp = geoIp
-                    val geoCountryCode = geoIp.countryCode
-                    if (geoCountryCode?.isNotBlank() == true) {
-                        getCampaigns(geoCountryCode)
-                        return@execute
-                    }
+        val generation = ++campaignRequestGeneration
+        countryPending = true
+        val executor = Executors.newSingleThreadScheduledExecutor()
+        requestCampaignExecutor = executor
+        executor.execute {
+            // Geo-IP feeds the location, network and IP macros either way. A failed lookup keeps
+            // the previous result, and no longer means no ads when the host gave a country.
+            // Contained, so a failing lookup can never leave countryPending stuck.
+            runCatching {
+                val geoIpUrl = HttpRequestsUtil.getGeoIpUrl()
+                if (!geoIpUrl.isNullOrBlank()) {
+                    HttpRequestsUtil.getGeoIp(geoIpUrl)?.let { InsideAdSdk.geoIp = it }
                 }
+            }.onFailure { Log.e(LOG_TAG, "geo-IP lookup failed", it) }
+            val country = effectiveCountryCode
+            if (generation == campaignRequestGeneration) {
+                countryPending = false
+                requestedCountryCode = country
+            }
+            if (country != null && generation == campaignRequestGeneration) {
+                getCampaigns(country, generation, executor)
+                return@execute
             }
             // Shut down executor if we didn't reach getCampaigns (which handles its own shutdown)
-            requestCampaignExecutor?.shutdown()
+            executor.shutdown()
         }
     }
 
     private fun getCampaigns(
-        geoCountryCode: String,
+        countryCode: String,
+        generation: Int,
+        executor: ScheduledExecutorService
     ) {
-        Log.i(LOG_TAG, "getCampaigns")
+        Log.i(LOG_TAG, "getCampaigns for $countryCode")
         HttpRequestsUtil.getCampaign(
-            geoCountryCode,
+            countryCode,
             object : CampaignCallback {
                 override fun onSuccess(campaigns: ArrayList<Campaign>?) {
-                    Log.i(LOG_TAG, "onSuccess: $campaigns")
-                    campaignsList = campaigns
-                    requestCampaignExecutor?.shutdown()
+                    if (generation == campaignRequestGeneration) {
+                        Log.i(LOG_TAG, "onSuccess: $campaigns")
+                        campaignsList = campaigns
+                    }
+                    executor.shutdown()
                 }
 
                 override fun onError(error: String?) {
                     var errorMsg = "Error while getting AD."
                     if (!error.isNullOrBlank()) errorMsg = error
                     Log.i(LOG_TAG, "onError: $errorMsg")
-                    campaignsErrorOrNull = true
-                    requestCampaignExecutor?.shutdown()
+                    if (generation == campaignRequestGeneration) campaignsErrorOrNull = true
+                    executor.shutdown()
                 }
             })
     }

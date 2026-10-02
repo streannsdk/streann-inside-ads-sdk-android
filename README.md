@@ -55,7 +55,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.32'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.33'
 }
 ```
 
@@ -120,6 +120,21 @@ To use the Streann Inside Ad library in your project, follow these steps:
             userBirthYear = 0,
             userGender = "user_gender"
         )   
+   ```
+
+- Pass the viewer's country (ISO 3166-1 alpha-2, e.g. "MX") if your app already knows it. Ads are
+  then fetched for that country instead of the one the geo-IP lookup returns, which can differ
+  behind a VPN or for travellers. Without it, the SDK keeps using geo-IP. You can set or change it
+  later too; the campaigns are fetched again when it changes:
+   ```js
+     InsideAdSdk.initializeSdk(
+            apiKey = "api_key",
+            apiToken = "api_token",
+            baseUrl = "base_url",
+            countryCode = "MX"
+        )
+
+     InsideAdSdk.setCountryCode("MX")
    ```
 
 - If you want to use banner or native ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
