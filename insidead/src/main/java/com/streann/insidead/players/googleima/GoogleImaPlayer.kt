@@ -37,6 +37,13 @@ class GoogleImaPlayer(
 
     private var videoPlayer: VideoView? = null
     private var videoAdPlayerAdapter: VideoAdPlayerAdapter? = null
+
+    /**
+     * Guards against reporting the same ad as finished twice, now that both the natural end and a
+     * skip route through [notifyAdFinished]. Reset when each ad starts, so every ad in a pod can
+     * report itself finished exactly once.
+     */
+    private var adFinishedNotified = false
     private var videoPlayerVolumeButton: FrameLayout? = null
 
     private var insideAdCallback: InsideAdCallback? = null
@@ -99,6 +106,16 @@ class GoogleImaPlayer(
 
         sdkFactory = ImaSdkFactory.getInstance()
         val settings = sdkFactory!!.createImaSdkSettings()
+        // Must be the real Activity context.
+        //
+        // Wrapping it in a ContextWrapper to catch ActivityNotFoundException - IMA opens
+        // clickthroughs itself and does not catch that, so a creative with an unresolvable
+        // intent:// deep link can crash the host - breaks clickthroughs outright: app-install ads
+        // do nothing on tap and the skip countdown stalls, because IMA needs the Activity itself
+        // to open one. Tried in 1.0.31 and reverted; do not reintroduce it.
+        //
+        // A creative whose clickthrough resolves to nothing is a trafficking problem and is
+        // better fixed at the source.
         adsLoader = sdkFactory!!.createAdsLoader(context, settings, adDisplayContainer)
 
         adsLoader!!.addAdErrorListener { adErrorEvent ->
@@ -139,6 +156,9 @@ class GoogleImaPlayer(
                     }
 
                     AdEventType.STARTED -> {
+                        // Per ad, not per request: a pod plays several ads through one playAd(),
+                        // and each has to be able to report itself finished.
+                        adFinishedNotified = false
                         logVastAdDetails("STARTED")
                     }
 
@@ -179,6 +199,18 @@ class GoogleImaPlayer(
                             )
                         )
                         insideAdCallback?.insideAdSkipped()
+
+                        // Skipping ends the ad, but IMA does not follow it with onEnded and
+                        // stopAdPlaying() is a no-op by this point because the VideoView has
+                        // already stopped. Without this nothing tells the host the ad is over, so
+                        // the ad view stays on screen for good and the slot is never reused.
+                        //
+                        // Posted, not called inline: reporting the ad finished tears this player
+                        // down (removeGoogleImaView -> release -> adsManager.destroy) and we are
+                        // still inside IMA's dispatch of the SKIPPED event. Destroying the
+                        // AdsManager there kills the rest of an ad pod and pushes a late onEnded
+                        // back into IMA.
+                        post { notifyAdFinished() }
                     }
 
                     AdEventType.CLICKED -> {
@@ -215,8 +247,7 @@ class GoogleImaPlayer(
             }
 
             override fun onEnded(p0: AdMediaInfo) {
-                insideAdCallback?.insideAdStop()
-                insideAdProgressCallback?.insideAdStopped()
+                notifyAdFinished()
             }
 
             override fun onError(p0: AdMediaInfo) {
@@ -244,6 +275,18 @@ class GoogleImaPlayer(
         })
     }
 
+    /**
+     * Reports the ad as finished, exactly once, however it ended - played out or skipped.
+     */
+    private fun notifyAdFinished() {
+        if (adFinishedNotified) return
+        adFinishedNotified = true
+
+        Log.i(InsideAdSdk.LOG_TAG, "VAST ad finished")
+        insideAdCallback?.insideAdStop()
+        insideAdProgressCallback?.insideAdStopped()
+    }
+
     /** Mutes or unmutes the VAST ad while it is playing. */
     internal fun setMuted(muted: Boolean) {
         videoAdPlayerAdapter?.setMuted(muted)
@@ -251,6 +294,7 @@ class GoogleImaPlayer(
 
     fun playAd(insideAd: InsideAd, listener: InsideAdCallback) {
         insideAdCallback = listener
+        adFinishedNotified = false
 
         // The adapter reads the mute state. Without this it falls back to the global
         // InsideAdSdk.isAdMuted, which whichever slot ran showAd() last has already overwritten -

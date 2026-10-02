@@ -57,6 +57,9 @@ class InsideAdPlayer(
     private var loadTimeoutHandler: Handler? = null
     private var isMediaPrepared: Boolean = false
 
+    /** A mute requested before the ad was prepared; applied once it is. */
+    private var pendingMuted: Boolean? = null
+
     private var savedAdPosition = 0
     private var adSoundPlaying = true
     private var isSurfaceDestroyed: Boolean = false
@@ -166,6 +169,7 @@ class InsideAdPlayer(
 
     private fun prepareMediaPlayer(videoUrl: Uri) {
         isMediaPrepared = false
+        pendingMuted = null
         startLoadTimeout()
 
         mediaPlayer = MediaPlayer().apply {
@@ -378,7 +382,14 @@ class InsideAdPlayer(
      * Mutes or unmutes the ad while it is playing. See VideoAdPlayerAdapter.setMuted.
      */
     internal fun setMuted(muted: Boolean) {
-        val player = mediaPlayer ?: return
+        val player = mediaPlayer
+        if (player == null || !isMediaPrepared) {
+            // setVolume on a player that is still preparing is not a valid call, and
+            // setAdVolumeControl would overwrite it from the request-time value anyway. Hold the
+            // request and let that apply it.
+            pendingMuted = muted
+            return
+        }
         if (muted != adSoundPlaying) return
 
         if (muted) {
@@ -390,8 +401,12 @@ class InsideAdPlayer(
     }
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
+        // A mute asked for while the ad was still loading wins over the request-time value.
+        val startMuted = pendingMuted ?: (ctxIsAdMuted != false)
+        pendingMuted = null
+
         // Defensive: explicitly check for false, default to muted if null/true
-        adSoundPlaying = if (ctxIsAdMuted == false) {
+        adSoundPlaying = if (!startMuted) {
             // Only unmute if explicitly set to false
             setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true

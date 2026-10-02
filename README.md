@@ -1,5 +1,18 @@
 # streann-inside-ads-sdk-android
 
+## Inside-Ad Technology Notice
+
+Inside-Ad is proprietary and patent-protected technology developed by Streann Media.
+
+Any use, reproduction, modification, distribution, integration, or commercial implementation of
+Inside-Ad or any related components is strictly prohibited without a valid written licensing
+agreement with Streann Media.
+
+To request access, licensing, or partnership information, please contact Streann Media at
+info@streann.com
+
+---
+
 Streann Inside Ad library is designed to incorporate playback functionality
 seamlessly of diverse ad formats into your Android applications. One standout feature of this
 library is its split-screen option, enabling you to effortlessly display ads side by side with your
@@ -42,7 +55,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.30'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.33'
 }
 ```
 
@@ -107,6 +120,21 @@ To use the Streann Inside Ad library in your project, follow these steps:
             userBirthYear = 0,
             userGender = "user_gender"
         )   
+   ```
+
+- Pass the viewer's country (ISO 3166-1 alpha-2, e.g. "MX") if your app already knows it. Ads are
+  then fetched for that country instead of the one the geo-IP lookup returns, which can differ
+  behind a VPN or for travellers. Without it, the SDK keeps using geo-IP. You can set or change it
+  later too; the campaigns are fetched again when it changes:
+   ```js
+     InsideAdSdk.initializeSdk(
+            apiKey = "api_key",
+            apiToken = "api_token",
+            baseUrl = "base_url",
+            countryCode = "MX"
+        )
+
+     InsideAdSdk.setCountryCode("MX")
    ```
 
 - If you want to use banner or native ads add your Ad Manager app ID to your app's AndroidManifest.xml file.
@@ -335,7 +363,8 @@ InsideAdSdk.requestMultiviewCanvasAd(
 )
 ```
 
-`requestMultiviewRightBarAd(...)` is the equivalent for the right bar.
+`requestMultiviewRightBarAd(...)` is the equivalent for the right bar. Each slot keeps its own
+mute state, targeting, timings and callbacks, so the two never interfere.
 
 ### Handing audio over while an ad plays
 
@@ -348,8 +377,7 @@ adView.setAdMuted(true)   // give the sound back to your player
 adView.setAdMuted(false)  // take it again
 ```
 
-Applies to VAST and local video ads; banner and native ads have no audio control and ignore it. Each slot keeps its own mute
-state, targeting, timings and callbacks, so the two never interfere.
+Applies to VAST and local video ads; banner and native ads have no audio control and ignore it.
 
 These ads **repeat** on the placement's `intervalInMinutes` (like regular ads, unlike preroll),
 honour `startAfterSeconds`, work with all five ad types, and support fallback ads.

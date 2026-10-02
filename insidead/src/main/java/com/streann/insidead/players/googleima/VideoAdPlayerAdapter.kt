@@ -33,6 +33,13 @@ class VideoAdPlayerAdapter(
 
     /** Held so the ad can be muted after playback has started, not only when it begins. */
     private var currentMediaPlayer: MediaPlayer? = null
+
+    /**
+     * A mute requested before the ad was prepared. VAST loading can take seconds, and without
+     * this the request is dropped and the ad then starts at its request-time volume - audible
+     * when the host had explicitly asked for silence.
+     */
+    private var pendingMuted: Boolean? = null
     private var videoPlayerVolumeButton: FrameLayout
 
     companion object {
@@ -222,9 +229,14 @@ class VideoAdPlayerAdapter(
             videoPlayer.stopPlayback()
             notifyImaSdkAboutAdEnded()
         }
+        // The MediaPlayer this was holding is gone once playback stops; setMuted must not reach
+        // for it afterwards. InsideAdPlayer nulls its own the same way.
+        currentMediaPlayer = null
     }
 
     override fun release() {
+        currentMediaPlayer = null
+        pendingMuted = null
         stopAdTracking()
         videoPlayer.setOnPreparedListener(null)
         videoPlayer.setOnErrorListener(null)
@@ -250,7 +262,12 @@ class VideoAdPlayerAdapter(
      * is fixed when the ad is requested.
      */
     internal fun setMuted(muted: Boolean) {
-        val mediaPlayer = currentMediaPlayer ?: return
+        val mediaPlayer = currentMediaPlayer
+        if (mediaPlayer == null) {
+            // Not prepared yet - applied by setAdVolumeControl when it is.
+            pendingMuted = muted
+            return
+        }
         if (muted != adSoundPlaying) return
 
         if (muted) {
@@ -263,8 +280,13 @@ class VideoAdPlayerAdapter(
 
     private fun setAdVolumeControl(mediaPlayer: MediaPlayer) {
         currentMediaPlayer = mediaPlayer
+
+        // A mute asked for while the ad was still loading wins over the request-time value.
+        val startMuted = pendingMuted ?: (ctxIsAdMuted != false)
+        pendingMuted = null
+
         // Defensive: explicitly check for false, default to muted if null/true
-        adSoundPlaying = if (ctxIsAdMuted == false) {
+        adSoundPlaying = if (!startMuted) {
             // Only unmute if explicitly set to false
             setAdSound(mediaPlayer, 1, R.drawable.ic_volume_up)
             true
