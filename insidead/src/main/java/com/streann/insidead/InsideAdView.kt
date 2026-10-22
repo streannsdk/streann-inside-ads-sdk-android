@@ -101,6 +101,12 @@ class InsideAdView @JvmOverloads constructor(
     // Store the resize mode preference
     private var resizeMode: ResizeMode = ResizeMode.FIT
 
+    // Whether IMA auto-focuses its skip button on TV; see setAutoFocusSkipButton.
+    private var autoFocusSkipButton: Boolean = true
+
+    // Told when a control appears that the remote can now focus; see setOnControlsChangedListener.
+    private var onControlsChanged: (() -> Unit)? = null
+
     // Track current orientation to detect changes
     private var currentOrientation: Int = 0
 
@@ -308,6 +314,7 @@ class InsideAdView @JvmOverloads constructor(
     ) = AdRequestContext(viewType, screen, isAdMuted, targetingFilters).also { ctx ->
         ctx.showAdForReels = screen == "Reels"
         ctx.resizeMode = resizeMode
+        ctx.autoFocusSkipButton = autoFocusSkipButton
         // Measure this view, not the shared globals - with two slots alive those hold whichever
         // view was laid out last, so both would report the same size to the ad server. Falls back
         // to the globals only while this view is still unmeasured.
@@ -504,6 +511,7 @@ class InsideAdView @JvmOverloads constructor(
     private fun createGoogleImaView() {
         if (mGoogleImaPlayer == null) {
             mGoogleImaPlayer = GoogleImaPlayer(context, this)
+            mGoogleImaPlayer?.onControlsChanged = onControlsChanged
             // Add with centered layout params so player is centered in portrait/landscape
             val playerParams = LayoutParams(LayoutParams.MATCH_PARENT, LayoutParams.MATCH_PARENT)
             playerParams.gravity = android.view.Gravity.CENTER
@@ -571,6 +579,45 @@ class InsideAdView @JvmOverloads constructor(
             AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.setMuted(muted)
             else -> {}
         }
+    }
+
+    /**
+     * Moves the D-pad focus to the ad's controls, for a TV host whose user has navigated to the ad.
+     *
+     * Focuses the skip button (VAST) or close button (local ads) when it is showing, otherwise the
+     * mute button, otherwise "Learn more". The controls are only focusable on TV.
+     *
+     * @return true if a control took the focus. For VAST skip this is IMA's own button, so the
+     *   result only says that IMA was asked to focus it.
+     */
+    fun focusControls(): Boolean {
+        val focused = when (playingAd?.adType) {
+            AdType.VAST.value -> mGoogleImaPlayer?.focusControls() ?: false
+            AdType.LOCAL_VIDEO.value, AdType.LOCAL_IMAGE.value -> mInsideAdPlayer?.focusControls() ?: false
+            else -> false
+        }
+        Log.i(InsideAdSdk.LOG_TAG, "focusControls: $focused")
+        return focused
+    }
+
+    /**
+     * Whether IMA moves the D-pad focus to the skip button as soon as it appears (Android TV
+     * only). On by default. Turn it off when the host manages focus itself and the user should
+     * move to the ad on their own. Applies to requests made after the call.
+     */
+    fun setAutoFocusSkipButton(enabled: Boolean) {
+        autoFocusSkipButton = enabled
+    }
+
+    /**
+     * Called when a control the remote can focus appears mid-ad: the skip button once the ad is
+     * skippable, or the close button once its delay has passed. A TV host that has focus on the ad
+     * can call [focusControls] again to move to it.
+     */
+    fun setOnControlsChangedListener(listener: (() -> Unit)?) {
+        onControlsChanged = listener
+        mGoogleImaPlayer?.onControlsChanged = listener
+        mInsideAdPlayer?.onControlsChanged = listener
     }
 
     fun stopAd() {

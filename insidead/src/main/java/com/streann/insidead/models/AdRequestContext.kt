@@ -42,6 +42,13 @@ internal class AdRequestContext(
     var resizeMode: InsideAdView.ResizeMode? = null
     var showAdForReels: Boolean = false
 
+    /**
+     * Whether IMA moves the D-pad focus to the skip button as soon as it appears (Android TV
+     * only). On by default, as IMA has it. Off for a host that has its own focus to protect, such
+     * as the multiview grid, where it would pull the cursor away from the channels.
+     */
+    var autoFocusSkipButton: Boolean = true
+
     /** True for the multiview canvas and right-bar slots. */
     val isMultiview: Boolean
         get() = viewType == ViewType.MULTIVIEW_CANVAS || viewType == ViewType.MULTIVIEW_RIGHT_BAR
