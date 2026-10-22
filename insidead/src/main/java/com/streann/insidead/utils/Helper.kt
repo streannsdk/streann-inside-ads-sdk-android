@@ -1,6 +1,7 @@
 package com.streann.insidead.utils
 
 import android.app.Activity
+import android.app.UiModeManager
 import android.content.Context
 import android.content.pm.PackageManager
 import android.content.res.Configuration
@@ -12,6 +13,7 @@ import android.view.View
 import android.view.WindowInsets
 import androidx.core.view.WindowInsetsCompat
 import com.google.android.gms.ads.AdSize
+import com.streann.insidead.R
 import java.math.BigInteger
 import java.net.HttpURLConnection
 import java.net.URL
@@ -265,6 +267,25 @@ object Helper {
             (view?.layoutParams as? android.widget.FrameLayout.LayoutParams)?.gravity =
                 android.view.Gravity.CENTER
         }
+    }
+
+    /** True on Android TV and Fire TV, where the ad's controls are reached with the remote. */
+    fun isTv(context: Context): Boolean {
+        val uiModeManager = context.getSystemService(Context.UI_MODE_SERVICE) as? UiModeManager
+        return uiModeManager?.currentModeType == Configuration.UI_MODE_TYPE_TELEVISION
+    }
+
+    /**
+     * Lets the remote reach an ad control on a TV: focusable, with a highlight while focused. The
+     * D-pad centre key then fires the control's existing click listener. TV only, so the controls
+     * look and size exactly as before on phones and tablets.
+     */
+    fun makeControlFocusable(view: View) {
+        if (!isTv(view.context)) return
+        view.isFocusable = true
+        view.setBackgroundResource(R.drawable.insidead_control_focus)
+        val padding = (4 * view.resources.displayMetrics.density).toInt()
+        view.setPadding(padding, padding, padding, padding)
     }
 
 }
