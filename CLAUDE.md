@@ -259,6 +259,22 @@ fixed when the ad is requested, so this is the only way to hand audio over mid-a
 grid uses it when the user unmutes a stream while an ad is running. It dispatches to the player for
 the current `adType`; banner and native have no audio control and ignore it.
 
+### TV remote (D-pad) controls
+
+On a TV (`Helper.isTv`), the ad's controls are focusable with a highlight
+(`insidead_control_focus`): the mute button on VAST, and close, mute and "Learn more" on local ads.
+The D-pad centre key fires their existing click listeners. Phones and tablets are unchanged.
+
+- The VAST skip button is drawn by IMA, not the SDK, so it is focused through
+  `AdsManager.focus()`. `AdsManager.skip()` is no substitute: IMA ignores it while it renders the
+  button itself.
+- `InsideAdView.focusControls()` moves focus to skip/close if showing, else mute, else "Learn more".
+- `InsideAdView.setAutoFocusSkipButton(false)` stops IMA moving focus to the skip button by itself
+  (`AdsRenderingSettings.focusSkipButtonWhenAvailable`, default true). The multiview turns it off
+  so the cursor stays on the channels until the user moves to the ad.
+- `InsideAdView.setOnControlsChangedListener {}` fires when skip or close appears mid-ad, so a
+  host with focus on the ad can call `focusControls()` again.
+
 Use `InsideAdView.ResizeMode.MATCH_CONTAINER` for these slots - every other mode sizes against the
 screen, which is wrong for an ad embedded in a panel.
 

@@ -46,6 +46,15 @@ class GoogleImaPlayer(
     private var adFinishedNotified = false
     private var videoPlayerVolumeButton: FrameLayout? = null
 
+    /**
+     * Whether the current ad's skip button is showing. IMA draws that button itself, so this is
+     * tracked from its events; it decides where [focusControls] puts the focus.
+     */
+    private var skipAvailable = false
+
+    /** Set by InsideAdView; told when the skip button appears. */
+    internal var onControlsChanged: (() -> Unit)? = null
+
     private var insideAdCallback: InsideAdCallback? = null
     private var insideAdProgressCallback: InsideAdProgressCallback? = callback
 
@@ -76,6 +85,7 @@ class GoogleImaPlayer(
         }
 
         videoPlayerVolumeButton = findViewById(R.id.adVolumeLayout)
+        Helper.makeControlFocusable(videoPlayerVolumeButton!!)
         videoAdPlayerAdapter = VideoAdPlayerAdapter(videoPlayer!!, videoPlayerVolumeButton!!)
 
         setImaAdsCallback()
@@ -159,6 +169,7 @@ class GoogleImaPlayer(
                         // Per ad, not per request: a pod plays several ads through one playAd(),
                         // and each has to be able to report itself finished.
                         adFinishedNotified = false
+                        skipAvailable = false
                         logVastAdDetails("STARTED")
                     }
 
@@ -172,6 +183,9 @@ class GoogleImaPlayer(
                         val currentAd = adsManager?.currentAd
                         val isSkippable = currentAd?.isSkippable ?: false
                         val skipTimeOffset = currentAd?.skipTimeOffset ?: 0.0
+
+                        skipAvailable = isSkippable
+                        if (isSkippable) onControlsChanged?.invoke()
 
                         InsideAdSdk.logSkipButtonState(
                             event = "SKIPPABLE_STATE_CHANGED",
@@ -224,6 +238,10 @@ class GoogleImaPlayer(
 
             val adsRenderingSettings = ImaSdkFactory.getInstance().createAdsRenderingSettings()
             adsRenderingSettings.setLoadVideoTimeout(15000)
+            // No-op off Android TV. IMA's default is true; a host managing its own focus turns it
+            // off and moves to the skip button through focusControls() instead.
+            adsRenderingSettings.focusSkipButtonWhenAvailable =
+                requestContext?.autoFocusSkipButton ?: true
             adsManager?.init(adsRenderingSettings)
         }
     }
@@ -313,6 +331,22 @@ class GoogleImaPlayer(
         url?.let { requestAds(it) }
     }
 
+    /**
+     * Focuses the skip button when it is showing, otherwise the mute button. The skip button is
+     * IMA's, so it is focused through IMA; AdsManager.skip() cannot stand in for it, as IMA ignores
+     * that call while it renders the button itself.
+     */
+    internal fun focusControls(): Boolean {
+        if (skipAvailable) {
+            adsManager?.let {
+                it.focus()
+                return true
+            }
+        }
+        val volumeButton = videoPlayerVolumeButton ?: return false
+        return volumeButton.isShown && volumeButton.requestFocus()
+    }
+
     fun stopAd() {
         videoAdPlayerAdapter?.stopAdPlaying()
     }
@@ -325,6 +359,7 @@ class GoogleImaPlayer(
         adsLoader?.contentComplete()
         insideAdCallback = null
         insideAdProgressCallback = null
+        onControlsChanged = null
     }
 
     /**

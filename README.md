@@ -55,7 +55,7 @@ to your app-level build.gradle file:
 
 ```gradle
 dependencies {
-    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.33'
+    implementation 'com.github.streannsdk:streann-inside-ads-sdk-android:1.0.34'
 }
 ```
 

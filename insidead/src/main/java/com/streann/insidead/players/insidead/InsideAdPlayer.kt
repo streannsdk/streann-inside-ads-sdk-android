@@ -41,6 +41,10 @@ class InsideAdPlayer(
     private var adVolumeButton: ImageView? = null
     private var videoProgressBar: ProgressBar? = null
     private var learnMoreLayout: LinearLayout? = null
+    private var learnMoreButton: TextView? = null
+
+    /** Set by InsideAdView; told when the close button appears. */
+    internal var onControlsChanged: (() -> Unit)? = null
 
     private var insideAdCallback: InsideAdCallback? = null
     private var insideAdProgressCallback: InsideAdProgressCallback? = callback
@@ -281,6 +285,15 @@ class InsideAdPlayer(
         }
     }
 
+    /**
+     * Focuses the close button when it is showing, otherwise the mute button, otherwise
+     * "Learn more". On a TV with no browser, "Learn more" does nothing when pressed: the
+     * ActivityNotFoundException is already caught.
+     */
+    internal fun focusControls(): Boolean =
+        listOfNotNull(adCloseButton, adVolumeButton, learnMoreButton)
+            .any { it.isShown && it.isFocusable && it.requestFocus() }
+
     fun stopAd() {
         Log.i(InsideAdSdk.LOG_TAG, "stopAd")
 
@@ -336,6 +349,7 @@ class InsideAdPlayer(
         params.topMargin = 10
 
         addView(adCloseButton, params)
+        adCloseButton?.let { Helper.makeControlFocusable(it) }
 
         adCloseButton?.setOnClickListener {
             InsideAdSdk.debugLog("InsideAdPlayer", "Close button clicked (NOT skip button)")
@@ -353,6 +367,7 @@ class InsideAdPlayer(
             ctxShowCloseButtonAfterSeconds?.let { delayMillis ->
                 showCloseButtonHandler?.postDelayed({
                     adCloseButton?.visibility = VISIBLE
+                    onControlsChanged?.invoke()
                     InsideAdSdk.debugLog(
                         "InsideAdPlayer",
                         "Close button NOW VISIBLE after ${delayMillis / 1000}s (this is NOT a skip button)"
@@ -369,6 +384,7 @@ class InsideAdPlayer(
 
     private fun setupVolumeButton() {
         adVolumeButton = ImageView(context)
+        adVolumeButton?.let { Helper.makeControlFocusable(it) }
 
         val params = LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         params.gravity = Gravity.TOP or Gravity.END
@@ -454,6 +470,8 @@ class InsideAdPlayer(
         volumeButtonParams: LayoutParams?
     ) {
         val learnMoreButton = createLearnMoreButton()
+        Helper.makeControlFocusable(learnMoreButton)
+        this.learnMoreButton = learnMoreButton
 
         val learnMoreParams = RelativeLayout.LayoutParams(WRAP_CONTENT, WRAP_CONTENT)
         learnMoreParams.topMargin = 10

@@ -1,0 +1,17 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  Background for the ad's controls (skip/close, mute, learn more). Invisible until a control takes
+  the D-pad focus on a TV, where it is the only sign of which control the remote will press.
+-->
+<selector xmlns:android="http://schemas.android.com/apk/res/android">
+    <item android:state_focused="true">
+        <shape android:shape="rectangle">
+            <solid android:color="#40FFFFFF" />
+            <stroke
+                android:width="2dp"
+                android:color="#FFFFFFFF" />
+            <corners android:radius="4dp" />
+        </shape>
+    </item>
+    <item android:drawable="@android:color/transparent" />
+</selector>
