@@ -184,8 +184,13 @@ class GoogleImaPlayer(
                         val isSkippable = currentAd?.isSkippable ?: false
                         val skipTimeOffset = currentAd?.skipTimeOffset ?: 0.0
 
-                        skipAvailable = isSkippable
-                        if (isSkippable) onControlsChanged?.invoke()
+                        // The event, not currentAd.isSkippable, says when IMA shows its skip
+                        // button: AdSense-served ads report isSkippable=false and no skip offset
+                        // while IMA still shows the button after 5 s and fires this event.
+                        // IMA documents it as "an ad changes its skippable state", and every ad
+                        // starts unskippable (STARTED resets this), so each event flips the state.
+                        skipAvailable = !skipAvailable
+                        if (skipAvailable) onControlsChanged?.invoke()
 
                         InsideAdSdk.logSkipButtonState(
                             event = "SKIPPABLE_STATE_CHANGED",
@@ -195,7 +200,7 @@ class GoogleImaPlayer(
                             skipOffsetSeconds = skipTimeOffset.toInt(),
                             adDuration = currentAd?.duration?.toFloat(),
                             additionalInfo = mapOf(
-                                "Skip Button Should Show" to isSkippable,
+                                "Skip Button Should Show" to skipAvailable,
                                 "Ad ID" to (currentAd?.adId ?: "Unknown"),
                                 "Ad System" to (currentAd?.adSystem ?: "Unknown")
                             )
